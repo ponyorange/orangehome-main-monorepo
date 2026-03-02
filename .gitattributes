@@ -1,0 +1,3 @@
+# Rush shrinkwrap 文件不应被合并
+common/config/rush/pnpm-lock.yaml binary
+common/config/rush/pnpm-workspace.yaml binary

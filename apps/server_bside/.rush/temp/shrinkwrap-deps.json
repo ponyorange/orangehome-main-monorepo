@@ -1,0 +1,12 @@
+{
+  "../../apps/server_bside": "../../apps/server_bside:xMZVqBdnUnLxo9fDDgwOco8mXvPLXROdu5tbzmJXT0k=:",
+  "/@nestjs/cli@10.4.9": "Missing shrinkwrap entry!",
+  "/@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
+  "/@nestjs/core@10.4.22(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
+  "/@nestjs/platform-express@10.4.22(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)": "Missing shrinkwrap entry!",
+  "/@types/express@4.17.25": "Missing shrinkwrap entry!",
+  "/@types/node@20.19.35": "Missing shrinkwrap entry!",
+  "/reflect-metadata@0.2.2": "Missing shrinkwrap entry!",
+  "/rxjs@7.8.2": "Missing shrinkwrap entry!",
+  "/typescript@5.3.3": "Missing shrinkwrap entry!"
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/rush.schema.json",
+  "rushVersion": "5.115.0",
+  "pnpmVersion": "9.14.2",
+  "nodeSupportedVersionRange": ">=18.12.0 <22.0.0",
+  "projectFolderMinDepth": 2,
+  "projectFolderMaxDepth": 2,
+  "projects": [
+    {
+      "packageName": "@orangehome/web_platform",
+      "projectFolder": "apps/web_platform"
+    },
+    {
+      "packageName": "@orangehome/web_builder",
+      "projectFolder": "apps/web_builder"
+    },
+    {
+      "packageName": "@orangehome/server_bside",
+      "projectFolder": "apps/server_bside"
+    },
+    {
+      "packageName": "@orangehome/server_cside",
+      "projectFolder": "apps/server_cside"
+    }
+  ]
+}
