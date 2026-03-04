@@ -1,0 +1,65 @@
+// 主题样式定义
+:root {
+  // 浅色主题（默认）
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e8e8e8;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --primary-color: #0066ff;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+}
+
+// 深色主题
+[data-theme='dark'] {
+  --bg-primary: #141414;
+  --bg-secondary: #1f1f1f;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #737373;
+  --border-color: #434343;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --primary-color: #1890ff;
+  --success-color: #49aa19;
+  --warning-color: #d89614;
+  --error-color: #d84a4a;
+}
+
+// 半深色主题
+[data-theme='semi-dark'] {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e6e8eb;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #7a7a7a;
+  --border-color: #d9d9d9;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --primary-color: #0066ff;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+}
+
+// 全局样式应用
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// 主题切换动画
+.theme-transition {
+  transition: all 0.3s ease;
+}

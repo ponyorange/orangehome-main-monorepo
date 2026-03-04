@@ -1,0 +1,19 @@
+.login-form {
+  width: 100%;
+
+  &__container {
+    .semi-form-field {
+      margin-bottom: 20px;
+    }
+
+    .semi-input-wrapper {
+      height: 44px;
+    }
+
+    .semi-button-primary {
+      margin-top: 8px;
+      height: 48px;
+      font-size: 16px;
+    }
+  }
+}
