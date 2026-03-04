@@ -1,7 +1,8 @@
-import { Form, Button, Toast } from '@douyinfe/semi-ui';
+import { Form, Button } from '@douyinfe/semi-ui';
 import { IconMail, IconLock } from '@douyinfe/semi-icons';
-import { LoginParams } from '../../types/auth';
-import { isValidEmail } from '../../utils/validators';
+import { useTranslation } from 'react-i18next';
+import { LoginParams } from '@/types/auth';
+import { isValidEmail } from '@/utils/validators';
 import './LoginForm.scss';
 
 interface LoginFormProps {
@@ -13,6 +14,8 @@ interface LoginFormProps {
  * 登录表单组件
  */
 export function LoginForm({ onSubmit, loading = false }: LoginFormProps) {
+  const { t } = useTranslation();
+
   const handleSubmit = async (values: LoginParams) => {
     const success = await onSubmit(values);
     if (!success) {
@@ -29,24 +32,24 @@ export function LoginForm({ onSubmit, loading = false }: LoginFormProps) {
       >
         <Form.Input
           field="email"
-          label="邮箱"
-          placeholder="请输入邮箱"
+          label={t('auth.email')}
+          placeholder={t('validation.required', { field: t('auth.email') })}
           prefix={<IconMail />}
           validate={(val) => {
-            if (!val) return '请输入邮箱';
-            if (!isValidEmail(val)) return '请输入有效的邮箱地址';
+            if (!val) return t('validation.required', { field: t('auth.email') });
+            if (!isValidEmail(val)) return t('validation.invalidEmail');
             return '';
           }}
-          rules={[{ required: true, message: '请输入邮箱' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.email') }) }]}
         />
 
         <Form.Input
           field="password"
-          label="密码"
+          label={t('auth.password')}
           type="password"
-          placeholder="请输入密码"
+          placeholder={t('validation.required', { field: t('auth.password') })}
           prefix={<IconLock />}
-          rules={[{ required: true, message: '请输入密码' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.password') }) }]}
         />
 
         <Form.Checkbox field="remember" noLabel>
@@ -61,7 +64,7 @@ export function LoginForm({ onSubmit, loading = false }: LoginFormProps) {
           size="large"
           theme="solid"
         >
-          登录
+          {t('auth.login')}
         </Button>
       </Form>
     </div>

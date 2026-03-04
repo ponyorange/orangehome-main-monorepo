@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "refresh": "刷新",
+    "logout": "退出登录",
+    "welcome": "欢迎",
+    "settings": "设置"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "username": "用户名",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "email": "邮箱",
+    "phone": "手机号",
+    "forgotPassword": "忘记密码？",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已有账号？",
+    "goRegister": "去注册",
+    "goLogin": "去登录",
+    "loginSuccess": "登录成功",
+    "registerSuccess": "注册成功",
+    "logoutSuccess": "退出成功"
+  },
+  "validation": {
+    "required": "{{field}}不能为空",
+    "minLength": "{{field}}至少{{length}}个字符",
+    "maxLength": "{{field}}最多{{length}}个字符",
+    "invalidEmail": "邮箱格式不正确",
+    "invalidPhone": "手机号格式不正确",
+    "passwordMismatch": "两次输入的密码不一致"
+  },
+  "theme": {
+    "light": "浅色模式",
+    "dark": "深色模式",
+    "semiDark": "半深色模式",
+    "switch": "切换主题"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English",
+    "switch": "切换语言"
+  },
+  "error": {
+    "network": "网络错误，请检查网络连接",
+    "server": "服务器错误，请稍后重试",
+    "unauthorized": "未授权，请重新登录",
+    "forbidden": "没有权限访问",
+    "notFound": "资源不存在"
+  }
+}

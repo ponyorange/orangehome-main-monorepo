@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "refresh": "Refresh",
+    "logout": "Logout",
+    "welcome": "Welcome",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "email": "Email",
+    "phone": "Phone",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "goRegister": "Sign up",
+    "goLogin": "Sign in",
+    "loginSuccess": "Login successful",
+    "registerSuccess": "Registration successful",
+    "logoutSuccess": "Logout successful"
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "minLength": "{{field}} must be at least {{length}} characters",
+    "maxLength": "{{field}} must be at most {{length}} characters",
+    "invalidEmail": "Invalid email format",
+    "invalidPhone": "Invalid phone number",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "semiDark": "Semi Dark Mode",
+    "switch": "Switch Theme"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English",
+    "switch": "Switch Language"
+  },
+  "error": {
+    "network": "Network error, please check your connection",
+    "server": "Server error, please try again later",
+    "unauthorized": "Unauthorized, please login again",
+    "forbidden": "Access forbidden",
+    "notFound": "Resource not found"
+  }
+}

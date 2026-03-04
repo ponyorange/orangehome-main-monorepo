@@ -1,32 +1,69 @@
-import { Layout, Nav, Avatar, Dropdown, Toast } from '@douyinfe/semi-ui';
-import { IconHome, IconAppCenter, IconSetting, IconExit } from '@douyinfe/semi-icons';
+import { Layout, Nav, Avatar, Dropdown, Toast, Button, Select } from '@douyinfe/semi-ui';
+import { 
+  IconHome, 
+  IconAppCenter, 
+  IconSetting, 
+  IconExit,
+  IconSun,
+  IconMoon,
+  IconLanguage
+} from '@douyinfe/semi-icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/hooks/useAuth';
+import type { Theme, Language } from '@/store/appStore';
 import './DashboardContainer.scss';
 
 const { Header, Sider, Content } = Layout;
 
+interface DashboardContainerProps {
+  theme: Theme;
+  onThemeChange: (theme: Theme) => void;
+  onToggleTheme: () => void;
+  language: Language;
+  onLanguageChange: (lang: Language) => void;
+}
+
 /**
  * Dashboard 页面容器
  */
-export function DashboardContainer() {
+export function DashboardContainer({
+  theme,
+  onThemeChange,
+  onToggleTheme,
+  language,
+  onLanguageChange,
+}: DashboardContainerProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
+    Toast.success(t('auth.logoutSuccess'));
     navigate('/login');
   };
 
   const navItems = [
-    { itemKey: 'home', text: '首页', icon: <IconHome /> },
+    { itemKey: 'home', text: t('common.welcome'), icon: <IconHome /> },
     { itemKey: 'apps', text: '应用管理', icon: <IconAppCenter /> },
-    { itemKey: 'settings', text: '系统设置', icon: <IconSetting /> },
+    { itemKey: 'settings', text: t('common.settings'), icon: <IconSetting /> },
   ];
 
   const dropDownItems = [
     { node: 'item', name: '个人中心', onClick: () => Toast.info('个人中心') },
-    { node: 'item', name: '退出登录', icon: <IconExit />, onClick: handleLogout },
+    { node: 'item', name: t('auth.logout'), icon: <IconExit />, onClick: handleLogout },
+  ];
+
+  const themeOptions = [
+    { value: 'light', label: t('theme.light') },
+    { value: 'dark', label: t('theme.dark') },
+    { value: 'semi-dark', label: t('theme.semiDark') },
+  ];
+
+  const languageOptions = [
+    { value: 'zh-CN', label: '中文' },
+    { value: 'en-US', label: 'English' },
   ];
 
   return (
@@ -36,13 +73,32 @@ export function DashboardContainer() {
           <IconAppCenter size="large" />
           <span>OrangeHome</span>
         </div>
+        
         <div className="dashboard-header__actions">
+          {/* 主题切换 */}
+          <Select
+            value={theme}
+            onChange={(value) => onThemeChange(value as Theme)}
+            optionList={themeOptions}
+            prefix={<IconSun />}
+            style={{ width: 140, marginRight: 12 }}
+          />
+          
+          {/* 语言切换 */}
+          <Select
+            value={language}
+            onChange={(value) => onLanguageChange(value as Language)}
+            optionList={languageOptions}
+            prefix={<IconLanguage />}
+            style={{ width: 120, marginRight: 12 }}
+          />
+          
           <Dropdown menu={dropDownItems} position="bottomRight">
             <div className="dashboard-header__user">
               <Avatar size="small" style={{ marginRight: 8 }}>
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
               </Avatar>
-              <span>{user?.email || '用户'}</span>
+              <span>{user?.email || t('auth.username')}</span>
             </div>
           </Dropdown>
         </div>
@@ -59,7 +115,7 @@ export function DashboardContainer() {
         
         <Content className="dashboard-content">
           <div className="dashboard-content__wrapper">
-            <h1>🎉 欢迎使用 OrangeHome 低代码平台</h1>
+            <h1>🎉 {t('common.welcome')} OrangeHome</h1>
             <p>这里是你登录后的主页面。你可以在此基础上开发：</p>
             <ul>
               <li>项目列表管理</li>
@@ -68,6 +124,14 @@ export function DashboardContainer() {
               <li>数据源配置</li>
               <li>部署发布流程</li>
             </ul>
+            
+            {/* 演示多语言使用 */}
+            <div style={{ marginTop: 24, padding: 16, background: 'var(--bg-secondary)', borderRadius: 8 }}>
+              <h3>{t('common.settings')}</h3>
+              <p>{t('theme.switch')}: {t(`theme.${theme.replace('-', '')}`)}</p>
+              <p>{t('language.switch')}: {language === 'zh-CN' ? '中文' : 'English'}</p>
+              <p>{t('common.loading')}</p>
+            </div>
           </div>
         </Content>
       </Layout>

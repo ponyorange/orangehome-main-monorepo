@@ -1,9 +1,10 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { Typography } from '@douyinfe/semi-ui';
-import { AuthLayout } from '../../components/AuthLayout';
-import { RegisterForm } from '../../components/RegisterForm';
-import { useAuth } from '../../hooks/useAuth';
-import { RegisterParams } from '../../types/auth';
+import { useTranslation } from 'react-i18next';
+import { AuthLayout } from '@/components/AuthLayout';
+import { RegisterForm } from '@/components/RegisterForm';
+import { useAuth } from '@/hooks/useAuth';
+import { RegisterParams } from '@/types/auth';
 
 const { Text } = Typography;
 
@@ -12,6 +13,7 @@ const { Text } = Typography;
  */
 export function RegisterContainer() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { register, sendCode, loading } = useAuth();
 
   const handleRegister = async (values: RegisterParams): Promise<boolean> => {
@@ -28,14 +30,14 @@ export function RegisterContainer() {
 
   const footer = (
     <Text>
-      已有账号？<Link to="/login">立即登录</Link>
+      {t('auth.hasAccount')} <Link to="/login">{t('auth.goLogin')}</Link>
     </Text>
   );
 
   return (
     <AuthLayout 
-      title="创建账号" 
-      subtitle="加入 OrangeHome 低代码平台"
+      title={t('auth.register')} 
+      subtitle="OrangeHome"
       footer={footer}
     >
       <RegisterForm 

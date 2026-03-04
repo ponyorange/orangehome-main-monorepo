@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Form, Button, Toast } from '@douyinfe/semi-ui';
 import { IconMail, IconKey, IconLock } from '@douyinfe/semi-icons';
-import { RegisterParams } from '../../types/auth';
-import { isValidEmail, isValidPassword } from '../../utils/validators';
-import { useCountdown } from '../../hooks/useCountdown';
+import { useTranslation } from 'react-i18next';
+import { RegisterParams } from '@/types/auth';
+import { isValidEmail, isValidPassword } from '@/utils/validators';
+import { useCountdown } from '@/hooks/useCountdown';
 import './RegisterForm.scss';
 
 interface RegisterFormProps {
@@ -16,6 +17,7 @@ interface RegisterFormProps {
  * 注册表单组件
  */
 export function RegisterForm({ onSubmit, onSendCode, loading = false }: RegisterFormProps) {
+  const { t } = useTranslation();
   const [formApi, setFormApi] = useState<any>(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const [countdown, startCountdown, , isCounting] = useCountdown(60);
@@ -24,12 +26,12 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
     const email = formApi?.getValue('email');
     
     if (!email) {
-      Toast.error('请先输入邮箱');
+      Toast.error(t('validation.required', { field: t('auth.email') }));
       return;
     }
 
     if (!isValidEmail(email)) {
-      Toast.error('请输入有效的邮箱地址');
+      Toast.error(t('validation.invalidEmail'));
       return;
     }
 
@@ -44,7 +46,7 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
 
   const handleSubmit = (values: RegisterParams) => {
     if (values.password !== values.confirmPassword) {
-      Toast.error('两次输入的密码不一致');
+      Toast.error(t('validation.passwordMismatch'));
       return;
     }
     onSubmit(values);
@@ -60,21 +62,21 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
       >
         <Form.Input
           field="email"
-          label="邮箱"
-          placeholder="请输入邮箱"
+          label={t('auth.email')}
+          placeholder={t('validation.required', { field: t('auth.email') })}
           prefix={<IconMail />}
           validate={(val) => {
-            if (!val) return '请输入邮箱';
-            if (!isValidEmail(val)) return '请输入有效的邮箱地址';
+            if (!val) return t('validation.required', { field: t('auth.email') });
+            if (!isValidEmail(val)) return t('validation.invalidEmail');
             return '';
           }}
-          rules={[{ required: true, message: '请输入邮箱' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.email') }) }]}
         />
 
         <Form.Input
           field="code"
-          label="验证码"
-          placeholder="请输入验证码"
+          label={t('auth.confirmPassword')}
+          placeholder={t('validation.required', { field: t('auth.confirmPassword') })}
           prefix={<IconKey />}
           suffix={
             <Button 
@@ -84,33 +86,33 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
               disabled={isCounting}
               onClick={handleSendCode}
             >
-              {isCounting ? `${countdown}秒` : '获取验证码'}
+              {isCounting ? `${countdown}s` : '获取验证码'}
             </Button>
           }
-          rules={[{ required: true, message: '请输入验证码' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.confirmPassword') }) }]}
         />
 
         <Form.Input
           field="password"
-          label="密码"
+          label={t('auth.password')}
           type="password"
-          placeholder="请设置密码（至少6位）"
+          placeholder={t('validation.minLength', { field: t('auth.password'), length: 6 })}
           prefix={<IconLock />}
           validate={(val) => {
-            if (!val) return '请输入密码';
-            if (!isValidPassword(val)) return '密码至少6位';
+            if (!val) return t('validation.required', { field: t('auth.password') });
+            if (!isValidPassword(val)) return t('validation.minLength', { field: t('auth.password'), length: 6 });
             return '';
           }}
-          rules={[{ required: true, message: '请输入密码' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.password') }) }]}
         />
 
         <Form.Input
           field="confirmPassword"
-          label="确认密码"
+          label={t('auth.confirmPassword')}
           type="password"
-          placeholder="请再次输入密码"
+          placeholder={t('validation.required', { field: t('auth.confirmPassword') })}
           prefix={<IconLock />}
-          rules={[{ required: true, message: '请确认密码' }]}
+          rules={[{ required: true, message: t('validation.required', { field: t('auth.confirmPassword') }) }]}
         />
 
         <Button 
@@ -121,7 +123,7 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
           size="large"
           theme="solid"
         >
-          注册
+          {t('auth.register')}
         </Button>
       </Form>
     </div>
