@@ -1,0 +1,42 @@
+.dashboard {
+  &__header {
+    margin-bottom: 24px;
+
+    .semi-typography {
+      display: block;
+      margin-bottom: 4px;
+    }
+  }
+
+  &__cards {
+    margin-bottom: 24px;
+  }
+
+  &__card {
+    .dashboard__card-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .dashboard__card-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--semi-color-primary-light-default, #e8f0fe);
+      border-radius: 8px;
+      color: var(--semi-color-primary, #1e3a5f);
+    }
+  }
+
+  &__info {
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 2;
+      color: var(--semi-color-text-1, #666);
+    }
+  }
+}

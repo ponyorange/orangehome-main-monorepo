@@ -1,10 +1,20 @@
 {
-  "../../apps/web_platform": "../../apps/web_platform:MzRsQkx3OdCbdSQE5sK7b+OnQ1Kc1Mv0iAufOv+jMRc=:",
+  "../../apps/web_platform": "../../apps/web_platform:jaDPIuwvdUej4p30UTQxkGVUMHDuVIDFdg7GahzPpAg=:",
+  "/@douyinfe/semi-icons@2.92.2(react@18.3.1)": "Missing shrinkwrap entry!",
+  "/@douyinfe/semi-ui@2.92.2(@floating-ui/dom@1.7.6)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)": "Missing shrinkwrap entry!",
   "/@types/react-dom@18.3.7(@types/react@18.3.28)": "Missing shrinkwrap entry!",
   "/@types/react@18.3.28": "Missing shrinkwrap entry!",
-  "/@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@20.19.35)(terser@5.46.0))": "Missing shrinkwrap entry!",
+  "/@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@20.19.35)(sass@1.97.3)(terser@5.46.0))": "Missing shrinkwrap entry!",
+  "/axios@1.13.6": "Missing shrinkwrap entry!",
+  "/i18next-browser-languagedetector@8.2.1": "Missing shrinkwrap entry!",
+  "/i18next@25.8.14(typescript@5.3.3)": "Missing shrinkwrap entry!",
   "/react-dom@18.3.1(react@18.3.1)": "Missing shrinkwrap entry!",
+  "/react-i18next@16.5.4(i18next@25.8.14(typescript@5.3.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.3.3)": "Missing shrinkwrap entry!",
+  "/react-router-dom@7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)": "Missing shrinkwrap entry!",
   "/react@18.3.1": "Missing shrinkwrap entry!",
+  "/sass@1.97.3": "Missing shrinkwrap entry!",
+  "/swr@2.4.1(react@18.3.1)": "Missing shrinkwrap entry!",
   "/typescript@5.3.3": "Missing shrinkwrap entry!",
-  "/vite@5.4.21(@types/node@20.19.35)(terser@5.46.0)": "Missing shrinkwrap entry!"
+  "/vite@5.4.21(@types/node@20.19.35)(sass@1.97.3)(terser@5.46.0)": "Missing shrinkwrap entry!",
+  "/zustand@5.0.11(@types/react@18.3.28)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))": "Missing shrinkwrap entry!"
 }

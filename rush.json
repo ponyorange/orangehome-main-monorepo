@@ -21,6 +21,10 @@
     {
       "packageName": "@orangehome/server_cside",
       "projectFolder": "apps/server_cside"
+    },
+    {
+      "packageName": "@orangehome/web_admin",
+      "projectFolder": "apps/web_admin"
     }
   ]
 }

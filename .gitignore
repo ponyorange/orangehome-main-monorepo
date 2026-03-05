@@ -1,6 +1,7 @@
 # Rush
 common/temp/
 *.log
+.rush/
 
 # Dependencies
 node_modules/

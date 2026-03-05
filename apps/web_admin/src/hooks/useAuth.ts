@@ -1,0 +1,111 @@
+import { useCallback } from 'react';
+import useSWRMutation from 'swr/mutation';
+import { Toast } from '@douyinfe/semi-ui';
+import { authApi, authStorage } from '@/services/auth';
+import type { LoginParams, RegisterParams, SendCodeParams, LoginResponse } from '@/types/auth';
+
+type FetcherArg<T> = { arg: T };
+
+/** 登录 */
+export function useLogin() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/auth/login',
+    async (_key, { arg }: FetcherArg<LoginParams>) => {
+      const res = await authApi.login(arg);
+      if (res.success && res.data) {
+        const { token, user } = res.data;
+        authStorage.setToken(token);
+        authStorage.setUser(user);
+      }
+      return res;
+    }
+  );
+
+  const login = useCallback(
+    async (params: LoginParams): Promise<boolean> => {
+      try {
+        const res = await trigger(params);
+        if (res?.success && res.data) {
+          Toast.success('登录成功');
+          return true;
+        }
+        Toast.error(res?.message || '登录失败');
+        return false;
+      } catch {
+        Toast.error('登录失败，请稍后重试');
+        return false;
+      }
+    },
+    [trigger]
+  );
+
+  return { login, loading: isMutating };
+}
+
+/** 注册 */
+export function useRegister() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/auth/register',
+    async (_key, { arg }: FetcherArg<Omit<RegisterParams, 'confirmPassword'>>) => {
+      return authApi.register(arg);
+    }
+  );
+
+  const register = useCallback(
+    async (params: RegisterParams): Promise<boolean> => {
+      try {
+        const { confirmPassword, ...rest } = params;
+        const res = await trigger(rest);
+        if (res?.success) {
+          Toast.success('注册成功，请登录');
+          return true;
+        }
+        Toast.error(res?.message || '注册失败');
+        return false;
+      } catch {
+        Toast.error('注册失败，请稍后重试');
+        return false;
+      }
+    },
+    [trigger]
+  );
+
+  return { register, loading: isMutating };
+}
+
+/** 发送验证码 */
+export function useSendCode() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/auth/send-code',
+    async (_key, { arg }: FetcherArg<SendCodeParams>) => authApi.sendCode(arg)
+  );
+
+  const sendCode = useCallback(
+    async (params: SendCodeParams): Promise<boolean> => {
+      try {
+        const res = await trigger(params);
+        if (res?.success) {
+          Toast.success(res.message || '验证码已发送');
+          return true;
+        }
+        Toast.error(res?.message || '发送失败');
+        return false;
+      } catch {
+        Toast.error('发送验证码失败，请稍后重试');
+        return false;
+      }
+    },
+    [trigger]
+  );
+
+  return { sendCode, loading: isMutating };
+}
+
+/** 退出登录 */
+export function useLogout() {
+  return useCallback(() => {
+    authStorage.clearToken();
+    authStorage.clearUser();
+    Toast.success('已退出登录');
+  }, []);
+}
