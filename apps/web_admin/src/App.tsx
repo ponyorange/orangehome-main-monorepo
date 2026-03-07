@@ -10,6 +10,12 @@ import { RegisterContainer } from '@/containers/RegisterContainer';
 import { Dashboard } from '@/containers/Dashboard';
 import { Users } from '@/containers/Users';
 import { Settings } from '@/containers/Settings';
+import { Platforms } from '@/containers/Platforms';
+import { Businesses } from '@/containers/Businesses';
+import { MaterialTypes } from '@/containers/MaterialTypes';
+import { MaterialCategories } from '@/containers/MaterialCategories';
+import { Materials } from '@/containers/Materials';
+import { MaterialVersions } from '@/containers/MaterialVersions';
 import '@/styles/global.scss';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -24,7 +30,7 @@ function App() {
   useTheme();
 
   useEffect(() => {
-    Toast.config({ duration: 3, position: 'top' });
+    Toast.config({ duration: 3 });
   }, []);
 
   return (
@@ -58,6 +64,12 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="platforms" element={<Platforms />} />
+            <Route path="businesses" element={<Businesses />} />
+            <Route path="material-types" element={<MaterialTypes />} />
+            <Route path="material-categories" element={<MaterialCategories />} />
+            <Route path="materials" element={<Materials />} />
+            <Route path="materials/:materialId/versions" element={<MaterialVersions />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import useSWRMutation from 'swr/mutation';
 import { Toast } from '@douyinfe/semi-ui';
 import { authApi, authStorage } from '@/services/auth';
-import type { LoginParams, RegisterParams, SendCodeParams, LoginResponse } from '@/types/auth';
+import type { LoginParams, RegisterParams, SendCodeParams } from '@/types/auth';
 
 type FetcherArg<T> = { arg: T };
 

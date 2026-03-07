@@ -4,6 +4,10 @@ import {
   IconUser,
   IconSetting,
   IconExit,
+  IconAppCenter,
+  IconBriefcase,
+  IconFolder,
+  IconFile,
 } from '@douyinfe/semi-icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { authStorage } from '@/services/auth';
@@ -29,12 +33,31 @@ export function AdminLayout() {
   const navItems = [
     { itemKey: '/', text: '工作台', icon: <IconHome /> },
     { itemKey: '/users', text: '用户管理', icon: <IconUser /> },
+    {
+      itemKey: 'materials-group',
+      text: '物料管理',
+      icon: <IconFolder />,
+      items: [
+        { itemKey: '/material-types', text: '物料类别', icon: <IconFile /> },
+        { itemKey: '/material-categories', text: '物料分类', icon: <IconFolder /> },
+        { itemKey: '/materials', text: '物料列表', icon: <IconFile /> },
+      ],
+    },
+    {
+      itemKey: 'platform-group',
+      text: '业务管理',
+      icon: <IconBriefcase />,
+      items: [
+        { itemKey: '/platforms', text: '平台管理', icon: <IconAppCenter /> },
+        { itemKey: '/businesses', text: '业务线管理', icon: <IconBriefcase /> },
+      ],
+    },
     { itemKey: '/settings', text: '系统设置', icon: <IconSetting /> },
   ];
 
   const dropDownItems = [
-    { node: 'item', name: '个人中心', onClick: () => Toast.info('个人中心') },
-    { node: 'item', name: '退出登录', icon: <IconExit />, onClick: handleLogout },
+    { node: 'item' as const, name: '个人中心', onClick: () => { Toast.info('个人中心'); } },
+    { node: 'item' as const, name: '退出登录', icon: <IconExit />, onClick: handleLogout },
   ];
 
   const themeOptions = [

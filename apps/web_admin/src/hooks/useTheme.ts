@@ -14,7 +14,7 @@ export function useTheme() {
     document.documentElement.setAttribute('data-theme', theme);
     const semiTheme = themeConfig[theme];
     document.documentElement.classList.remove('theme-light', 'theme-dark');
-    document.documentElement.classList.add(`theme-${theme}`);
+    document.documentElement.classList.add(`theme-${semiTheme}`);
   }, [theme]);
 
   return { theme };
