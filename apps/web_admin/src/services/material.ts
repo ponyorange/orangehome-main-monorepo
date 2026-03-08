@@ -18,21 +18,18 @@ export const materialApi = {
   /**
    * 获取物料列表
    */
-  async getList(params?: MaterialQueryParams): Promise<ApiResponse<MaterialListResponse>> {
+  async getList(params?: MaterialQueryParams) {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
-    if (params?.pageSize) query.append('pageSize', String(params.pageSize));
-    if (params?.keyword) query.append('keyword', params.keyword);
+    if (params?.pageSize) query.append('limit', String(params.pageSize));
+    if (params?.keyword) query.append('searchKeyword', params.keyword);
     if (params?.typeId) query.append('typeId', params.typeId);
     if (params?.categoryId) query.append('categoryId', params.categoryId);
     if (params?.platformId) query.append('platformId', params.platformId);
-    if (params?.businessId) query.append('businessId', params.businessId);
     if (params?.status) query.append('status', params.status);
-    
     const queryString = query.toString();
     const url = `${API_ENDPOINTS.MATERIAL.LIST}${queryString ? `?${queryString}` : ''}`;
-    
-    return request<MaterialListResponse>(url, { method: 'GET' });
+    return request<{ data: Material[]; total: number; page: number; limit: number }>(url, { method: 'GET' });
   },
 
   /**

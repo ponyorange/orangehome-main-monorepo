@@ -1,33 +1,28 @@
 /**
- * 业务线类型定义
+ * 业务线类型定义（与 core-service BusinessDto 一致）
  */
 export interface Business {
   id: string;
-  name: string;
-  code: string;
+  businessCode: string;
+  businessName: string;
   description?: string;
-  icon?: string;
-  isActive: boolean;
-  sortOrder: number;
   platforms?: Array<{
-    id: string;
-    name: string;
-    code: string;
+    platformId: string;
+    platformCode: string;
+    platformName: string;
   }>;
-  createdAt: string;
-  updatedAt: string;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
  * 创建业务线参数
  */
 export interface CreateBusinessParams {
-  name: string;
-  code: string;
+  businessCode: string;
+  businessName: string;
   description?: string;
-  icon?: string;
-  isActive?: boolean;
-  sortOrder?: number;
   platformIds?: string[];
 }
 

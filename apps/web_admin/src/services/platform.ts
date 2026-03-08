@@ -1,9 +1,7 @@
-import type { ApiResponse } from '@/types';
 import type {
   Platform,
   CreatePlatformParams,
   UpdatePlatformParams,
-  PlatformListResponse,
   PlatformQueryParams,
 } from '@/types/platform';
 import { API_ENDPOINTS } from './config';
@@ -16,29 +14,27 @@ export const platformApi = {
   /**
    * 获取平台列表
    */
-  async getList(params?: PlatformQueryParams): Promise<ApiResponse<PlatformListResponse>> {
+  async getList(params?: PlatformQueryParams) {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
-    if (params?.pageSize) query.append('pageSize', String(params.pageSize));
-    if (params?.keyword) query.append('keyword', params.keyword);
-    
+    if (params?.pageSize) query.append('limit', String(params.pageSize));
+    if (params?.keyword) query.append('search', params.keyword);
     const queryString = query.toString();
     const url = `${API_ENDPOINTS.PLATFORM.LIST}${queryString ? `?${queryString}` : ''}`;
-    
-    return request<PlatformListResponse>(url, { method: 'GET' });
+    return request<{ data: Platform[]; total: number; page: number; limit: number }>(url, { method: 'GET' });
   },
 
   /**
    * 获取平台详情
    */
-  async getById(id: string): Promise<ApiResponse<Platform>> {
+  async getById(id: string) {
     return request<Platform>(API_ENDPOINTS.PLATFORM.DETAIL(id), { method: 'GET' });
   },
 
   /**
    * 创建平台
    */
-  async create(data: CreatePlatformParams): Promise<ApiResponse<Platform>> {
+  async create(data: CreatePlatformParams) {
     return request<Platform>(API_ENDPOINTS.PLATFORM.CREATE, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -48,7 +44,7 @@ export const platformApi = {
   /**
    * 更新平台
    */
-  async update(id: string, data: UpdatePlatformParams): Promise<ApiResponse<Platform>> {
+  async update(id: string, data: UpdatePlatformParams) {
     return request<Platform>(API_ENDPOINTS.PLATFORM.UPDATE(id), {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -58,7 +54,7 @@ export const platformApi = {
   /**
    * 删除平台
    */
-  async delete(id: string): Promise<ApiResponse<void>> {
+  async delete(id: string) {
     return request<void>(API_ENDPOINTS.PLATFORM.DELETE(id), { method: 'DELETE' });
   },
 };

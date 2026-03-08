@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { AdminLayout } from '@/containers/AdminLayout';
 import { LoginContainer } from '@/containers/LoginContainer';
 import { RegisterContainer } from '@/containers/RegisterContainer';
+import { ResetPasswordContainer } from '@/containers/ResetPasswordContainer';
 import { Dashboard } from '@/containers/Dashboard';
 import { Users } from '@/containers/Users';
 import { Settings } from '@/containers/Settings';
@@ -50,6 +51,14 @@ function App() {
             element={
               <PublicRoute>
                 <RegisterContainer />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <PublicRoute>
+                <ResetPasswordContainer />
               </PublicRoute>
             }
           />

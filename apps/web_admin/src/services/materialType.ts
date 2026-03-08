@@ -1,9 +1,7 @@
-import type { ApiResponse } from '@/types';
 import type {
   MaterialType,
   CreateMaterialTypeParams,
   UpdateMaterialTypeParams,
-  MaterialTypeListResponse,
 } from '@/types/materialType';
 import { API_ENDPOINTS } from './config';
 import { request } from '@/lib/fetch';
@@ -15,8 +13,8 @@ export const materialTypeApi = {
   /**
    * 获取物料类别列表
    */
-  async getList(): Promise<ApiResponse<MaterialTypeListResponse>> {
-    return request<MaterialTypeListResponse>(API_ENDPOINTS.MATERIAL_TYPE.LIST, { method: 'GET' });
+  async getList() {
+    return request<{ data: MaterialType[]; total: number }>(API_ENDPOINTS.MATERIAL_TYPE.LIST, { method: 'GET' });
   },
 
   /**

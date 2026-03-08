@@ -25,8 +25,8 @@ export function AdminLayout() {
   const { theme, setTheme } = useAppStore();
   const user = authStorage.getUser();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

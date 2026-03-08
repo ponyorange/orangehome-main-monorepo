@@ -11,13 +11,11 @@ const { Title } = Typography;
 export function Platforms() {
   const [visible, setVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formValues, setFormValues] = useState<Partial<CreatePlatformParams>>({
-    name: '',
-    code: '',
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({
+    platformName: '',
+    platformCode: '',
     description: '',
-    icon: '',
-    sortOrder: 0,
-    isActive: true,
+    iconUrl: '',
   });
 
   const { data, mutate, isLoading } = useSWR(
@@ -42,30 +40,21 @@ export function Platforms() {
     (_, { arg }: { arg: string }) => platformApi.delete(arg)
   );
 
-  const platforms = data?.data?.items || [];
+  const platforms = data?.data || [];
 
   const handleAdd = useCallback(() => {
     setEditingId(null);
-    setFormValues({
-      name: '',
-      code: '',
-      description: '',
-      icon: '',
-      sortOrder: 0,
-      isActive: true,
-    });
+    setFormValues({ platformName: '', platformCode: '', description: '', iconUrl: '' });
     setVisible(true);
   }, []);
 
-  const handleEdit = useCallback((record: Platform) => {
-    setEditingId(record.id);
+  const handleEdit = useCallback((record: Record<string, unknown>) => {
+    setEditingId(record.id as string);
     setFormValues({
-      name: record.name,
-      code: record.code,
-      description: record.description,
-      icon: record.icon,
-      sortOrder: record.sortOrder,
-      isActive: record.isActive,
+      platformName: record.platformName || '',
+      platformCode: record.platformCode || '',
+      description: record.description || '',
+      iconUrl: record.iconUrl || '',
     });
     setVisible(true);
   }, []);
@@ -91,29 +80,25 @@ export function Platforms() {
       }
       setVisible(false);
       mutate();
-    } catch {
-      // error
+    } catch (e) {
+      Toast.error(e instanceof Error ? e.message : '操作失败');
     }
   }, [editingId, formValues, createTrigger, updateTrigger, mutate]);
 
   const columns = [
-    { title: '名称', dataIndex: 'name' },
-    { title: '编码', dataIndex: 'code' },
+    { title: '名称', dataIndex: 'platformName' },
+    { title: '编码', dataIndex: 'platformCode' },
     { title: '描述', dataIndex: 'description' },
     {
       title: '状态',
-      dataIndex: 'isActive',
-      render: (isActive: boolean) => (
-        <Switch checked={isActive} disabled size="small" />
+      dataIndex: 'isDeleted',
+      render: (isDeleted: boolean) => (
+        <Switch checked={!isDeleted} disabled size="small" />
       ),
     },
     {
-      title: '排序',
-      dataIndex: 'sortOrder',
-    },
-    {
       title: '操作',
-      render: (_: unknown, record: Platform) => (
+      render: (_: unknown, record: Record<string, unknown>) => (
         <Space>
           <Button
             icon={<IconEdit />}
@@ -123,7 +108,7 @@ export function Platforms() {
           <Popconfirm
             title="确认删除？"
             content="此操作不可恢复"
-            onConfirm={() => { if (record.id) handleDelete(record.id); }}
+            onConfirm={() => { if (record.id) handleDelete(record.id as string); }}
           >
             <Button icon={<IconDelete />} theme="borderless" type="danger" />
           </Popconfirm>
@@ -159,42 +144,30 @@ export function Platforms() {
       >
         <Form layout="vertical">
           <Form.Input
-            field="name"
+            field="platformName"
             label="名称"
-            initValue={formValues.name}
-            onChange={(v) => setFormValues(p => ({ ...p, name: v }))}
+            initValue={formValues.platformName}
+            onChange={(v) => setFormValues(p => ({ ...p, platformName: v }))}
             rules={[{ required: true, message: '请输入名称' }]}
           />
           <Form.Input
-            field="code"
+            field="platformCode"
             label="编码"
-            initValue={formValues.code}
-            onChange={(v) => setFormValues(p => ({ ...p, code: v }))}
+            initValue={formValues.platformCode}
+            onChange={(v) => setFormValues(p => ({ ...p, platformCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
           />
-          <Form.Input 
-            field="description" 
-            label="描述" 
+          <Form.Input
+            field="description"
+            label="描述"
             initValue={formValues.description}
             onChange={(v) => setFormValues(p => ({ ...p, description: v }))}
           />
-          <Form.Input 
-            field="icon" 
-            label="图标" 
-            initValue={formValues.icon}
-            onChange={(v) => setFormValues(p => ({ ...p, icon: v }))}
-          />
-          <Form.InputNumber
-            field="sortOrder"
-            label="排序"
-            initValue={formValues.sortOrder}
-            onChange={(v) => setFormValues(p => ({ ...p, sortOrder: Number(v) }))}
-          />
-          <Form.Switch 
-            field="isActive" 
-            label="启用" 
-            initValue={formValues.isActive}
-            onChange={(v) => setFormValues(p => ({ ...p, isActive: Boolean(v) }))}
+          <Form.Input
+            field="iconUrl"
+            label="图标"
+            initValue={formValues.iconUrl}
+            onChange={(v) => setFormValues(p => ({ ...p, iconUrl: v }))}
           />
         </Form>
       </Modal>

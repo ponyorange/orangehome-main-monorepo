@@ -1,28 +1,25 @@
 /**
- * 平台类型定义
+ * 平台类型定义（与 core-service PlatformDto 一致）
  */
 export interface Platform {
   id: string;
-  name: string;
-  code: string;
+  platformCode: string;
+  platformName: string;
   description?: string;
-  icon?: string;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+  iconUrl?: string;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
  * 创建平台参数
  */
 export interface CreatePlatformParams {
-  name: string;
-  code: string;
+  platformCode: string;
+  platformName: string;
   description?: string;
-  icon?: string;
-  isActive?: boolean;
-  sortOrder?: number;
+  iconUrl?: string;
 }
 
 /**

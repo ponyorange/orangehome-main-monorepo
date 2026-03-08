@@ -16,13 +16,10 @@ export function Businesses() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkingId, setLinkingId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Partial<CreateBusinessParams>>({
-    name: '',
-    code: '',
+    businessName: '',
+    businessCode: '',
     description: '',
-    icon: '',
     platformIds: [],
-    sortOrder: 0,
-    isActive: true,
   });
   const [linkPlatformId, setLinkPlatformId] = useState<string>('');
 
@@ -60,33 +57,22 @@ export function Businesses() {
       businessApi.linkPlatform(arg.id, arg.platformId)
   );
 
-  const businesses = data?.data?.items || [];
-  const platforms = platformData?.data?.items || [];
+  const businesses = data?.data || [];
+  const platforms = platformData?.data || [];
 
   const handleAdd = useCallback(() => {
     setEditingId(null);
-    setFormValues({
-      name: '',
-      code: '',
-      description: '',
-      icon: '',
-      platformIds: [],
-      sortOrder: 0,
-      isActive: true,
-    });
+    setFormValues({ businessName: '', businessCode: '', description: '', platformIds: [] });
     setVisible(true);
   }, []);
 
   const handleEdit = useCallback((record: Business) => {
     setEditingId(record.id);
     setFormValues({
-      name: record.name,
-      code: record.code,
+      businessName: record.businessName,
+      businessCode: record.businessCode,
       description: record.description,
-      icon: record.icon,
-      platformIds: record.platforms?.map(p => p.id) || [],
-      sortOrder: record.sortOrder,
-      isActive: record.isActive,
+      platformIds: record.platforms?.map(p => p.platformId) || [],
     });
     setVisible(true);
   }, []);
@@ -137,20 +123,20 @@ export function Businesses() {
   }, [linkingId, linkPlatformId, linkPlatformTrigger, mutate]);
 
   const columns = [
-    { title: '名称', dataIndex: 'name' },
-    { title: '编码', dataIndex: 'code' },
+    { title: '名称', dataIndex: 'businessName' },
+    { title: '编码', dataIndex: 'businessCode' },
     { title: '描述', dataIndex: 'description' },
     {
       title: '关联平台',
       render: (_: unknown, record: Business) => (
-        <span>{record.platforms?.map(p => p.name).join(', ') || '-'}</span>
+        <span>{record.platforms?.map(p => p.platformName).join(', ') || '-'}</span>
       ),
     },
     {
       title: '状态',
-      dataIndex: 'isActive',
-      render: (isActive: boolean) => (
-        <Switch checked={isActive} disabled size="small" />
+      dataIndex: 'isDeleted',
+      render: (isDeleted: boolean) => (
+        <Switch checked={!isDeleted} disabled size="small" />
       ),
     },
     {
@@ -206,30 +192,24 @@ export function Businesses() {
       >
         <Form layout="vertical">
           <Form.Input
-            field="name"
+            field="businessName"
             label="名称"
-            initValue={formValues.name}
-            onChange={(v) => setFormValues(p => ({ ...p, name: v }))}
+            initValue={formValues.businessName}
+            onChange={(v) => setFormValues(p => ({ ...p, businessName: v }))}
             rules={[{ required: true, message: '请输入名称' }]}
           />
           <Form.Input
-            field="code"
+            field="businessCode"
             label="编码"
-            initValue={formValues.code}
-            onChange={(v) => setFormValues(p => ({ ...p, code: v }))}
+            initValue={formValues.businessCode}
+            onChange={(v) => setFormValues(p => ({ ...p, businessCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
           />
-          <Form.Input 
-            field="description" 
-            label="描述" 
+          <Form.Input
+            field="description"
+            label="描述"
             initValue={formValues.description}
             onChange={(v) => setFormValues(p => ({ ...p, description: v }))}
-          />
-          <Form.Input 
-            field="icon" 
-            label="图标" 
-            initValue={formValues.icon}
-            onChange={(v) => setFormValues(p => ({ ...p, icon: v }))}
           />
           <Form.Select
             field="platformIds"
@@ -240,21 +220,9 @@ export function Businesses() {
             onChange={(v) => setFormValues(p => ({ ...p, platformIds: v as string[] }))}
           >
             {platforms.map(p => (
-              <Option key={p.id} value={p.id}>{p.name}</Option>
+              <Option key={p.id} value={p.id}>{p.platformName}</Option>
             ))}
           </Form.Select>
-          <Form.InputNumber
-            field="sortOrder"
-            label="排序"
-            initValue={formValues.sortOrder}
-            onChange={(v) => setFormValues(p => ({ ...p, sortOrder: Number(v) }))}
-          />
-          <Form.Switch 
-            field="isActive" 
-            label="启用" 
-            initValue={formValues.isActive}
-            onChange={(v) => setFormValues(p => ({ ...p, isActive: Boolean(v) }))}
-          />
         </Form>
       </Modal>
 
@@ -275,7 +243,7 @@ export function Businesses() {
             onChange={(v) => setLinkPlatformId(v as string)}
           >
             {platforms.map(p => (
-              <Option key={p.id} value={p.id}>{p.name}</Option>
+              <Option key={p.id} value={p.id}>{p.platformName}</Option>
             ))}
           </Form.Select>
         </Form>

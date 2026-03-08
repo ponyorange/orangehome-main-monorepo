@@ -1,9 +1,7 @@
-import type { ApiResponse } from '@/types';
 import type {
   MaterialCategory,
   CreateMaterialCategoryParams,
   UpdateMaterialCategoryParams,
-  MaterialCategoryListResponse,
   MaterialCategoryTree,
   MoveCategoryParams,
 } from '@/types/materialCategory';
@@ -17,15 +15,15 @@ export const materialCategoryApi = {
   /**
    * 获取物料分类列表
    */
-  async getList(): Promise<ApiResponse<MaterialCategoryListResponse>> {
-    return request<MaterialCategoryListResponse>(API_ENDPOINTS.MATERIAL_CATEGORY.LIST, { method: 'GET' });
+  async getList() {
+    return request<{ data: MaterialCategory[]; total: number }>(API_ENDPOINTS.MATERIAL_CATEGORY.LIST, { method: 'GET' });
   },
 
   /**
    * 获取物料分类树形列表
    */
-  async getTreeList(): Promise<ApiResponse<MaterialCategoryTree[]>> {
-    return request<MaterialCategoryTree[]>(API_ENDPOINTS.MATERIAL_CATEGORY.TREE_LIST, { method: 'GET' });
+  async getTreeList() {
+    return request<{ data: MaterialCategoryTree[] }>(API_ENDPOINTS.MATERIAL_CATEGORY.TREE_LIST, { method: 'GET' });
   },
 
   /**

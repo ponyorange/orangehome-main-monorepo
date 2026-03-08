@@ -4,6 +4,8 @@ import { useState, useMemo, useCallback } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { materialCategoryApi } from '@/services/materialCategory';
+import { materialTypeApi } from '@/services/materialType';
+import { platformApi } from '@/services/platform';
 import type { MaterialCategory, CreateMaterialCategoryParams } from '@/types/materialCategory';
 
 const { Title } = Typography;
@@ -13,12 +15,13 @@ export function MaterialCategories() {
   const [visible, setVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Partial<CreateMaterialCategoryParams>>({
-    name: '',
-    code: '',
+    categoryName: '',
+    categoryCode: '',
     description: '',
+    typeId: '',
+    platformId: '',
     parentId: null,
     sortOrder: 0,
-    isActive: true,
   });
 
   const { data, mutate } = useSWR(
@@ -26,6 +29,11 @@ export function MaterialCategories() {
     () => materialCategoryApi.getTreeList(),
     { revalidateOnFocus: false }
   );
+
+  const { data: typeData } = useSWR(['materialTypes-all'], () => materialTypeApi.getList(), { revalidateOnFocus: false });
+  const { data: platformData } = useSWR(['platforms-all'], () => platformApi.getList({ page: 1, pageSize: 100 }), { revalidateOnFocus: false });
+  const types = typeData?.data || [];
+  const platforms = platformData?.data || [];
 
   const { trigger: createTrigger } = useSWRMutation(
     'materialCategories',
@@ -43,13 +51,30 @@ export function MaterialCategories() {
     (_, { arg }: { arg: string }) => materialCategoryApi.delete(arg)
   );
 
-  const categories = data?.data || [];
+  // API 返回 _id，需映射为 id 供前端使用
+  const normalizeNode = (node: Record<string, unknown>): MaterialCategory => {
+    const id = (node.id ?? node._id)?.toString?.() ?? String(node._id ?? node.id);
+    return {
+      ...node,
+      id,
+      _id: node._id,
+      categoryName: node.categoryName ?? node.categoryCode,
+      categoryCode: node.categoryCode as string,
+      children: Array.isArray(node.children)
+        ? (node.children as Record<string, unknown>[]).map(normalizeNode)
+        : undefined,
+    } as MaterialCategory;
+  };
+  const categories = useMemo(
+    () => (data?.data || []).map((n: Record<string, unknown>) => normalizeNode(n)),
+    [data?.data]
+  );
 
   // 将树形数据转换为扁平列表用于选择父分类
   const flattenCategories = (items: MaterialCategory[], level = 0): Array<{ id: string; name: string; level: number }> => {
     const result: Array<{ id: string; name: string; level: number }> = [];
     items.forEach(item => {
-      result.push({ id: item.id, name: item.name, level });
+      result.push({ id: item.id, name: item.categoryName || item.name, level });
       if (item.children && item.children.length > 0) {
         result.push(...flattenCategories(item.children, level + 1));
       }
@@ -62,12 +87,13 @@ export function MaterialCategories() {
   const handleAdd = useCallback((parentId?: string | null) => {
     setEditingId(null);
     setFormValues({
-      name: '',
-      code: '',
+      categoryName: '',
+      categoryCode: '',
       description: '',
+      typeId: '',
+      platformId: '',
       parentId: parentId || null,
       sortOrder: 0,
-      isActive: true,
     });
     setVisible(true);
   }, []);
@@ -75,12 +101,13 @@ export function MaterialCategories() {
   const handleEdit = useCallback((record: MaterialCategory) => {
     setEditingId(record.id);
     setFormValues({
-      name: record.name,
-      code: record.code,
+      categoryName: record.categoryName || (record as { name?: string }).name,
+      categoryCode: record.categoryCode || (record as { code?: string }).code,
       description: record.description,
+      typeId: record.typeId,
+      platformId: record.platformId,
       parentId: record.parentId,
-      sortOrder: record.sortOrder,
-      isActive: record.isActive,
+      sortOrder: record.sortOrder ?? 0,
     });
     setVisible(true);
   }, []);
@@ -117,7 +144,7 @@ export function MaterialCategories() {
     return items.map(item => ({
       label: (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <span>{item.name} <small style={{ color: '#999' }}>({item.code})</small></span>
+          <span>{item.categoryName} <small style={{ color: '#999' }}>({item.categoryCode})</small></span>
           <div style={{ display: 'flex', gap: 8 }} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <Button
               icon={<IconPlus />}
@@ -173,17 +200,17 @@ export function MaterialCategories() {
       >
         <Form layout="vertical">
           <Form.Input
-            field="name"
+            field="categoryName"
             label="名称"
-            initValue={formValues.name}
-            onChange={(v) => setFormValues(p => ({ ...p, name: v }))}
+            initValue={formValues.categoryName}
+            onChange={(v) => setFormValues(p => ({ ...p, categoryName: v }))}
             rules={[{ required: true, message: '请输入名称' }]}
           />
           <Form.Input
-            field="code"
+            field="categoryCode"
             label="编码"
-            initValue={formValues.code}
-            onChange={(v) => setFormValues(p => ({ ...p, code: v }))}
+            initValue={formValues.categoryCode}
+            onChange={(v) => setFormValues(p => ({ ...p, categoryCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
           />
           <Form.Input 
@@ -193,11 +220,35 @@ export function MaterialCategories() {
             onChange={(v) => setFormValues(p => ({ ...p, description: v }))}
           />
           <Form.Select
+            field="typeId"
+            label="物料类别"
+            placeholder="请选择类别"
+            initValue={formValues.typeId}
+            onChange={(v) => setFormValues(p => ({ ...p, typeId: v as string }))}
+            rules={[{ required: true, message: '请选择物料类别' }]}
+          >
+            {types.map((t: { id: string; typeName: string }) => (
+              <Option key={t.id} value={t.id}>{t.typeName}</Option>
+            ))}
+          </Form.Select>
+          <Form.Select
+            field="platformId"
+            label="平台"
+            placeholder="请选择平台"
+            initValue={formValues.platformId}
+            onChange={(v) => setFormValues(p => ({ ...p, platformId: v as string }))}
+            rules={[{ required: true, message: '请选择平台' }]}
+          >
+            {platforms.map((p: { id: string; platformName: string }) => (
+              <Option key={p.id} value={p.id}>{p.platformName}</Option>
+            ))}
+          </Form.Select>
+          <Form.Select
             field="parentId"
             label="父分类"
             placeholder="不选则为根分类"
             initValue={formValues.parentId}
-            onChange={(v) => setFormValues(p => ({ ...p, parentId: v as string | null }))}
+            onChange={(v) => setFormValues(p => ({ ...p, parentId: v === '' ? null : (v as string) }))}
           >
             <Option value="">无（根分类）</Option>
             {flatCategories.filter(c => c.id !== editingId).map(c => (
@@ -211,12 +262,6 @@ export function MaterialCategories() {
             label="排序"
             initValue={formValues.sortOrder}
             onChange={(v) => setFormValues(p => ({ ...p, sortOrder: Number(v) }))}
-          />
-          <Form.Switch 
-            field="isActive" 
-            label="启用" 
-            initValue={formValues.isActive}
-            onChange={(v) => setFormValues(p => ({ ...p, isActive: Boolean(v) }))}
           />
         </Form>
       </Modal>

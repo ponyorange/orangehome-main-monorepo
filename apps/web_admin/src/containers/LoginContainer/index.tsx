@@ -1,5 +1,6 @@
-import { useNavigate, Link } from 'react-router-dom';
-import { Typography } from '@douyinfe/semi-ui';
+import { useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Typography, Toast } from '@douyinfe/semi-ui';
 import { AuthLayout } from '@/components/AuthLayout';
 import { LoginForm } from '@/components/LoginForm';
 import { useLogin } from '@/hooks/useAuth';
@@ -9,7 +10,15 @@ const { Text } = Typography;
 
 export function LoginContainer() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { login, loading } = useLogin();
+
+  useEffect(() => {
+    if (searchParams.get('expired') === '1') {
+      Toast.warning('登录已过期，请重新登录');
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleLogin = async (values: LoginParams): Promise<boolean> => {
     const success = await login(values);
@@ -20,6 +29,8 @@ export function LoginContainer() {
   const footer = (
     <Text>
       没有账号？ <Link to="/register">去注册</Link>
+      {' · '}
+      <Link to="/reset-password">忘记密码</Link>
     </Text>
   );
 

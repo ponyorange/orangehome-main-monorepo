@@ -1,9 +1,7 @@
-import type { ApiResponse } from '@/types';
 import type {
   Business,
   CreateBusinessParams,
   UpdateBusinessParams,
-  BusinessListResponse,
   BusinessQueryParams,
 } from '@/types/business';
 import { API_ENDPOINTS } from './config';
@@ -16,17 +14,15 @@ export const businessApi = {
   /**
    * 获取业务线列表
    */
-  async getList(params?: BusinessQueryParams): Promise<ApiResponse<BusinessListResponse>> {
+  async getList(params?: BusinessQueryParams) {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
-    if (params?.pageSize) query.append('pageSize', String(params.pageSize));
-    if (params?.keyword) query.append('keyword', params.keyword);
+    if (params?.pageSize) query.append('limit', String(params.pageSize));
+    if (params?.keyword) query.append('search', params.keyword);
     if (params?.platformId) query.append('platformId', params.platformId);
-    
     const queryString = query.toString();
     const url = `${API_ENDPOINTS.BUSINESS.LIST}${queryString ? `?${queryString}` : ''}`;
-    
-    return request<BusinessListResponse>(url, { method: 'GET' });
+    return request<{ data: Business[]; total: number; page: number; limit: number }>(url, { method: 'GET' });
   },
 
   /**

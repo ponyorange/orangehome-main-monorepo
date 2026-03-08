@@ -1,43 +1,49 @@
 /**
- * 物料类型定义
+ * 物料类型定义（与 core-service MaterialDto 一致）
  */
 export interface Material {
   id: string;
-  name: string;
-  code: string;
+  materialUid: string;
+  materialName: string;
   description?: string;
   typeId: string;
   typeName?: string;
   categoryId: string;
   categoryName?: string;
+  platformId?: string;
+  platformName?: string;
+  businessId?: string;
+  businessName?: string;
+  icon?: string;
+  status: string;
+  visibility?: string;
+  latestVersionId?: string;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  /** 兼容 */
+  name?: string;
+  code?: string;
   platformIds?: string[];
   businessIds?: string[];
   thumbnail?: string;
   fileUrl?: string;
-  fileSize?: number;
-  fileType?: string;
-  status: 'draft' | 'published' | 'archived';
-  versionCount?: number;
-  latestVersion?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 /**
- * 创建物料参数
+ * 创建物料参数（与 core-service CreateMaterialDto 一致）
  */
 export interface CreateMaterialParams {
-  name: string;
-  code: string;
+  materialName: string;
+  materialUid?: string;
   description?: string;
   typeId: string;
   categoryId: string;
-  platformIds?: string[];
-  businessIds?: string[];
-  thumbnail?: string;
-  fileUrl?: string;
-  fileSize?: number;
-  fileType?: string;
+  platformId: string;
+  businessId?: string;
+  icon?: string;
+  status?: string;
+  visibility?: string;
 }
 
 /**

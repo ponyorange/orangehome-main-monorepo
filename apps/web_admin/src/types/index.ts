@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './user';
 export * from './platform';
 export * from './business';
 export * from './materialType';

@@ -2,18 +2,25 @@
  * API 配置
  */
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || '/api',
-  TIMEOUT: 10000,
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  TIMEOUT: 15000,
 };
 
 /**
  * API 端点
  */
 export const API_ENDPOINTS = {
+  USER: {
+    LIST: '/users',
+    ADD_IDENTITY: (id: string) => `/users/${id}/identities`,
+    REMOVE_IDENTITY: (id: string, identityName: string) =>
+      `/users/${id}/identities/${encodeURIComponent(identityName)}`,
+  },
   AUTH: {
-    SEND_CODE: '/auth/send-code',
+    SEND_EMAIL_CODE: '/auth/send-email-code',
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
+    RESET_PASSWORD: '/auth/reset-password',
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
   },

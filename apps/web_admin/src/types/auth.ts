@@ -1,12 +1,12 @@
 /**
- * 用户类型定义
+ * 用户类型定义（与 core-service UserInfoDto 一致）
  */
 export interface User {
-  id?: string;
+  id: string;
   email: string;
   nickname?: string;
   avatar?: string;
-  createdAt?: string;
+  identities?: string[];
 }
 
 /**
@@ -25,7 +25,8 @@ export interface RegisterParams {
   email: string;
   code: string;
   password: string;
-  confirmPassword?: string;
+  confirmPassword: string;
+  nickname?: string;
 }
 
 /**
@@ -37,20 +38,21 @@ export interface SendCodeParams {
 }
 
 /**
- * API 响应结构
+ * 重置密码参数
  */
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  code: number;
-  message: string;
-  data?: T;
+export interface ResetPasswordParams {
+  email: string;
+  code: string;
+  newPassword: string;
+  confirmPassword?: string;
 }
 
 /**
- * 登录响应数据
+ * core-service 登录响应（直接返回，无包装）
  */
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
   user: User;
-  expiresIn?: number;
 }

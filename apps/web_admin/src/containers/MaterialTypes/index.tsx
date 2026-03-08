@@ -12,12 +12,11 @@ export function MaterialTypes() {
   const [visible, setVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Partial<CreateMaterialTypeParams>>({
-    name: '',
-    code: '',
+    typeName: '',
+    typeCode: '',
     description: '',
     icon: '',
     sortOrder: 0,
-    isActive: true,
   });
 
   const { data, mutate, isLoading } = useSWR(
@@ -42,30 +41,22 @@ export function MaterialTypes() {
     (_, { arg }: { arg: string }) => materialTypeApi.delete(arg)
   );
 
-  const materialTypes = data?.data?.items || [];
+  const materialTypes = data?.data || [];
 
   const handleAdd = useCallback(() => {
     setEditingId(null);
-    setFormValues({
-      name: '',
-      code: '',
-      description: '',
-      icon: '',
-      sortOrder: 0,
-      isActive: true,
-    });
+    setFormValues({ typeName: '', typeCode: '', description: '', icon: '', sortOrder: 0 });
     setVisible(true);
   }, []);
 
   const handleEdit = useCallback((record: MaterialType) => {
     setEditingId(record.id);
     setFormValues({
-      name: record.name,
-      code: record.code,
+      typeName: record.typeName,
+      typeCode: record.typeCode,
       description: record.description,
       icon: record.icon,
-      sortOrder: record.sortOrder,
-      isActive: record.isActive,
+      sortOrder: record.sortOrder ?? 0,
     });
     setVisible(true);
   }, []);
@@ -97,16 +88,9 @@ export function MaterialTypes() {
   }, [editingId, formValues, createTrigger, updateTrigger, mutate]);
 
   const columns = [
-    { title: '名称', dataIndex: 'name' },
-    { title: '编码', dataIndex: 'code' },
+    { title: '名称', dataIndex: 'typeName' },
+    { title: '编码', dataIndex: 'typeCode' },
     { title: '描述', dataIndex: 'description' },
-    {
-      title: '状态',
-      dataIndex: 'isActive',
-      render: (isActive: boolean) => (
-        <Switch checked={isActive} disabled size="small" />
-      ),
-    },
     {
       title: '排序',
       dataIndex: 'sortOrder',
@@ -159,28 +143,28 @@ export function MaterialTypes() {
       >
         <Form layout="vertical">
           <Form.Input
-            field="name"
+            field="typeName"
             label="名称"
-            initValue={formValues.name}
-            onChange={(v) => setFormValues(p => ({ ...p, name: v }))}
+            initValue={formValues.typeName}
+            onChange={(v) => setFormValues(p => ({ ...p, typeName: v }))}
             rules={[{ required: true, message: '请输入名称' }]}
           />
           <Form.Input
-            field="code"
+            field="typeCode"
             label="编码"
-            initValue={formValues.code}
-            onChange={(v) => setFormValues(p => ({ ...p, code: v }))}
+            initValue={formValues.typeCode}
+            onChange={(v) => setFormValues(p => ({ ...p, typeCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
           />
-          <Form.Input 
-            field="description" 
-            label="描述" 
+          <Form.Input
+            field="description"
+            label="描述"
             initValue={formValues.description}
             onChange={(v) => setFormValues(p => ({ ...p, description: v }))}
           />
-          <Form.Input 
-            field="icon" 
-            label="图标" 
+          <Form.Input
+            field="icon"
+            label="图标"
             initValue={formValues.icon}
             onChange={(v) => setFormValues(p => ({ ...p, icon: v }))}
           />
@@ -189,12 +173,6 @@ export function MaterialTypes() {
             label="排序"
             initValue={formValues.sortOrder}
             onChange={(v) => setFormValues(p => ({ ...p, sortOrder: Number(v) }))}
-          />
-          <Form.Switch 
-            field="isActive" 
-            label="启用" 
-            initValue={formValues.isActive}
-            onChange={(v) => setFormValues(p => ({ ...p, isActive: Boolean(v) }))}
           />
         </Form>
       </Modal>

@@ -1,21 +1,25 @@
 import { useState } from 'react';
 import { Form, Button, Toast } from '@douyinfe/semi-ui';
 import { IconMail, IconKey, IconLock } from '@douyinfe/semi-icons';
-import type { RegisterParams } from '@/types/auth';
+import type { ResetPasswordParams } from '@/types/auth';
 import { isValidEmail, isValidPassword } from '@/utils/validators';
 import { useCountdown } from '@/hooks/useCountdown';
-import './RegisterForm.scss';
+import './ResetPasswordForm.scss';
 
-interface RegisterFormProps {
-  onSubmit: (values: RegisterParams) => Promise<boolean>;
+interface ResetPasswordFormProps {
+  onSubmit: (values: ResetPasswordParams) => Promise<boolean>;
   onSendCode: (email: string) => Promise<boolean>;
   loading?: boolean;
 }
 
 /**
- * 注册表单 - 邮箱验证码注册
+ * 重置密码表单
  */
-export function RegisterForm({ onSubmit, onSendCode, loading = false }: RegisterFormProps) {
+export function ResetPasswordForm({
+  onSubmit,
+  onSendCode,
+  loading = false,
+}: ResetPasswordFormProps) {
   const [formApi, setFormApi] = useState<{ getValue: (key: string) => string } | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const [countdown, startCountdown, , isCounting] = useCountdown(60);
@@ -36,30 +40,34 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
     if (success) startCountdown();
   };
 
-  const handleSubmit = async (values: RegisterParams) => {
-    if (values.password !== values.confirmPassword) {
-      Toast.error('两次输入的密码不一致');
+  const handleSubmit = async (values: ResetPasswordParams & { confirmPassword?: string }) => {
+    if (values.newPassword !== values.confirmPassword) {
+      Toast.error('两次输入的新密码不一致');
       return;
     }
-    if (!isValidPassword(values.password)) {
+    if (!isValidPassword(values.newPassword)) {
       Toast.error('密码至少6位');
       return;
     }
-    await onSubmit(values);
+    await onSubmit({
+      email: values.email,
+      code: values.code,
+      newPassword: values.newPassword,
+    });
   };
 
   return (
-    <div className="register-form">
+    <div className="reset-password-form">
       <Form
         onSubmit={handleSubmit}
         layout="vertical"
-        className="register-form__container"
+        className="reset-password-form__container"
         getFormApi={setFormApi}
       >
         <Form.Input
           field="email"
           label="邮箱"
-          placeholder="请输入邮箱"
+          placeholder="请输入注册邮箱"
           prefix={<IconMail />}
           validate={(val) => {
             if (!val) return '请输入邮箱';
@@ -87,25 +95,25 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
           rules={[{ required: true, message: '请输入验证码' }]}
         />
         <Form.Input
-          field="password"
-          label="密码"
+          field="newPassword"
+          label="新密码"
           type="password"
           placeholder="至少6位密码"
           prefix={<IconLock />}
           validate={(val) => {
-            if (!val) return '请输入密码';
+            if (!val) return '请输入新密码';
             if (!isValidPassword(val)) return '密码至少6位';
             return '';
           }}
-          rules={[{ required: true, message: '请输入密码' }]}
+          rules={[{ required: true, message: '请输入新密码' }]}
         />
         <Form.Input
           field="confirmPassword"
-          label="确认密码"
+          label="确认新密码"
           type="password"
-          placeholder="请再次输入密码"
+          placeholder="请再次输入新密码"
           prefix={<IconLock />}
-          rules={[{ required: true, message: '请再次输入密码' }]}
+          rules={[{ required: true, message: '请再次输入新密码' }]}
         />
         <Button
           type="primary"
@@ -115,7 +123,7 @@ export function RegisterForm({ onSubmit, onSendCode, loading = false }: Register
           size="large"
           theme="solid"
         >
-          注册
+          重置密码
         </Button>
       </Form>
     </div>

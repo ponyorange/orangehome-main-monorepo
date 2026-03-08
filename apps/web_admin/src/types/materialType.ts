@@ -1,27 +1,25 @@
 /**
- * 物料类别类型定义
+ * 物料类别类型定义（与 core-service MaterialTypeDto 一致）
  */
 export interface MaterialType {
   id: string;
-  name: string;
-  code: string;
+  typeCode: string;
+  typeName: string;
   description?: string;
   icon?: string;
-  isActive: boolean;
   sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
  * 创建物料类别参数
  */
 export interface CreateMaterialTypeParams {
-  name: string;
-  code: string;
+  typeCode: string;
+  typeName: string;
   description?: string;
   icon?: string;
-  isActive?: boolean;
   sortOrder?: number;
 }
 

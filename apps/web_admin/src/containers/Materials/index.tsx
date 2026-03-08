@@ -91,24 +91,23 @@ export function Materials() {
     (_, { arg }: { arg: string }) => materialApi.delete(arg)
   );
 
-  const materials = data?.data?.items || [];
-  const types = typeData?.data?.items || [];
-  const categories = categoryData?.data?.items || [];
-  const platforms = platformData?.data?.items || [];
-  const businesses = businessData?.data?.items || [];
+  const materials = data?.data || [];
+  const types = typeData?.data || [];
+  const categories = categoryData?.data || [];
+  const platforms = platformData?.data || [];
+  const businesses = businessData?.data || [];
 
   const handleAdd = useCallback(() => {
     setEditingId(null);
     setFormValues({
-      name: '',
-      code: '',
+      materialName: '',
+      materialUid: '',
       description: '',
       typeId: '',
       categoryId: '',
-      platformIds: [],
-      businessIds: [],
-      thumbnail: '',
-      fileUrl: '',
+      platformId: '',
+      businessId: '',
+      icon: '',
     });
     setVisible(true);
   }, []);
@@ -116,15 +115,14 @@ export function Materials() {
   const handleEdit = useCallback((record: Material) => {
     setEditingId(record.id);
     setFormValues({
-      name: record.name,
-      code: record.code,
+      materialName: record.materialName || record.name,
+      materialUid: record.materialUid || record.code,
       description: record.description,
       typeId: record.typeId,
       categoryId: record.categoryId,
-      platformIds: record.platformIds || [],
-      businessIds: record.businessIds || [],
-      thumbnail: record.thumbnail,
-      fileUrl: record.fileUrl,
+      platformId: record.platformId || (record.platformIds?.[0] ?? ''),
+      businessId: record.businessId || (record.businessIds?.[0] ?? ''),
+      icon: record.icon || record.thumbnail,
     });
     setVisible(true);
   }, []);
@@ -162,17 +160,17 @@ export function Materials() {
   const columns = [
     {
       title: '缩略图',
-      dataIndex: 'thumbnail',
-      render: (thumbnail?: string) => (
-        thumbnail ? (
-          <Image src={thumbnail} width={48} height={48} style={{ objectFit: 'cover' }} />
+      dataIndex: 'icon',
+      render: (icon?: string) => (
+        icon ? (
+          <Image src={icon} width={48} height={48} style={{ objectFit: 'cover' }} />
         ) : (
           <div style={{ width: 48, height: 48, background: '#f0f0f0', borderRadius: 4 }} />
         )
       ),
     },
-    { title: '名称', dataIndex: 'name' },
-    { title: '编码', dataIndex: 'code' },
+    { title: '名称', dataIndex: 'materialName' },
+    { title: '编码', dataIndex: 'materialUid' },
     {
       title: '类别',
       render: (_: unknown, record: Material) => record.typeName || '-',
@@ -191,8 +189,8 @@ export function Materials() {
       ),
     },
     {
-      title: '版本数',
-      render: (_: unknown, record: Material) => record.versionCount || 0,
+      title: '最新版本',
+      render: (_: unknown, record: Material) => record.latestVersionId || '-',
     },
     {
       title: '操作',
@@ -277,7 +275,7 @@ export function Materials() {
           pagination={{
             currentPage: queryParams.page,
             pageSize: queryParams.pageSize,
-            total: data?.data?.total || 0,
+            total: data?.total || 0,
             onPageChange: (page) => setQueryParams(p => ({ ...p, page })),
           }}
           rowKey="id"
@@ -294,18 +292,17 @@ export function Materials() {
       >
         <Form layout="vertical">
           <Form.Input
-            field="name"
+            field="materialName"
             label="名称"
-            initValue={formValues.name}
-            onChange={(v) => setFormValues(p => ({ ...p, name: v }))}
+            initValue={formValues.materialName}
+            onChange={(v) => setFormValues(p => ({ ...p, materialName: v }))}
             rules={[{ required: true, message: '请输入名称' }]}
           />
           <Form.Input
-            field="code"
-            label="编码"
-            initValue={formValues.code}
-            onChange={(v) => setFormValues(p => ({ ...p, code: v }))}
-            rules={[{ required: true, message: '请输入编码' }]}
+            field="materialUid"
+            label="编码（可选）"
+            initValue={formValues.materialUid}
+            onChange={(v) => setFormValues(p => ({ ...p, materialUid: v }))}
           />
           <Form.Input 
             field="description" 
@@ -338,40 +335,34 @@ export function Materials() {
             ))}
           </Form.Select>
           <Form.Select
-            field="platformIds"
+            field="platformId"
             label="适用平台"
-            multiple
+            rules={[{ required: true, message: '请选择平台' }]}
             placeholder="请选择平台"
-            initValue={formValues.platformIds}
-            onChange={(v) => setFormValues(p => ({ ...p, platformIds: v as string[] }))}
+            initValue={formValues.platformId}
+            onChange={(v) => setFormValues(p => ({ ...p, platformId: v as string }))}
           >
-            {platforms.map(p => (
-              <Option key={p.id} value={p.id}>{p.name}</Option>
+            {platforms.map((p: { id: string; platformName: string }) => (
+              <Option key={p.id} value={p.id}>{p.platformName}</Option>
             ))}
           </Form.Select>
           <Form.Select
-            field="businessIds"
+            field="businessId"
             label="适用业务线"
-            multiple
-            placeholder="请选择业务线"
-            initValue={formValues.businessIds}
-            onChange={(v) => setFormValues(p => ({ ...p, businessIds: v as string[] }))}
+            placeholder="请选择业务线（可选）"
+            initValue={formValues.businessId}
+            onChange={(v) => setFormValues(p => ({ ...p, businessId: v as string }))}
           >
-            {businesses.map(b => (
-              <Option key={b.id} value={b.id}>{b.name}</Option>
+            <Option value="">无</Option>
+            {businesses.map((b: { id: string; businessName: string }) => (
+              <Option key={b.id} value={b.id}>{b.businessName}</Option>
             ))}
           </Form.Select>
-          <Form.Input 
-            field="thumbnail" 
-            label="缩略图URL" 
-            initValue={formValues.thumbnail}
-            onChange={(v) => setFormValues(p => ({ ...p, thumbnail: v }))}
-          />
-          <Form.Input 
-            field="fileUrl" 
-            label="文件URL" 
-            initValue={formValues.fileUrl}
-            onChange={(v) => setFormValues(p => ({ ...p, fileUrl: v }))}
+          <Form.Input
+            field="icon"
+            label="图标URL"
+            initValue={formValues.icon}
+            onChange={(v) => setFormValues(p => ({ ...p, icon: v }))}
           />
         </Form>
       </Modal>
