@@ -1,0 +1,1 @@
+{"version":3,"file":"core-service.module.js","sourceRoot":"","sources":["../../src/core-service/core-service.module.ts"],"names":[],"mappings":";;;;;;;;;AAAA,2CAAwC;AACxC,iEAAqD;AAM9C,IAAM,iBAAiB,GAAvB,MAAM,iBAAiB;CAAG,CAAA;AAApB,8CAAiB;4BAAjB,iBAAiB;IAJ7B,IAAA,eAAM,EAAC;QACN,SAAS,EAAE,CAAC,kCAAW,CAAC;QACxB,OAAO,EAAE,CAAC,kCAAW,CAAC;KACvB,CAAC;GACW,iBAAiB,CAAG"}
