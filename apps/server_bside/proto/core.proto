@@ -1,0 +1,717 @@
+syntax = "proto3";
+
+package orangehome.core;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+// Platform 平台管理服务
+service PlatformService {
+  rpc CreatePlatform(CreatePlatformRequest) returns (PlatformResponse);
+  rpc UpdatePlatform(UpdatePlatformRequest) returns (PlatformResponse);
+  rpc DeletePlatform(DeletePlatformRequest) returns (google.protobuf.Empty);
+  rpc GetPlatform(GetPlatformRequest) returns (PlatformResponse);
+  rpc ListPlatforms(ListPlatformsRequest) returns (ListPlatformsResponse);
+}
+
+// Business 业务线管理服务
+service BusinessService {
+  rpc CreateBusiness(CreateBusinessRequest) returns (BusinessResponse);
+  rpc UpdateBusiness(UpdateBusinessRequest) returns (BusinessResponse);
+  rpc DeleteBusiness(DeleteBusinessRequest) returns (google.protobuf.Empty);
+  rpc GetBusiness(GetBusinessRequest) returns (BusinessResponse);
+  rpc ListBusinesses(ListBusinessesRequest) returns (ListBusinessesResponse);
+  rpc AddPlatformToBusiness(AddPlatformToBusinessRequest) returns (BusinessResponse);
+  rpc RemovePlatformFromBusiness(RemovePlatformFromBusinessRequest) returns (BusinessResponse);
+}
+
+// ============== Platform Messages ==============
+
+message Platform {
+  string id = 1;
+  string platform_code = 2;
+  string platform_name = 3;
+  string description = 4;
+  google.protobuf.StringValue icon_url = 5;
+  google.protobuf.StringValue config = 6;
+  bool is_deleted = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message CreatePlatformRequest {
+  string platform_code = 1;
+  string platform_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue icon_url = 4;
+  google.protobuf.StringValue config = 5;
+}
+
+message UpdatePlatformRequest {
+  string id = 1;
+  google.protobuf.StringValue platform_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue icon_url = 4;
+  google.protobuf.StringValue config = 5;
+}
+
+message DeletePlatformRequest {
+  string id = 1;
+  bool permanent = 2;
+}
+
+message GetPlatformRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListPlatformsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue search = 3;
+  bool with_deleted = 4;
+}
+
+message PlatformResponse {
+  Platform data = 1;
+}
+
+message ListPlatformsResponse {
+  repeated Platform data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== Business Messages ==============
+
+message BusinessPlatform {
+  string platform_id = 1;
+  string platform_code = 2;
+  string platform_name = 3;
+}
+
+message Business {
+  string id = 1;
+  string business_code = 2;
+  string business_name = 3;
+  google.protobuf.StringValue description = 4;
+  google.protobuf.StringValue owner = 5;
+  repeated BusinessPlatform platforms = 6;
+  google.protobuf.StringValue config = 7;
+  bool is_deleted = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreateBusinessRequest {
+  string business_code = 1;
+  string business_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue owner = 4;
+  repeated string platform_ids = 5;
+  google.protobuf.StringValue config = 6;
+}
+
+message UpdateBusinessRequest {
+  string id = 1;
+  google.protobuf.StringValue business_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue owner = 4;
+  google.protobuf.StringValue config = 5;
+}
+
+message DeleteBusinessRequest {
+  string id = 1;
+  bool permanent = 2;
+}
+
+message GetBusinessRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListBusinessesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue search = 3;
+  google.protobuf.StringValue platform_id = 4;
+  bool with_deleted = 5;
+}
+
+message AddPlatformToBusinessRequest {
+  string business_id = 1;
+  string platform_id = 2;
+}
+
+message RemovePlatformFromBusinessRequest {
+  string business_id = 1;
+  string platform_id = 2;
+}
+
+message BusinessResponse {
+  Business data = 1;
+}
+
+message ListBusinessesResponse {
+  repeated Business data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== MaterialType 物料类别 ==============
+
+service MaterialTypeService {
+  rpc CreateMaterialType(CreateMaterialTypeRequest) returns (MaterialTypeResponse);
+  rpc UpdateMaterialType(UpdateMaterialTypeRequest) returns (MaterialTypeResponse);
+  rpc DeleteMaterialType(DeleteMaterialTypeRequest) returns (google.protobuf.Empty);
+  rpc GetMaterialType(GetMaterialTypeRequest) returns (MaterialTypeResponse);
+  rpc ListMaterialTypes(ListMaterialTypesRequest) returns (ListMaterialTypesResponse);
+}
+
+message MaterialType {
+  string id = 1;
+  string type_code = 2;
+  string type_name = 3;
+  google.protobuf.StringValue description = 4;
+  google.protobuf.StringValue icon = 5;
+  int32 sort_order = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateMaterialTypeRequest {
+  string type_code = 1;
+  string type_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue icon = 4;
+  int32 sort_order = 5;
+}
+
+message UpdateMaterialTypeRequest {
+  string id = 1;
+  google.protobuf.StringValue type_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue icon = 4;
+  google.protobuf.Int32Value sort_order = 5;
+}
+
+message DeleteMaterialTypeRequest {
+  string id = 1;
+}
+
+message GetMaterialTypeRequest {
+  string id = 1;
+}
+
+message ListMaterialTypesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue search = 3;
+}
+
+message MaterialTypeResponse {
+  MaterialType data = 1;
+}
+
+message ListMaterialTypesResponse {
+  repeated MaterialType data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== MaterialCategory 物料分类（树形） ==============
+
+service MaterialCategoryService {
+  rpc CreateMaterialCategory(CreateMaterialCategoryRequest) returns (MaterialCategoryResponse);
+  rpc UpdateMaterialCategory(UpdateMaterialCategoryRequest) returns (MaterialCategoryResponse);
+  rpc DeleteMaterialCategory(DeleteMaterialCategoryRequest) returns (google.protobuf.Empty);
+  rpc GetMaterialCategory(GetMaterialCategoryRequest) returns (MaterialCategoryResponse);
+  rpc ListMaterialCategories(ListMaterialCategoriesRequest) returns (ListMaterialCategoriesResponse);
+  rpc GetMaterialCategoryTree(GetMaterialCategoryTreeRequest) returns (MaterialCategoryTreeResponse);
+  rpc MoveMaterialCategory(MoveMaterialCategoryRequest) returns (MaterialCategoryResponse);
+}
+
+message MaterialCategoryRef {
+  string type_id = 1;
+  string type_name = 2;
+  string platform_id = 3;
+  string platform_name = 4;
+}
+
+message MaterialCategory {
+  string id = 1;
+  string category_code = 2;
+  string category_name = 3;
+  string type_id = 4;
+  string type_name = 5;
+  string platform_id = 6;
+  string platform_name = 7;
+  google.protobuf.StringValue icon = 8;
+  int32 sort_order = 9;
+  google.protobuf.StringValue parent_id = 10;
+  int32 level = 11;
+  bool is_deleted = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message MaterialCategoryTreeNode {
+  string id = 1;
+  string category_code = 2;
+  string category_name = 3;
+  string type_id = 4;
+  string type_name = 5;
+  string platform_id = 6;
+  string platform_name = 7;
+  google.protobuf.StringValue icon = 8;
+  int32 sort_order = 9;
+  google.protobuf.StringValue parent_id = 10;
+  int32 level = 11;
+  repeated MaterialCategoryTreeNode children = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message CreateMaterialCategoryRequest {
+  string category_code = 1;
+  string category_name = 2;
+  string type_id = 3;
+  string platform_id = 4;
+  google.protobuf.StringValue icon = 5;
+  int32 sort_order = 6;
+  google.protobuf.StringValue parent_id = 7;
+}
+
+message UpdateMaterialCategoryRequest {
+  string id = 1;
+  google.protobuf.StringValue category_name = 2;
+  google.protobuf.StringValue icon = 3;
+  google.protobuf.Int32Value sort_order = 4;
+}
+
+message DeleteMaterialCategoryRequest {
+  string id = 1;
+}
+
+message GetMaterialCategoryRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListMaterialCategoriesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue search = 3;
+  google.protobuf.StringValue type_id = 4;
+  google.protobuf.StringValue platform_id = 5;
+  google.protobuf.StringValue parent_id = 6;
+  bool with_deleted = 7;
+}
+
+message GetMaterialCategoryTreeRequest {
+  google.protobuf.StringValue platform_id = 1;
+  google.protobuf.StringValue type_id = 2;
+}
+
+message MoveMaterialCategoryRequest {
+  string id = 1;
+  string parent_id = 2;
+}
+
+message MaterialCategoryResponse {
+  MaterialCategory data = 1;
+}
+
+message ListMaterialCategoriesResponse {
+  repeated MaterialCategory data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message MaterialCategoryTreeResponse {
+  repeated MaterialCategoryTreeNode nodes = 1;
+}
+
+// ============== Material 物料 ==============
+
+service MaterialService {
+  rpc CreateMaterial(CreateMaterialRequest) returns (MaterialResponse);
+  rpc UpdateMaterial(UpdateMaterialRequest) returns (MaterialResponse);
+  rpc DeleteMaterial(DeleteMaterialRequest) returns (google.protobuf.Empty);
+  rpc GetMaterial(GetMaterialRequest) returns (MaterialResponse);
+  rpc ListMaterials(ListMaterialsRequest) returns (ListMaterialsResponse);
+}
+
+message MaterialRefs {
+  string platform_id = 1;
+  string platform_name = 2;
+  string type_id = 3;
+  string type_name = 4;
+  string category_id = 5;
+  string category_name = 6;
+  google.protobuf.StringValue business_id = 7;
+  google.protobuf.StringValue business_name = 8;
+}
+
+message Material {
+  string id = 1;
+  string material_uid = 2;
+  string material_name = 3;
+  google.protobuf.StringValue description = 4;
+  google.protobuf.StringValue icon = 5;
+  string platform_id = 6;
+  string platform_name = 7;
+  string type_id = 8;
+  string type_name = 9;
+  string category_id = 10;
+  string category_name = 11;
+  string status = 12;
+  string visibility = 13;
+  google.protobuf.StringValue business_id = 14;
+  google.protobuf.StringValue business_name = 15;
+  int32 sort_order = 16;
+  google.protobuf.StringValue config = 17;
+  google.protobuf.StringValue latest_version_id = 18;
+  bool is_deleted = 19;
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+}
+
+message CreateMaterialRequest {
+  string material_name = 1;
+  google.protobuf.StringValue description = 2;
+  google.protobuf.StringValue icon = 3;
+  string platform_id = 4;
+  string type_id = 5;
+  string category_id = 6;
+  google.protobuf.StringValue material_uid = 7;
+  google.protobuf.StringValue business_id = 8;
+  string status = 9;
+  string visibility = 10;
+  int32 sort_order = 11;
+  google.protobuf.StringValue config = 12;
+}
+
+message UpdateMaterialRequest {
+  string id = 1;
+  google.protobuf.StringValue material_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue icon = 4;
+  google.protobuf.StringValue status = 5;
+  google.protobuf.StringValue visibility = 6;
+  google.protobuf.Int32Value sort_order = 7;
+  google.protobuf.StringValue config = 8;
+}
+
+message DeleteMaterialRequest {
+  string id = 1;
+}
+
+message GetMaterialRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListMaterialsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue platform_id = 3;
+  google.protobuf.StringValue type_id = 4;
+  google.protobuf.StringValue category_id = 5;
+  google.protobuf.StringValue status = 6;
+  google.protobuf.StringValue visibility = 7;
+  google.protobuf.StringValue search_keyword = 8;
+}
+
+message MaterialResponse {
+  Material data = 1;
+}
+
+message ListMaterialsResponse {
+  repeated Material data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== MaterialVersion 物料版本 ==============
+
+service MaterialVersionService {
+  rpc CreateMaterialVersion(CreateMaterialVersionRequest) returns (MaterialVersionResponse);
+  rpc GetMaterialVersion(GetMaterialVersionRequest) returns (MaterialVersionResponse);
+  rpc ListMaterialVersions(ListMaterialVersionsRequest) returns (ListMaterialVersionsResponse);
+  rpc PublishMaterialVersion(PublishMaterialVersionRequest) returns (MaterialVersionResponse);
+  rpc DeleteMaterialVersion(DeleteMaterialVersionRequest) returns (google.protobuf.Empty);
+  rpc GetPresignedUploadUrl(GetPresignedUploadUrlRequest) returns (PresignedUploadUrlResponse);
+}
+
+message MaterialVersionMessage {
+  string id = 1;
+  string material_id = 2;
+  string version = 3;
+  int32 version_code = 4;
+  google.protobuf.StringValue changelog = 5;
+  string file_object_key = 6;
+  google.protobuf.StringValue file_url = 7;
+  google.protobuf.StringValue source_object_key = 8;
+  google.protobuf.StringValue source_url = 9;
+  string editor_config_json = 10;
+  int32 size = 11;
+  google.protobuf.StringValue md5 = 12;
+  int32 status = 13;
+  bool is_published = 14;
+  google.protobuf.Timestamp release_time = 15;
+  bool is_deleted = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp updated_at = 18;
+}
+
+message CreateMaterialVersionRequest {
+  string material_id = 1;
+  string version = 2;
+  google.protobuf.StringValue changelog = 3;
+  string file_object_key = 4;
+  google.protobuf.StringValue source_object_key = 5;
+  google.protobuf.StringValue editor_config = 6;
+  google.protobuf.StringValue md5 = 7;
+}
+
+message GetMaterialVersionRequest {
+  string id = 1;
+}
+
+message ListMaterialVersionsRequest {
+  string material_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  google.protobuf.Int32Value status = 4;
+}
+
+message PublishMaterialVersionRequest {
+  string id = 1;
+}
+
+message DeleteMaterialVersionRequest {
+  string id = 1;
+}
+
+message GetPresignedUploadUrlRequest {
+  string material_id = 1;
+  string version = 2;
+  string filename = 3;
+}
+
+message PresignedUploadUrlResponse {
+  string url = 1;
+  string object_key = 2;
+  int32 expires_in = 3;
+}
+
+message MaterialVersionResponse {
+  MaterialVersionMessage data = 1;
+}
+
+message ListMaterialVersionsResponse {
+  repeated MaterialVersionMessage data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== Project 项目管理 ==============
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (ProjectResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (ProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+  rpc GetProject(GetProjectRequest) returns (ProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+}
+
+message Project {
+  string id = 1;
+  string project_code = 2;
+  string project_name = 3;
+  string business_id = 4;
+  string business_name = 5;
+  google.protobuf.StringValue description = 6;
+  google.protobuf.StringValue config = 7;
+  bool is_deleted = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreateProjectRequest {
+  string project_code = 1;
+  string project_name = 2;
+  string business_id = 3;
+  google.protobuf.StringValue description = 4;
+  google.protobuf.StringValue config = 5;
+}
+
+message UpdateProjectRequest {
+  string id = 1;
+  google.protobuf.StringValue project_name = 2;
+  google.protobuf.StringValue description = 3;
+  google.protobuf.StringValue config = 4;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+  bool permanent = 2;
+}
+
+message GetProjectRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListProjectsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  google.protobuf.StringValue search = 3;
+  google.protobuf.StringValue business_id = 4;
+  bool with_deleted = 5;
+}
+
+message ProjectResponse {
+  Project data = 1;
+}
+
+message ListProjectsResponse {
+  repeated Project data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== Page 页面管理 ==============
+
+service PageService {
+  rpc CreatePage(CreatePageRequest) returns (PageResponse);
+  rpc UpdatePage(UpdatePageRequest) returns (PageResponse);
+  rpc DeletePage(DeletePageRequest) returns (google.protobuf.Empty);
+  rpc GetPage(GetPageRequest) returns (PageResponse);
+  rpc ListPages(ListPagesRequest) returns (ListPagesResponse);
+}
+
+message Page {
+  string id = 1;
+  string project_id = 2;
+  string project_name = 3;
+  string path = 4;
+  string title = 5;
+  google.protobuf.StringValue description = 6;
+  google.protobuf.StringValue published_version_id = 7;
+  bool is_deleted = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreatePageRequest {
+  string project_id = 1;
+  string path = 2;
+  string title = 3;
+  google.protobuf.StringValue description = 4;
+}
+
+message UpdatePageRequest {
+  string id = 1;
+  google.protobuf.StringValue path = 2;
+  google.protobuf.StringValue title = 3;
+  google.protobuf.StringValue description = 4;
+}
+
+message DeletePageRequest {
+  string id = 1;
+  bool permanent = 2;
+}
+
+message GetPageRequest {
+  string id = 1;
+  bool with_deleted = 2;
+}
+
+message ListPagesRequest {
+  string project_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  google.protobuf.StringValue search = 4;
+  bool with_deleted = 5;
+}
+
+message PageResponse {
+  Page data = 1;
+}
+
+message ListPagesResponse {
+  repeated Page data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// ============== PageVersion 页面版本 ==============
+
+service PageVersionService {
+  rpc SavePageContent(SavePageContentRequest) returns (PageVersionResponse);
+  rpc PublishPageVersion(PublishPageVersionRequest) returns (PageVersionResponse);
+  rpc ListPageVersions(ListPageVersionsRequest) returns (ListPageVersionsResponse);
+  rpc RollbackPageVersion(RollbackPageVersionRequest) returns (PageVersionResponse);
+  rpc DeletePageVersion(DeletePageVersionRequest) returns (google.protobuf.Empty);
+}
+
+message PageVersionMessage {
+  string id = 1;
+  string page_id = 2;
+  int32 version_number = 3;
+  google.protobuf.StringValue comment = 4;
+  string page_schema_json = 5;
+  bool is_latest_draft = 6;
+  bool is_published = 7;
+  google.protobuf.Timestamp published_at = 8;
+  string created_by = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message SavePageContentRequest {
+  string page_id = 1;
+  string page_schema_json = 2;
+  string user_id = 3;
+}
+
+message PublishPageVersionRequest {
+  string version_id = 1;
+}
+
+message ListPageVersionsRequest {
+  string page_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message RollbackPageVersionRequest {
+  string version_id = 1;
+  string user_id = 2;
+}
+
+message DeletePageVersionRequest {
+  string version_id = 1;
+}
+
+message PageVersionResponse {
+  PageVersionMessage data = 1;
+}
+
+message ListPageVersionsResponse {
+  repeated PageVersionMessage data = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
