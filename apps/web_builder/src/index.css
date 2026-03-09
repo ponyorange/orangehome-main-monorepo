@@ -186,3 +186,34 @@ body,
   background: #fff;
   box-shadow: 0 -3px 0 #fff, 0 3px 0 #fff;
 }
+
+/* 布局壳样式 */
+.layout-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 可折叠面板 */
+.collapsible-panel {
+  position: relative;
+  background: #fff;
+}
+
+.collapsible-panel-resizer {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.collapsible-panel:hover .collapsible-panel-resizer {
+  opacity: 1;
+}
+
+/* 布局插槽项 */
+.layout-slot-item {
+  height: 100%;
+}
+
+/* 拖拽镜像 */
+.orange-drag-mirror {
+  pointer-events: none;
+  user-select: none;
+}
