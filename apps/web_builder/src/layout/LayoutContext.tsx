@@ -3,7 +3,7 @@
  * 提供 LayoutService 访问和插槽订阅功能
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ILayoutService, LayoutSlot, SlotType } from './types';
 
 const LayoutContext = createContext<ILayoutService | null>(null);
@@ -34,11 +34,19 @@ export function useLayoutService(): ILayoutService {
 export function useSlots(type: SlotType): LayoutSlot[] {
   const service = useLayoutService();
   const [slots, setSlots] = useState<LayoutSlot[]>(() => service.getSlotsByType(type));
+  const initialSlotsRef = useRef(slots);
 
   useEffect(() => {
-    setSlots(service.getSlotsByType(type));
+    // 只订阅更新，不重复设置初始值
     return service.subscribe(type, (newSlots) => {
-      setSlots(newSlots);
+      // 对比避免不必要的更新
+      setSlots((prev) => {
+        if (prev.length !== newSlots.length) return newSlots;
+        for (let i = 0; i < prev.length; i++) {
+          if (prev[i].id !== newSlots[i].id) return newSlots;
+        }
+        return prev;
+      });
     });
   }, [service, type]);
 

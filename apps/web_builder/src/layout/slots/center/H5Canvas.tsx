@@ -3,7 +3,7 @@
  * 模拟手机页面样式，支持拖拽添加组件
  */
 
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { useStore } from 'zustand';
 import { useEditorStore } from '../../../core/EditorStoreContext';
 import { useRegisterSlot } from '../../LayoutContext';
@@ -26,28 +26,45 @@ export interface H5CanvasProps {
   addDrag: OrangeDrag | null;
 }
 
+// 稳定的选择器函数
+const selectSchema = (s: { schema: unknown }) => s.schema;
+const selectUniqueId2Module = (s: { config?: { uniqueId2Module?: Record<string, string> } }) => s.config?.uniqueId2Module;
+const selectSelectedNodeId = (s: { selectedNodeId: unknown }) => s.selectedNodeId;
+const selectHoveredNodeId = (s: { editor?: { hoveredNodeId?: string | null } }) => s.editor?.hoveredNodeId;
+
 function H5CanvasContent({ addDrag }: H5CanvasProps) {
   const store = useEditorStore();
-  const schema = useStore(store, (s) => s.schema);
-  const uniqueId2Module = useStore(store, (s) => s.config?.uniqueId2Module ?? {});
-  const selectedNodeId = useStore(store, (s) => s.selectedNodeId);
-  const hoveredNodeId = useStore(store, (s) => s.editor?.hoveredNodeId ?? null);
+  const schema = useStore(store, selectSchema);
+  const uniqueId2ModuleRaw = useStore(store, selectUniqueId2Module);
+  const uniqueId2Module = uniqueId2ModuleRaw ?? {};
+  const selectedNodeId = useStore(store, selectSelectedNodeId);
+  const hoveredNodeIdRaw = useStore(store, selectHoveredNodeId);
+  const hoveredNodeId = hoveredNodeIdRaw ?? null;
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // 选中/悬停处理
-  const handleSelectNode = (id: string | null) => {
-    store.setState({ selectedNodeId: id });
+  // 使用 ref 存储 store，避免回调依赖变化
+  const storeRef = useRef(store);
+  storeRef.current = store;
+
+  // 选中/悬停处理 - 使用 useCallback 缓存
+  const handleSelectNode = useCallback((id: string | null) => {
+    storeRef.current.setState({ selectedNodeId: id });
     if (id) console.log('[H5Canvas] 选中组件 ID:', id);
-  };
-  const handleHoverNode = (id: string | null) => {
-    store.setState((s) => ({
+  }, []);
+
+  const handleHoverNode = useCallback((id: string | null) => {
+    storeRef.current.setState((s) => ({
       editor: { ...s.editor, hoveredNodeId: id },
     }));
-  };
+  }, []);
+
+  // 使用 ref 避免依赖循环
+  const schemaRef = useRef(schema);
+  schemaRef.current = schema;
 
   // 拖拽添加到画布
   useEffect(() => {
-    if (!addDrag || !canvasRef.current || !schema) return;
+    if (!addDrag || !canvasRef.current) return;
     const el = canvasRef.current;
 
     addDrag.setDropTarget((x, y) => {
@@ -59,16 +76,18 @@ function H5CanvasContent({ addDrag }: H5CanvasProps) {
     });
 
     addDrag.onDragEnd((state, dropTarget) => {
-      if (!dropTarget || !schema) return;
+      const currentSchema = schemaRef.current;
+      const currentStore = storeRef.current;
+      if (!dropTarget || !currentSchema) return;
+
       const data = state.data as { type: string; name: string } | undefined;
       if (!data?.type) return;
 
-      const rootId = schema.id;
+      const rootId = currentSchema.id;
       const id = `node_${data.type}_${Date.now()}`;
       const node = createAddNodeFromType(data.type, data.name || data.type, id);
 
-      // 更新 schema（通过 store 的 schema，实际应由 SchemaService 处理）
-      const newSchema = { ...schema };
+      // 更新 schema
       const addToNode = (n: ISchema): ISchema => {
         if (n.id === rootId) {
           return {
@@ -84,14 +103,15 @@ function H5CanvasContent({ addDrag }: H5CanvasProps) {
         }
         return n;
       };
-      store.setState({ schema: addToNode(newSchema) });
+      currentStore.setState({ schema: addToNode({ ...currentSchema }) });
       console.log('[H5Canvas] 添加组件:', data.type, id);
     });
 
     return () => {
       addDrag.setDropTarget(null);
     };
-  }, [addDrag, schema, store]);
+    // 只依赖 addDrag，schema/store 使用 ref
+  }, [addDrag]);
 
   // 移动拖拽（用于选中节点）
   const moveDrag = useMemo(
@@ -122,8 +142,11 @@ function H5CanvasContent({ addDrag }: H5CanvasProps) {
   );
 
   useEffect(() => {
-    if (!schema) return;
     moveDrag.onDragEnd((state) => {
+      const currentSchema = schemaRef.current;
+      const currentStore = storeRef.current;
+      if (!currentSchema) return;
+
       const data = state.data as { nodeId: string } | undefined;
       if (!data?.nodeId) return;
       const dx = state.currentX - state.startX;
@@ -148,13 +171,14 @@ function H5CanvasContent({ addDrag }: H5CanvasProps) {
         return n;
       };
 
-      store.setState({ schema: updateNodePosition({ ...schema }) });
+      currentStore.setState({ schema: updateNodePosition({ ...currentSchema }) });
     });
-  }, [moveDrag, schema, store]);
+    // 只注册一次，依赖使用 ref
+  }, [moveDrag]);
 
-  const handleStartMove = (nodeId: string, _el: HTMLElement, clientX: number, clientY: number) => {
+  const handleStartMove = useCallback((nodeId: string, _el: HTMLElement, clientX: number, clientY: number) => {
     moveDrag.mousedown(document.body, clientX, clientY, { nodeId });
-  };
+  }, [moveDrag]);
 
   return (
     <div

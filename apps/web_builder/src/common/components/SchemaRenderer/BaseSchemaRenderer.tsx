@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ISchema } from '../../../types/base';
 import type { ComponentManager } from './ComponentManager';
 import type { ComponentType } from 'react';
@@ -35,10 +35,14 @@ export function BaseSchemaRenderer({
   const isHovered = hoveredNodeId === id;
   const selectable = Boolean(onSelectNode || onHoverNode);
 
+  // 使用 ref 存储 componentManager，避免作为 effect 依赖
+  const managerRef = useRef(componentManager);
+  managerRef.current = componentManager;
+
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    componentManager
+    managerRef.current
       .loadRemoteComponent(type)
       .then((comp) => {
         if (!cancelled) setComponent(() => comp);
@@ -52,7 +56,8 @@ export function BaseSchemaRenderer({
     return () => {
       cancelled = true;
     };
-  }, [type, componentManager]);
+    // 只在 type 变化时重新加载，避免 componentManager 引用变化导致无限循环
+  }, [type]);
 
   const handleEvent = (eventName: string) => (e: React.SyntheticEvent) => {
     const actionId = event2action[eventName];

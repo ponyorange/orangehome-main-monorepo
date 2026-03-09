@@ -5,7 +5,7 @@
 
 import React, { useMemo } from 'react';
 import { EditorStoreProvider } from './EditorStoreContext';
-import { LayoutProvider, LayoutShell, LayoutRegistry } from '../layout';
+import { LayoutProvider, LayoutShell, LayoutRegistry, LayoutService } from '../layout';
 import { OrangeDrag } from '../common/base/OrangeDrag';
 import type { Container } from 'inversify';
 import type { IStoreService } from '../extensions/store';
@@ -21,10 +21,9 @@ export function EditorMount({ container, storeService }: EditorMountProps) {
   // 获取 LayoutService 实例
   const layoutService = useMemo(() => {
     try {
-      return container.get<import('../layout').ILayoutService>(
-        import('../layout').LayoutService
-      );
-    } catch {
+      return container.get(LayoutService);
+    } catch (err) {
+      console.error('[EditorMount] LayoutService 获取失败:', err);
       return null;
     }
   }, [container]);

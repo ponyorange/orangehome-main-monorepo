@@ -3,7 +3,7 @@
  * 集中注册所有内置插槽组件
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useRegisterSlot } from './LayoutContext';
 import { OrangeHomeTitle } from './slots/header/OrangeHomeTitle';
 import { VerticalTabContainer } from './slots/leftPanel/VerticalTabContainer';
@@ -13,6 +13,7 @@ import { H5CanvasContent } from './slots/center/H5Canvas';
 import { PropertyPanelContent } from './slots/rightPanel/PropertyPanel';
 import { HelpButtonContent } from './slots/float/HelpButton';
 import type { OrangeDrag } from '../common/base/OrangeDrag';
+import type { LayoutSlot } from './types';
 
 // 简单的占位图标
 const TreeIcon = () => (
@@ -27,42 +28,88 @@ export interface LayoutRegistryProps {
   addDrag: OrangeDrag | null;
 }
 
+// 静态插槽定义（不依赖 addDrag 的）
+const STATIC_SLOTS: Omit<LayoutSlot, 'component'>[] = [
+  {
+    id: 'orangehome-title',
+    type: 'header',
+    priority: 10,
+    title: 'OrangeHome',
+  },
+  {
+    id: 'left-panel-tabs',
+    type: 'leftPanel',
+    priority: 5,
+    title: '功能模块',
+  },
+  {
+    id: 'page-hierarchy-tab',
+    type: 'leftPanelTab' as unknown as import('./types').SlotType,
+    tabId: 'hierarchy',
+    priority: 10,
+    title: '层级',
+    icon: <TreeIcon />,
+  },
+  {
+    id: 'property-panel',
+    type: 'rightPanel',
+    priority: 10,
+    title: '属性配置',
+  },
+  {
+    id: 'help-button',
+    type: 'float',
+    priority: 10,
+    title: '帮助',
+  },
+];
+
+// 创建稳定的动态组件包装器
+function createLibrarySlot(addDrag: OrangeDrag | null) {
+  return function LibrarySlot() {
+    return <ComponentLibraryContent addDrag={addDrag} />;
+  };
+}
+
+function createCanvasSlot(addDrag: OrangeDrag | null) {
+  return function CanvasSlot() {
+    return <H5CanvasContent addDrag={addDrag} />;
+  };
+}
+
 /** 注册所有布局插槽的 Hook */
 export function useLayoutRegistry({ addDrag }: LayoutRegistryProps) {
   const register = useRegisterSlot();
+  const hasRegistered = useRef(false);
 
+  // 使用 ref 存储 addDrag，避免 effect 重新执行
+  const addDragRef = useRef(addDrag);
+  addDragRef.current = addDrag;
+
+  // 只注册一次所有插槽
   React.useEffect(() => {
-    // 1. Header - OrangeHomeTitle
+    if (hasRegistered.current) return;
+    hasRegistered.current = true;
+
+    // 1. Header
     register({
-      id: 'orangehome-title',
-      type: 'header',
-      priority: 10,
-      title: 'OrangeHome',
+      ...STATIC_SLOTS[0],
       component: OrangeHomeTitle,
     });
 
-    // 2. LeftPanel - VerticalTabContainer（容器）
+    // 2. LeftPanel 容器
     register({
-      id: 'left-panel-tabs',
-      type: 'leftPanel',
-      priority: 5,
-      title: '功能模块',
+      ...STATIC_SLOTS[1],
       component: VerticalTabContainer,
     });
 
-    // 3. LeftPanel Tabs - 页面层级
+    // 3. LeftPanel Tab - 层级
     register({
-      id: 'page-hierarchy-tab',
-      type: 'leftPanelTab' as unknown as import('./types').SlotType,
-      tabId: 'hierarchy',
-      priority: 10,
-      title: '层级',
-      icon: <TreeIcon />,
+      ...STATIC_SLOTS[2],
       component: PageHierarchyContent,
     });
 
-    // 4. LeftPanel Tabs - 组件库
-    const LibrarySlot = () => <ComponentLibraryContent addDrag={addDrag} />;
+    // 4. LeftPanel Tab - 组件库（使用当前 addDrag）
     register({
       id: 'component-library-tab',
       type: 'leftPanelTab' as unknown as import('./types').SlotType,
@@ -70,37 +117,30 @@ export function useLayoutRegistry({ addDrag }: LayoutRegistryProps) {
       priority: 20,
       title: '组件',
       icon: <ComponentIcon />,
-      component: LibrarySlot,
+      component: createLibrarySlot(addDragRef.current),
     });
 
-    // 5. Center - H5Canvas
-    const CanvasSlot = () => <H5CanvasContent addDrag={addDrag} />;
+    // 5. Center - H5 画布（使用当前 addDrag）
     register({
       id: 'h5-canvas',
       type: 'center',
       priority: 10,
       title: 'H5画布',
-      component: CanvasSlot,
+      component: createCanvasSlot(addDragRef.current),
     });
 
-    // 6. RightPanel - PropertyPanel
+    // 6. RightPanel - 属性面板
     register({
-      id: 'property-panel',
-      type: 'rightPanel',
-      priority: 10,
-      title: '属性配置',
+      ...STATIC_SLOTS[3],
       component: PropertyPanelContent,
     });
 
-    // 7. Float - HelpButton
+    // 7. Float - 帮助按钮
     register({
-      id: 'help-button',
-      type: 'float',
-      priority: 10,
-      title: '帮助',
+      ...STATIC_SLOTS[4],
       component: HelpButtonContent,
     });
-  }, [register, addDrag]);
+  }, [register]); // 只依赖 register，addDrag 使用 ref
 }
 
 /** 布局注册组件（用于在 React 组件树中注册） */
