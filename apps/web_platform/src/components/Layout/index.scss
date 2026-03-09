@@ -1,0 +1,10 @@
+.main-layout {
+  min-height: 100vh;
+  padding-top: 60px; // Header 高度
+
+  .main-content {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
