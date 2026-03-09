@@ -10,11 +10,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 3008,
     proxy: {
-      // 代理 API 请求到后端（开发时）
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:4000',
         changeOrigin: true,
       },
     },
