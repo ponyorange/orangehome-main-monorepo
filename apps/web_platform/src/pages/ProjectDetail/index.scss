@@ -1,0 +1,43 @@
+.project-detail-page {
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .header-info {
+      h4 {
+        margin: 0;
+      }
+    }
+  }
+
+  .pages-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .info-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    span:first-child {
+      min-width: 80px;
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+}

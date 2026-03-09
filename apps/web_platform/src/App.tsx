@@ -1,44 +1,69 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, Toast } from '@douyinfe/semi-ui';
 import { useEffect, useState } from 'react';
-import { LoginContainer } from './containers/LoginContainer';
-import { RegisterContainer } from './containers/RegisterContainer';
-import { DashboardContainer } from './containers/DashboardContainer';
-import { authService } from './services/auth';
-import { useAppStore } from './store/appStore';
 import { useTheme } from './hooks/useTheme';
 import { useLanguage } from './hooks/useLanguage';
+import { useAuth } from './hooks/useAuth';
 import type { Locale } from '@douyinfe/semi-ui/lib/es/locale';
 import './styles/global.scss';
+
+// 页面
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 
 /**
  * 路由守卫组件 - 需要登录
  */
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  return authService.isAuthenticated() ? (
-    <>{children}</>
-  ) : (
-    <Navigate to="/login" replace />
-  );
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        加载中...
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
 /**
  * 路由守卫组件 - 已登录跳转
  */
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  return authService.isAuthenticated() ? (
-    <Navigate to="/dashboard" replace />
-  ) : (
-    <>{children}</>
-  );
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        加载中...
+      </div>
+    );
+  }
+
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/projects" replace />;
 }
 
 /**
  * 应用主组件
  */
 function App() {
-  const { theme, setTheme, toggleTheme } = useTheme();
-  const { language, setLanguage, loadSemiLocale } = useLanguage();
+  const { theme } = useTheme();
+  const { language, loadSemiLocale } = useLanguage();
   const [semiLocale, setSemiLocale] = useState<Locale | null>(null);
   
   // 加载 Semi UI 语言包
@@ -60,47 +85,59 @@ function App() {
 
   return (
     <ConfigProvider locale={semiLocale}>
-      <Router>
-        <Routes>
-          {/* 公开路由 */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <LoginContainer />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <RegisterContainer />
-              </PublicRoute>
-            }
-          />
+      <div className={`app ${theme}`}>
+        <Router>
+          <Routes>
+            {/* 公开路由 - 未登录可访问 */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
+              }
+            />
 
-          {/* 需要登录的路由 */}
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <DashboardContainer 
-                  theme={theme}
-                  onThemeChange={setTheme}
-                  onToggleTheme={toggleTheme}
-                  language={language}
-                  onLanguageChange={setLanguage}
-                />
-              </PrivateRoute>
-            }
-          />
+            {/* 需要登录的路由 */}
+            <Route
+              path="/projects"
+              element={
+                <PrivateRoute>
+                  <Projects />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <PrivateRoute>
+                  <ProjectDetail />
+                </PrivateRoute>
+              }
+            />
 
-          {/* 默认重定向 */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+            {/* 默认重定向 */}
+            <Route path="/" element={<Navigate to="/projects" replace />} />
+            <Route path="*" element={<Navigate to="/projects" replace />} />
+          </Routes>
+        </Router>
+      </div>
     </ConfigProvider>
   );
 }
