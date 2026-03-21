@@ -1,69 +1,54 @@
 /**
- * 编辑器核心状态接口（参考文档 3.2.3 节）
+ * 编辑器状态
  */
-import type { ISchema } from '../base';
-
-/** 布局配置 */
-export interface LayoutState {
-  leftPanelWidth?: number;
-  rightPanelWidth?: number;
-  topPanelHeight?: number;
-  bottomPanelHeight?: number;
-  [key: string]: unknown;
+export interface IEditorState {
+  /** 编辑器是否就绪 */
+  isReady: boolean;
+  /** 是否加载中 */
+  isLoading: boolean;
+  /** 当前选中组件 ID */
+  selectedId: string | null;
+  /** 当前悬停组件 ID */
+  hoveredId: string | null;
 }
 
-/** 画布状态 */
-export interface CanvasState {
-  zoom?: number;
-  offsetX?: number;
-  offsetY?: number;
-  backgroundColor?: string;
-  width?: number;
-  height?: number;
-  [key: string]: unknown;
+/**
+ * 组件状态
+ */
+export interface IComponentState {
+  id: string;
+  type: string;
+  name: string;
+  props: Record<string, unknown>;
+  isSelected: boolean;
+  isHovered: boolean;
+  isDragging: boolean;
+  isVisible: boolean;
+  isLocked: boolean;
 }
 
-/** 远程组件 URL 映射（uniqueId/type -> 组件模块 URL） */
-export type UniqueId2Module = Record<string, string>;
-
-/** 编辑器配置 */
-export interface ConfigState {
-  readOnly?: boolean;
-  gridSize?: number;
-  showGrid?: boolean;
-  /** 组件类型/唯一 ID 到远程模块 URL 的映射 */
-  uniqueId2Module?: UniqueId2Module;
-  [key: string]: unknown;
+/**
+ * 历史记录状态
+ */
+export interface IHistoryState {
+  /** 历史记录栈 */
+  past: unknown[];
+  /** 重做栈 */
+  future: unknown[];
+  /** 是否可以撤销 */
+  canUndo: boolean;
+  /** 是否可以重做 */
+  canRedo: boolean;
 }
 
-/** 编辑器 UI 状态 */
-export interface EditorUIState {
-  selectedNodeId?: string | null;
-  hoveredNodeId?: string | null;
-  [key: string]: unknown;
-}
-
-export interface EditorCoreState {
-  /** 当前选中的节点 ID */
-  selectedNodeId: string | null;
-  /** 页面 Schema 树 */
-  schema: ISchema | null;
-  /** 页面名称 */
-  pageName?: string;
-  /** 页面 ID */
-  pageId?: string;
-  /** 历史记录（撤销/重做） */
-  history?: unknown[];
-  /** 当前历史索引 */
-  historyIndex?: number;
-  /** 布局状态 */
-  layouts: LayoutState;
-  /** 画布状态 */
-  canvas: CanvasState;
-  /** 配置状态 */
-  config: ConfigState;
-  /** 编辑器 UI 状态 */
-  editor: EditorUIState;
-  /** 其他扩展状态 */
-  [key: string]: unknown;
+/**
+ * 全局状态
+ */
+export interface IStoreState {
+  /** 编辑器状态 */
+  editor: IEditorState;
+  /** 组件状态映射 */
+  components: Map<string, IComponentState>;
+  /** 历史记录状态 */
+  history: IHistoryState;
 }

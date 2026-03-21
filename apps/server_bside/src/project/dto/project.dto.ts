@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
@@ -10,7 +10,6 @@ export class CreateProjectDto {
   projectName: string;
 
   @IsString()
-  @IsUUID()
   @IsNotEmpty({ message: '业务线ID不能为空' })
   businessId: string;
 
@@ -21,6 +20,15 @@ export class CreateProjectDto {
   @IsString()
   @IsOptional()
   config?: string;
+
+  @IsString()
+  @IsOptional()
+  owner?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  collaborators?: string[];
 }
 
 export class UpdateProjectDto {
@@ -35,6 +43,15 @@ export class UpdateProjectDto {
   @IsString()
   @IsOptional()
   config?: string;
+
+  @IsString()
+  @IsOptional()
+  owner?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  collaborators?: string[];
 }
 
 export class ProjectResponseDto {
@@ -45,6 +62,8 @@ export class ProjectResponseDto {
   businessName: string;
   description?: string;
   config?: string;
+  owner?: string;
+  collaborators: string[];
   createdAt: Date;
   updatedAt: Date;
 }

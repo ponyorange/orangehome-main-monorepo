@@ -1,21 +1,39 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-
-const __VERSION__ = '1.0.0';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
-    target: 'ES2022',
-    cssCodeSplit: true,
-  },
-  css: {
-    devSourcemap: true,
-  },
-  define: {
-    __VERSION__: JSON.stringify(__VERSION__),
+    lib: {
+      entry: path.resolve(__dirname, 'src/index.ts'),
+      name: 'OrangeEditor',
+      formats: ['es', 'cjs'],
+      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`,
+    },
+    rollupOptions: {
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        },
+      },
+    },
+    sourcemap: true,
+    minify: false,
   },
   server: {
-    port: 3001,
+    port: 5173,
+    open: true,
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
   },
 });

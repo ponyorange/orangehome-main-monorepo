@@ -3,8 +3,103 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Orange Editor - Orangehome Web Builder</title>
-    <link rel="stylesheet" href="https://unpkg.com/@douyinfe/semi-ui@2/dist/css/semi.min.css" />
+    <title>Orange Editor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body, #root {
+        height: 100%;
+      }
+
+      /* 主题系统CSS变量 - 默认值，会被JS动态覆盖 */
+      :root {
+        /* 主色调 */
+        --theme-primary: #e07a3f;
+        --theme-primary-hover: #f08b52;
+        --theme-primary-active: #c96a35;
+        --theme-primary-light: rgba(224, 122, 63, 0.15);
+        --theme-primary-light-bg: rgba(224, 122, 63, 0.08);
+        --theme-primary-text: #e07a3f;
+
+        /* 文字颜色 */
+        --theme-text-secondary: #666666;
+        --theme-text-primary: #333333;
+        --theme-text-disabled: #999999;
+
+        /* 背景色 */
+        --theme-background: #fafafa;
+        --theme-background-card: #ffffff;
+        --theme-background-hover: #f5f5f5;
+
+        /* 边框和分割线 */
+        --theme-border: #e0e0e0;
+        --theme-divider: #e8e8e8;
+
+        /* 功能色 */
+        --theme-success: #52c41a;
+        --theme-warning: #faad14;
+        --theme-error: #f5222d;
+        --theme-info: #e07a3f;
+
+        /* Semi Design 兼容 */
+        --semi-color-primary: #e07a3f;
+        --semi-color-primary-hover: #f08b52;
+        --semi-color-primary-active: #c96a35;
+        --semi-color-primary-light: rgba(224, 122, 63, 0.15);
+        --semi-color-link: #e07a3f;
+        --semi-color-link-hover: #f08b52;
+        --semi-color-info: #e07a3f;
+      }
+
+      /* 强制覆盖 Tabs 选中态 */
+      .semi-tabs-tab.semi-tabs-tab-active {
+        color: var(--theme-primary) !important;
+        border-left-color: var(--theme-primary) !important;
+        background-color: var(--theme-primary-light-bg) !important;
+      }
+      .semi-tabs-tab.semi-tabs-tab-active::before {
+        background-color: var(--theme-primary) !important;
+      }
+
+      /* 强制覆盖 Tabs hover 背景 */
+      .semi-tabs-tab:hover {
+        background-color: var(--theme-primary-light-bg) !important;
+      }
+
+      /* 强制覆盖 Button primary */
+      .semi-button-primary {
+        background-color: var(--theme-primary) !important;
+        border-color: var(--theme-primary) !important;
+        color: #fff !important;
+      }
+      .semi-button-primary:hover {
+        background-color: var(--theme-primary-hover) !important;
+        border-color: var(--theme-primary-hover) !important;
+      }
+
+      /* 强制覆盖 Button secondary */
+      .semi-button-secondary {
+        color: var(--theme-primary) !important;
+        border-color: var(--theme-primary) !important;
+      }
+
+      /* 强制覆盖 Input focus */
+      .semi-input-wrapper-focus {
+        border-color: var(--theme-primary) !important;
+        box-shadow: 0 0 0 2px var(--theme-primary-light) !important;
+      }
+
+      /* 拖拽放置目标高亮 */
+      [data-drop-target="true"] {
+        outline: 2px dashed var(--theme-primary) !important;
+        outline-offset: -2px;
+        background-color: var(--theme-primary-light-bg) !important;
+        transition: outline 0.15s, background-color 0.15s;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

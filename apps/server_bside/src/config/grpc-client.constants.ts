@@ -1,0 +1,1 @@
+export const CORE_GRPC_CLIENT = 'CORE_GRPC_CLIENT';

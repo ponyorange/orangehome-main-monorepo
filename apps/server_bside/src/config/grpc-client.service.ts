@@ -1,52 +1,57 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Client, ClientGrpc } from '@nestjs/microservices';
-import { join } from 'path';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Metadata } from '@grpc/grpc-js';
+import { ClientGrpc } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
+import { CORE_GRPC_CLIENT } from './grpc-client.constants';
 
 export interface ProjectService {
-  createProject(data: any): Promise<any>;
-  updateProject(data: any): Promise<any>;
-  deleteProject(data: any): Promise<any>;
-  getProject(data: any): Promise<any>;
-  listProjects(data: any): Promise<any>;
+  createProject(data: any, metadata?: Metadata): Observable<any>;
+  updateProject(data: any, metadata?: Metadata): Observable<any>;
+  deleteProject(data: any, metadata?: Metadata): Observable<any>;
+  getProject(data: any, metadata?: Metadata): Observable<any>;
+  listProjects(data: any, metadata?: Metadata): Observable<any>;
+}
+
+export interface BusinessService {
+  getBusiness(data: any, metadata?: Metadata): Observable<any>;
+  listBusinesses(data: any, metadata?: Metadata): Observable<any>;
 }
 
 export interface PageService {
-  createPage(data: any): Promise<any>;
-  updatePage(data: any): Promise<any>;
-  deletePage(data: any): Promise<any>;
-  getPage(data: any): Promise<any>;
-  listPages(data: any): Promise<any>;
+  createPage(data: any, metadata?: Metadata): Observable<any>;
+  updatePage(data: any, metadata?: Metadata): Observable<any>;
+  deletePage(data: any, metadata?: Metadata): Observable<any>;
+  getPage(data: any, metadata?: Metadata): Observable<any>;
+  listPages(data: any, metadata?: Metadata): Observable<any>;
 }
 
 export interface PageVersionService {
-  savePageContent(data: any): Promise<any>;
-  publishPageVersion(data: any): Promise<any>;
-  listPageVersions(data: any): Promise<any>;
-  rollbackPageVersion(data: any): Promise<any>;
-  deletePageVersion(data: any): Promise<any>;
-  getPageVersion(data: any): Promise<any>;
+  savePageContent(data: any, metadata?: Metadata): Observable<any>;
+  publishPageVersion(data: any, metadata?: Metadata): Observable<any>;
+  listPageVersions(data: any, metadata?: Metadata): Observable<any>;
+  rollbackPageVersion(data: any, metadata?: Metadata): Observable<any>;
+  deletePageVersion(data: any, metadata?: Metadata): Observable<any>;
+  getPageVersion(data: any, metadata?: Metadata): Observable<any>;
 }
 
 @Injectable()
 export class GrpcClientService implements OnModuleInit {
-  @Client({
-    transport: 4, // Transport.GRPC
-    options: {
-      package: 'orangehome.core',
-      protoPath: join(__dirname, '../../proto/core.proto'),
-      url: process.env.CORE_SERVICE_GRPC_URL || 'localhost:50051',
-    },
-  })
-  private readonly client!: ClientGrpc;
+  constructor(@Inject(CORE_GRPC_CLIENT) private readonly client: ClientGrpc) {}
 
+  private businessService!: BusinessService;
   private projectService!: ProjectService;
   private pageService!: PageService;
   private pageVersionService!: PageVersionService;
 
   onModuleInit() {
+    this.businessService = this.client.getService<BusinessService>('BusinessService');
     this.projectService = this.client.getService<ProjectService>('ProjectService');
     this.pageService = this.client.getService<PageService>('PageService');
     this.pageVersionService = this.client.getService<PageVersionService>('PageVersionService');
+  }
+
+  get business(): BusinessService {
+    return this.businessService;
   }
 
   get project(): ProjectService {
@@ -59,5 +64,26 @@ export class GrpcClientService implements OnModuleInit {
 
   get pageVersion(): PageVersionService {
     return this.pageVersionService;
+  }
+
+  createAuthMetadata(authHeader?: string): Metadata {
+    const metadata = new Metadata();
+    const normalized = authHeader?.trim();
+    if (!normalized) {
+      return metadata;
+    }
+
+    metadata.set(
+      'authorization',
+      /^Bearer\s+/i.test(normalized) ? normalized : `Bearer ${normalized}`,
+    );
+    return metadata;
+  }
+
+  wrapStringValue(value?: string): { value: string } | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    return { value };
   }
 }

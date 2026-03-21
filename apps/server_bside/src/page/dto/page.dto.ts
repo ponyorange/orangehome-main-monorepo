@@ -1,8 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreatePageDto {
   @IsString()
-  @IsUUID()
   @IsNotEmpty({ message: '项目ID不能为空' })
   projectId: string;
 

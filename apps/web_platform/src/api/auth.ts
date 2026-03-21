@@ -1,6 +1,18 @@
 import axios from 'axios';
 
 const API_BASE = 'http://localhost:4000/api';
+const PUBLIC_AUTH_PATHS = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/reset-password',
+  '/auth/send-email-code',
+]);
+
+const clearClientAuth = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('auth-storage');
+};
 
 const apiClient = axios.create({
   baseURL: API_BASE,
@@ -12,6 +24,10 @@ const apiClient = axios.create({
 
 // 请求拦截器 - 自动添加 token
 apiClient.interceptors.request.use((config) => {
+  if (config.url && PUBLIC_AUTH_PATHS.has(config.url)) {
+    return config;
+  }
+
   const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -23,7 +39,20 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    const status = error.response?.status;
     const message = error.response?.data?.message || '网络错误';
+
+    if (status === 401 && !PUBLIC_AUTH_PATHS.has(error.config?.url || '')) {
+      clearClientAuth();
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('authExpiredMessage', '登录已过期，请重新登录');
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
+      }
+    }
+
     return Promise.reject(new Error(Array.isArray(message) ? message.join(', ') : message));
   }
 );
@@ -92,8 +121,7 @@ export const getCurrentUser = async (): Promise<User> => {
 // 用户登出
 export const logout = async () => {
   await apiClient.post('/auth/logout');
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  clearClientAuth();
 };
 
 export default apiClient;

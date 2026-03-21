@@ -1,59 +1,46 @@
-import React, { useMemo } from 'react';
-import { ComponentManager } from './ComponentManager';
-import { BaseSchemaRenderer } from './BaseSchemaRenderer';
+import React from 'react';
 import type { ISchema } from '../../../types/base';
-import type { UniqueId2Module } from '../../../types/store';
-import { createConfigComponentLoader } from '../../../services/RuntimeContextService';
+import './BaseComponents'; // 注册基础组件
+import { ComponentManager } from './ComponentManager';
 
 export interface SchemaRendererProps {
   schema: ISchema | null;
-  uniqueId2Module?: UniqueId2Module;
-  /** 静态组件映射：type -> React 组件 */
-  staticComponents?: Record<string, React.ComponentType<Record<string, unknown>>>;
-  onAction?: (actionId: string, schema: ISchema, event: React.SyntheticEvent) => void;
-  selectedNodeId?: string | null;
-  hoveredNodeId?: string | null;
-  onSelectNode?: (id: string | null) => void;
-  onHoverNode?: (id: string | null) => void;
-  onStartMove?: (nodeId: string, el: HTMLElement, clientX: number, clientY: number) => void;
 }
 
-export function SchemaRenderer({
-  schema,
-  uniqueId2Module = {},
-  staticComponents = {},
-  onAction,
-  selectedNodeId = null,
-  hoveredNodeId = null,
-  onSelectNode,
-  onHoverNode,
-  onStartMove,
-}: SchemaRendererProps) {
-  const componentManager = useMemo(() => {
-    const manager = new ComponentManager();
-    for (const [type, comp] of Object.entries(staticComponents)) {
-      manager.registerStatic(type, comp);
-    }
-    manager.registerLoader(
-      createConfigComponentLoader(() => uniqueId2Module)
-    );
-    return manager;
-  }, [uniqueId2Module, staticComponents]);
-
+/**
+ * Schema 渲染器
+ * 将 ISchema 树递归渲染为 React 组件
+ */
+export const SchemaRenderer: React.FC<SchemaRendererProps> = ({ schema }) => {
   if (!schema) {
     return null;
   }
 
-  return (
-    <BaseSchemaRenderer
-      schema={schema}
-      componentManager={componentManager}
-      onAction={onAction}
-      selectedNodeId={selectedNodeId}
-      hoveredNodeId={hoveredNodeId}
-      onSelectNode={onSelectNode}
-      onHoverNode={onHoverNode}
-      onStartMove={onStartMove}
-    />
-  );
-}
+  const Component = ComponentManager.get(schema.type);
+  if (!Component) {
+    return (
+      <div data-schema-id={schema.id} style={{ color: '#999', fontSize: 12, padding: 8 }}>
+        [未知根组件: {schema.type}]
+      </div>
+    );
+  }
+
+  return <Component schema={schema} />;
+};
+
+export { ComponentManager } from './ComponentManager';
+export { SchemaNode, TextComponent, ImageComponent, ContainerComponent, ButtonComponent } from './BaseComponents';
+
+// 可选择版本（支持点击选中和悬停高亮）
+export { 
+  SelectableSchemaRenderer,
+  SelectionContext,
+  useSelectionContext,
+  type SelectableSchemaRendererProps,
+} from './SelectableSchemaRenderer';
+export {
+  SelectableSchemaNode,
+  SelectableContainer,
+  type SelectableSchemaNodeProps,
+  type SelectableContainerProps,
+} from './SelectableComponents';

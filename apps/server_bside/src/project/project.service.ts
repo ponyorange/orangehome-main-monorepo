@@ -1,56 +1,94 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { GrpcClientService } from '../config/grpc-client.service';
 import { CreateProjectDto, UpdateProjectDto, ProjectResponseDto } from './dto/project.dto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly grpcClient: GrpcClientService) {}
+  constructor(private readonly grpcClient: GrpcClientService) { }
 
-  async create(dto: CreateProjectDto): Promise<ProjectResponseDto> {
+  private normalizeTimestamp(value: any): Date {
+    if (!value) {
+      return new Date(0);
+    }
+
+    if (value instanceof Date) {
+      return value;
+    }
+
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? new Date(0) : date;
+    }
+
+    if (typeof value === 'object' && value.seconds !== undefined) {
+      const seconds = Number(value.seconds) || 0;
+      const nanos = Number(value.nanos) || 0;
+      return new Date(seconds * 1000 + Math.floor(nanos / 1_000_000));
+    }
+
+    return new Date(0);
+  }
+
+  async create(dto: CreateProjectDto, authHeader?: string): Promise<ProjectResponseDto> {
     try {
-      const result = await this.grpcClient.project.createProject({
-        projectCode: dto.projectCode,
-        projectName: dto.projectName,
-        businessId: dto.businessId,
-        description: dto.description || '',
-        config: dto.config || '',
-      });
+      const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      const result = await firstValueFrom(
+        this.grpcClient.project.createProject({
+          projectCode: dto.projectCode,
+          projectName: dto.projectName,
+          businessId: dto.businessId,
+          description: this.grpcClient.wrapStringValue(dto.description),
+          config: this.grpcClient.wrapStringValue(dto.config),
+          owner: dto.owner || '',
+          collaborators: dto.collaborators || [],
+        }, metadata),
+      );
       return this.mapToDto(result.data);
     } catch (error) {
       this.handleGrpcError(error);
     }
   }
 
-  async update(id: string, dto: UpdateProjectDto): Promise<ProjectResponseDto> {
+  async update(id: string, dto: UpdateProjectDto, authHeader?: string): Promise<ProjectResponseDto> {
     try {
-      const result = await this.grpcClient.project.updateProject({
-        id,
-        ...dto,
-      });
+      const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      const result = await firstValueFrom(
+        this.grpcClient.project.updateProject({
+          id,
+          projectName: this.grpcClient.wrapStringValue(dto.projectName),
+          description: this.grpcClient.wrapStringValue(dto.description),
+          config: this.grpcClient.wrapStringValue(dto.config),
+          owner: this.grpcClient.wrapStringValue(dto.owner),
+          collaborators: dto.collaborators,
+        }, metadata),
+      );
       return this.mapToDto(result.data);
     } catch (error) {
       this.handleGrpcError(error);
     }
   }
 
-  async delete(id: string, permanent: boolean = false): Promise<void> {
+  async delete(id: string, permanent: boolean = false, authHeader?: string): Promise<void> {
     try {
-      await this.grpcClient.project.deleteProject({ id, permanent });
+      const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      await firstValueFrom(this.grpcClient.project.deleteProject({ id, permanent }, metadata));
     } catch (error) {
       this.handleGrpcError(error);
     }
   }
 
-  async findOne(id: string): Promise<ProjectResponseDto> {
+  async findOne(id: string, authHeader?: string): Promise<ProjectResponseDto> {
     try {
-      const result = await this.grpcClient.project.getProject({ id });
+      const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      const result = await firstValueFrom(this.grpcClient.project.getProject({ id }, metadata));
       return this.mapToDto(result.data);
     } catch (error) {
       this.handleGrpcError(error);
     }
   }
 
-  async findAll(query: { page?: number; limit?: number; search?: string; businessId?: string }): Promise<{
+  async findAll(query: { page?: number; limit?: number; search?: string; businessId?: string }, authHeader?: string): Promise<{
     data: ProjectResponseDto[];
     total: number;
     page: number;
@@ -59,16 +97,18 @@ export class ProjectService {
     try {
       const page = query.page || 1;
       const limit = query.limit || 10;
+      const metadata = this.grpcClient.createAuthMetadata(authHeader);
 
-      const result = await this.grpcClient.project.listProjects({
-        page,
-        limit,
-        search: query.search || undefined,
-        businessId: query.businessId || undefined,
-      });
-
+      const result = await firstValueFrom(
+        this.grpcClient.project.listProjects({
+          page,
+          limit,
+          search: query.search ? this.grpcClient.wrapStringValue(query.search) : undefined,
+          businessId: query.businessId ? this.grpcClient.wrapStringValue(query.businessId) : undefined,
+        }, metadata),
+      );
       return {
-        data: result.data.map((item: any) => this.mapToDto(item)),
+        data: result.data?.map((item: any) => this.mapToDto(item)) || [],
         total: result.total,
         page: result.page,
         limit: result.limit,
@@ -87,8 +127,10 @@ export class ProjectService {
       businessName: data.businessName,
       description: data.description || undefined,
       config: data.config || undefined,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      owner: data.owner || undefined,
+      collaborators: data.collaborators || [],
+      createdAt: this.normalizeTimestamp(data.createdAt),
+      updatedAt: this.normalizeTimestamp(data.updatedAt),
     };
   }
 
@@ -96,6 +138,9 @@ export class ProjectService {
     if (error.code === 5) {
       throw new NotFoundException('资源不存在');
     }
-    throw new HttpException(error.message || '服务错误', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (error.code === 16) {
+      throw new UnauthorizedException(error.details || error.message || '请提供有效的 Bearer Token');
+    }
+    throw new HttpException(error.details || error.message || '服务错误', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

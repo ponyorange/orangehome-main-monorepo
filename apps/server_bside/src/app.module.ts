@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { GrpcClientService } from './config/grpc-client.service';
+import { BuilderModule } from './builder/builder.module';
+import { GrpcClientModule } from './config/grpc-client.module';
 import { AuthModule } from './auth/auth.module';
+import { BusinessModule } from './business/business.module';
 import { ProjectModule } from './project/project.module';
 import { PageModule } from './page/page.module';
 import { PageVersionModule } from './page-version/page-version.module';
@@ -15,13 +17,15 @@ import { AppService } from './app.service';
       isGlobal: true,
     }),
     HttpModule,
+    BuilderModule,
+    GrpcClientModule,
     AuthModule,
+    BusinessModule,
     ProjectModule,
     PageModule,
     PageVersionModule,
   ],
   controllers: [AppController],
-  providers: [AppService, GrpcClientService],
-  exports: [GrpcClientService],
+  providers: [AppService],
 })
 export class AppModule {}

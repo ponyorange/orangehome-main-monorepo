@@ -9,6 +9,8 @@ export interface Project {
   businessName: string;
   description?: string;
   config?: string;
+  owner?: string;
+  collaborators: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +30,8 @@ export const createProject = async (data: {
   businessId: string;
   description?: string;
   config?: string;
+  owner?: string;
+  collaborators?: string[];
 }): Promise<Project> => {
   return apiClient.post('/projects', data);
 };
@@ -54,6 +58,8 @@ export const updateProject = async (
     projectName?: string;
     description?: string;
     config?: string;
+    owner?: string;
+    collaborators?: string[];
   }
 ): Promise<Project> => {
   return apiClient.put(`/projects/${id}`, data);

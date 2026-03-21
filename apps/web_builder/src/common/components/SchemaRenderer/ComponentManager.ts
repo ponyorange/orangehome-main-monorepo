@@ -1,101 +1,75 @@
-import type { ComponentType } from 'react';
+import React from 'react';
+import type { ISchema } from '../../../types/base';
+import { loadRemoteComponent } from './utils/remoteLoader';
 
-export type LoadedComponent = ComponentType<Record<string, unknown>>;
-
-/** 组件加载器：根据 type 和 url 加载组件 */
-export interface IComponentLoader {
-  load(type: string, url?: string): Promise<LoadedComponent | null>;
+export interface RemoteComponentDefinition {
+  moduleUrl?: string;
+  scriptUrl?: string;
+  cssUrl?: string;
+  exportName?: string;
+  globalName?: string;
 }
 
-/** 静态组件加载器：从本地映射获取 */
-export function createStaticLoader(
-  map: Map<string, LoadedComponent>
-): IComponentLoader {
-  return {
-    async load(type: string): Promise<LoadedComponent | null> {
-      return map.get(type) ?? null;
-    },
-  };
+export interface SchemaComponentProps {
+  schema: ISchema;
+  children?: React.ReactNode;
+  eventHandlers?: Record<string, unknown>;
 }
 
-/** 组件管理器：动态加载并缓存远程/本地组件 */
-export class ComponentManager {
-  private _cache = new Map<string, LoadedComponent>();
-  private _staticMap = new Map<string, LoadedComponent>();
-  private _loading = new Map<string, Promise<LoadedComponent>>();
-  private _loaders: IComponentLoader[] = [];
+type SchemaComponent = React.ComponentType<SchemaComponentProps>;
 
-  constructor(loaders?: IComponentLoader[]) {
-    this._loaders = loaders ?? [];
-    this._loaders.unshift(createStaticLoader(this._staticMap));
-  }
+/** 基础组件映射表 */
+const componentMap: Record<string, SchemaComponent> = {};
+const remoteComponentCache = new Map<string, Promise<SchemaComponent | null>>();
 
-  /** 注册组件加载器 */
-  registerLoader(loader: IComponentLoader): void {
-    this._loaders.push(loader);
-  }
+function getRemoteCacheKey(definition: RemoteComponentDefinition): string {
+  return JSON.stringify(definition);
+}
 
-  /** 注册静态组件（用于 div、button 等内置组件） */
-  registerStatic(type: string, component: LoadedComponent): void {
-    this._staticMap.set(type, component);
-    this._cache.set(type, component);
-  }
+/**
+ * 组件管理器
+ * 负责将 Schema type 映射到实际的 React 组件
+ */
+export const ComponentManager = {
+  /**
+   * 注册组件
+   */
+  register(type: string, component: SchemaComponent): void {
+    componentMap[type] = component;
+  },
 
-  /** 根据组件类型和可选 URL 加载远程组件，带缓存 */
-  async loadRemoteComponent(type: string, url?: string): Promise<LoadedComponent> {
-    const cacheKey = url ? `${type}@${url}` : type;
+  /**
+   * 获取组件
+   */
+  get(type: string): SchemaComponent | null {
+    return componentMap[type] ?? null;
+  },
 
-    const cached = this._cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
+  /**
+   * 检查是否已注册
+   */
+  has(type: string): boolean {
+    return type in componentMap;
+  },
 
-    const loading = this._loading.get(cacheKey);
-    if (loading) {
-      return loading;
-    }
-
-    const loadPromise = this._doLoad(type, url).then((component) => {
-      this._cache.set(cacheKey, component);
-      this._loading.delete(cacheKey);
-      return component;
-    });
-
-    this._loading.set(cacheKey, loadPromise);
-
-    try {
-      return await loadPromise;
-    } catch (err) {
-      this._loading.delete(cacheKey);
-      console.error(`[ComponentManager] Failed to load component: type=${type}, url=${url}`, err);
-      throw err;
-    }
-  }
-
-  private async _doLoad(type: string, url?: string): Promise<LoadedComponent> {
-    for (const loader of this._loaders) {
-      try {
-        const component = await loader.load(type, url);
-        if (component) {
+  /**
+   * 加载远程组件
+   */
+  async loadRemote(type: string, definition: RemoteComponentDefinition): Promise<SchemaComponent | null> {
+    const cacheKey = `${type}:${getRemoteCacheKey(definition)}`;
+    if (!remoteComponentCache.has(cacheKey)) {
+      remoteComponentCache.set(
+        cacheKey,
+        (async () => {
+          const component = await loadRemoteComponent(definition);
+          if (component) {
+            componentMap[type] = component;
+          }
           return component;
-        }
-      } catch (err) {
-        console.error(`[ComponentManager] Loader failed for type=${type}`, err);
-        continue;
-      }
+        })()
+      );
     }
-    throw new Error(`[ComponentManager] No loader could resolve component: type=${type}`);
-  }
 
-  /** 同步获取已缓存的组件 */
-  getCached(type: string, url?: string): LoadedComponent | undefined {
-    const cacheKey = url ? `${type}@${url}` : type;
-    return this._cache.get(cacheKey);
-  }
-
-  /** 清除缓存 */
-  clearCache(): void {
-    this._cache.clear();
-    this._loading.clear();
-  }
-}
+    return (await remoteComponentCache.get(cacheKey)) ?? null;
+  },
+};

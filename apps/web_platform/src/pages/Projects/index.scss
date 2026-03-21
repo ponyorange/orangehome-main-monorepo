@@ -1,4 +1,14 @@
 .projects-page {
+  .create-project-modal {
+    .semi-modal-body {
+      padding-bottom: 28px;
+    }
+  }
+
+  .create-project-form {
+    padding-bottom: 8px;
+  }
+
   .page-header {
     display: flex;
     justify-content: space-between;

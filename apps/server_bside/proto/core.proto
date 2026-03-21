@@ -544,6 +544,8 @@ message Project {
   bool is_deleted = 8;
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
+  string owner = 11;
+  repeated string collaborators = 12;
 }
 
 message CreateProjectRequest {
@@ -552,6 +554,8 @@ message CreateProjectRequest {
   string business_id = 3;
   google.protobuf.StringValue description = 4;
   google.protobuf.StringValue config = 5;
+  string owner = 6;
+  repeated string collaborators = 7;
 }
 
 message UpdateProjectRequest {
@@ -559,6 +563,8 @@ message UpdateProjectRequest {
   google.protobuf.StringValue project_name = 2;
   google.protobuf.StringValue description = 3;
   google.protobuf.StringValue config = 4;
+  google.protobuf.StringValue owner = 5;
+  repeated string collaborators = 6;
 }
 
 message DeleteProjectRequest {

@@ -1,10 +1,11 @@
 {
-  "../../apps/server_bside": "../../apps/server_bside:JuuBpjQpUWFk0EpnIdBqsSfH1OvG7a7aeWhsLqueNig=:",
+  "../../apps/server_bside": "../../apps/server_bside:DUL+pnj+cvLzWHB1yfT/2Ml8761TWM0uoqrKPkX/xIQ=:",
   "/@grpc/grpc-js@1.14.3": "Missing shrinkwrap entry!",
   "/@grpc/proto-loader@0.8.0": "Missing shrinkwrap entry!",
   "/@nestjs/axios@4.0.1(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(axios@1.13.6)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
   "/@nestjs/cli@10.4.9": "Missing shrinkwrap entry!",
   "/@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
+  "/@nestjs/config@4.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)": "Missing shrinkwrap entry!",
   "/@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/microservices@11.1.16)(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
   "/@nestjs/microservices@11.1.16(@grpc/grpc-js@1.14.3)(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)": "Missing shrinkwrap entry!",
   "/@nestjs/platform-express@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)": "Missing shrinkwrap entry!",

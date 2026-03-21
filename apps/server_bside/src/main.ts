@@ -97,6 +97,8 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', '用户认证')
+    .addTag('builder', '编辑器初始化')
+    .addTag('businesses', '业务线管理')
     .addTag('projects', '项目管理')
     .addTag('pages', '页面管理')
     .addTag('page-versions', '页面版本管理')

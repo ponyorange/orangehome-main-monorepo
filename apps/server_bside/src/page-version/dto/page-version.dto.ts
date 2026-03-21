@@ -1,8 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsJSON } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsJSON } from 'class-validator';
 
 export class SavePageContentDto {
   @IsString()
-  @IsUUID()
   @IsNotEmpty({ message: '页面ID不能为空' })
   pageId: string;
 
@@ -12,7 +11,6 @@ export class SavePageContentDto {
   pageSchemaJson: string;
 
   @IsString()
-  @IsUUID()
   @IsNotEmpty({ message: '用户ID不能为空' })
   userId: string;
 }

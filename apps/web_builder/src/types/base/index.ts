@@ -1,26 +1,118 @@
 /**
- * 事件到动作的映射（如 onClick -> actionId）
+ * CSS 规则类型
  */
-export type Event2Action = Record<string, string>;
+export interface ICSSRule {
+  [property: string]: string | number;
+}
 
 /**
- * Schema 基础类型定义（参考文档 6.1 节）
+ * 事件动作绑定
+ */
+export interface IEvent2Action {
+  event: string;      // 事件名，如 'onClick', 'onChange'
+  action: string;     // 动作类型，如 'navigate', 'api', 'setState'
+  target?: string;    // 目标组件ID
+  params?: Record<string, unknown>;  // 动作参数
+}
+
+/**
+ * API 数据配置
+ */
+export interface IApiInSchema {
+  url: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers?: Record<string, string>;
+  params?: Record<string, unknown>;
+  dataPath?: string;  // 数据路径，如 'data.list'
+  interval?: number;  // 轮询间隔（毫秒）
+}
+
+/**
+ * Schema 节点结构
+ * 描述页面组件树的 JSON 结构
  */
 export interface ISchema {
-  /** 唯一标识 */
+  id: string;                    // 全局唯一 ID
+  name: string;                   // 组件名称（可读）
+  type: string;                   // 组件类型（如 'Text', 'Image', 'Container'）
+  children: ISchema[];           // 子组件
+  props: Record<string, unknown>; // 组件属性
+  propStyle?: Record<string, ICSSRule>;  // 样式配置，键为 CSS 选择器
+  event2action?: IEvent2Action[];  // 事件动作绑定
+  api?: IApiInSchema;            // API 数据配置
+}
+
+/**
+ * 组件节点
+ * 单个组件的完整描述
+ */
+export interface IComponentNode {
   id: string;
-  /** 组件名称 */
   name: string;
-  /** 组件类型 */
   type: string;
-  /** 子节点 */
-  children?: ISchema[];
-  /** 组件属性 */
-  props?: Record<string, unknown>;
-  /** 样式属性（内联 style） */
-  propStyle?: React.CSSProperties;
-  /** 事件绑定映射 */
-  event2action?: Event2Action;
-  /** 其他扩展字段 */
-  [key: string]: unknown;
+  props: Record<string, unknown>;
+  children: IComponentNode[];
+  parentId?: string;
+}
+
+/**
+ * 编辑器配置选项
+ */
+export interface IEditorOptions {
+  /** 编辑器容器元素 */
+  container?: HTMLElement;
+  /** 初始 Schema */
+  initialSchema?: ISchema;
+  /** 是否启用拖拽 */
+  enableDrag?: boolean;
+  /** 是否启用撤销重做 */
+  enableHistory?: boolean;
+  /** 调试模式 */
+  debug?: boolean;
+}
+
+/**
+ * 组件元数据
+ */
+export interface IComponentMeta {
+  name: string;
+  type: string;
+  icon?: string;
+  description?: string;
+  category?: string;
+  props?: IPropMeta[];
+}
+
+/**
+ * 属性元数据
+ */
+export interface IPropMeta {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  defaultValue?: unknown;
+  description?: string;
+}
+
+/**
+ * 组件类型
+ */
+export interface IComponentType {
+  type: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  category?: string;
+  component: React.ComponentType<unknown>;
+  props?: IPropMeta[];
+}
+
+/**
+ * 组件接口
+ */
+export interface IComponent {
+  id: string;
+  name: string;
+  version: string;
+  schema: ISchema;
+  meta?: IComponentMeta;
 }

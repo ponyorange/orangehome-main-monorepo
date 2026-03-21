@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { PageService } from './page.service';
 import { CreatePageDto, UpdatePageDto, PageResponseDto, ListPagesQueryDto } from './dto/page.dto';
@@ -12,8 +12,8 @@ export class PageController {
   @Post()
   @ApiOperation({ summary: '新建页面' })
   @ApiResponse({ status: 201, description: '创建成功', type: PageResponseDto })
-  async create(@Body() dto: CreatePageDto) {
-    return this.pageService.create(dto);
+  async create(@Body() dto: CreatePageDto, @Headers('authorization') authHeader?: string) {
+    return this.pageService.create(dto, authHeader);
   }
 
   @Get()
@@ -23,7 +23,7 @@ export class PageController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false })
   @ApiResponse({ status: 200, description: '查询成功' })
-  async findAll(@Query() query: { projectId?: string } & ListPagesQueryDto) {
+  async findAll(@Query() query: { projectId?: string } & ListPagesQueryDto, @Headers('authorization') authHeader?: string) {
     if (!query.projectId) {
       throw new Error('projectId is required');
     }
@@ -31,23 +31,23 @@ export class PageController {
       page: query.page ? parseInt(query.page) : undefined,
       limit: query.limit ? parseInt(query.limit) : undefined,
       search: query.search,
-    });
+    }, authHeader);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '获取页面详情' })
   @ApiParam({ name: 'id', description: '页面ID' })
   @ApiResponse({ status: 200, description: '查询成功', type: PageResponseDto })
-  async findOne(@Param('id') id: string) {
-    return this.pageService.findOne(id);
+  async findOne(@Param('id') id: string, @Headers('authorization') authHeader?: string) {
+    return this.pageService.findOne(id, authHeader);
   }
 
   @Put(':id')
   @ApiOperation({ summary: '修改页面信息' })
   @ApiParam({ name: 'id', description: '页面ID' })
   @ApiResponse({ status: 200, description: '修改成功', type: PageResponseDto })
-  async update(@Param('id') id: string, @Body() dto: UpdatePageDto) {
-    return this.pageService.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdatePageDto, @Headers('authorization') authHeader?: string) {
+    return this.pageService.update(id, dto, authHeader);
   }
 
   @Delete(':id')
@@ -55,8 +55,8 @@ export class PageController {
   @ApiParam({ name: 'id', description: '页面ID' })
   @ApiQuery({ name: 'permanent', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: '删除成功' })
-  async delete(@Param('id') id: string, @Query('permanent') permanent?: string) {
-    await this.pageService.delete(id, permanent === 'true');
+  async delete(@Param('id') id: string, @Query('permanent') permanent?: string, @Headers('authorization') authHeader?: string) {
+    await this.pageService.delete(id, permanent === 'true', authHeader);
     return { message: '删除成功' };
   }
 }

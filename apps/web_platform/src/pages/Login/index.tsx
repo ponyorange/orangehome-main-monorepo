@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Typography, Toast } from '@douyinfe/semi-ui';
 import { IconLock, IconUser } from '@douyinfe/semi-icons';
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,6 +12,14 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login: storeLogin } = useAuthStore();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const expiredMessage = sessionStorage.getItem('authExpiredMessage');
+    if (expiredMessage) {
+      Toast.warning(expiredMessage);
+      sessionStorage.removeItem('authExpiredMessage');
+    }
+  }, []);
 
   const handleSubmit = async (values: { email: string; password: string }) => {
     setLoading(true);

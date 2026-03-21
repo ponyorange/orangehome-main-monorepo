@@ -10,6 +10,11 @@ import './index.scss';
 
 const { Title, Text } = Typography;
 const { Column } = Table;
+const formatDateTime = (value?: string | number | Date) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
+};
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,12 +65,16 @@ const ProjectDetail: React.FC = () => {
     }
   };
 
+  const handleEditPage = (pageId: string) => {
+    window.open(`http://localhost:5173/?pageId=${encodeURIComponent(pageId)}`, '_blank', 'noopener,noreferrer');
+  };
+
   const renderPageActions = (record: Page) => (
     <div className="action-buttons">
       <Button
         icon={<IconEdit />}
         theme="borderless"
-        onClick={() => navigate(`/pages/${record.id}/edit`)}
+        onClick={() => handleEditPage(record.id)}
       >
         编辑
       </Button>
@@ -138,7 +147,7 @@ const ProjectDetail: React.FC = () => {
                 <Column
                   title="创建时间"
                   dataIndex="createdAt"
-                  render={(time) => new Date(time).toLocaleString()}
+                  render={(time) => formatDateTime(time)}
                 />
                 <Column title="操作" render={renderPageActions} />
               </Table>
@@ -165,7 +174,7 @@ const ProjectDetail: React.FC = () => {
               </div>
               <div className="info-item">
                 <Text type="secondary">创建时间:</Text>
-                <Text>{project?.createdAt ? new Date(project.createdAt).toLocaleString() : '-'}</Text>
+                <Text>{formatDateTime(project?.createdAt)}</Text>
               </div>
             </Card>
           </Tabs.TabPane>
