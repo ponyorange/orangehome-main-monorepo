@@ -38,7 +38,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
         minHeight: '100vh',
         display: 'grid',
         gridTemplateColumns: '1.1fr 0.9fr',
-        background: 'linear-gradient(135deg, #fff0f7 0%, #f2f5ff 48%, #fff8eb 100%)',
+        background: 'var(--theme-gradient-page)',
       }}
     >
       <div
@@ -63,11 +63,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               gap: 8,
               padding: '8px 14px',
               borderRadius: 999,
-              background: 'rgba(255,255,255,0.68)',
-              color: '#7c3aed',
+              background: 'var(--theme-surface-glass)',
+              color: 'var(--theme-primary)',
               fontWeight: 700,
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 10px 30px rgba(124, 58, 237, 0.08)',
+              backdropFilter: 'blur(var(--theme-backdrop-blur))',
+              boxShadow: 'var(--theme-shadow-sm)',
+              border: '1px solid var(--theme-border-soft)',
             }}
           >
             <IconLightningStroked />
@@ -81,7 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               marginBottom: 0,
               fontSize: 52,
               lineHeight: 1.15,
-              color: '#1d1b3a',
+              color: 'var(--theme-text-primary)',
               maxWidth: 560,
             }}
           >
@@ -95,7 +96,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               marginTop: 20,
               fontSize: 17,
               lineHeight: 1.9,
-              color: 'rgba(29, 27, 58, 0.72)',
+              color: 'var(--theme-text-secondary)',
               maxWidth: 560,
             }}
           >
@@ -125,15 +126,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
             maxWidth: '100%',
             padding: 32,
             borderRadius: 30,
-            background: 'rgba(255,255,255,0.86)',
-            boxShadow: '0 30px 80px rgba(50, 44, 120, 0.16)',
-            backdropFilter: 'blur(16px)',
+            background: 'var(--theme-gradient-panel)',
+            border: '1px solid var(--theme-border-soft)',
+            boxShadow: 'var(--theme-shadow-lg)',
+            backdropFilter: 'blur(var(--theme-backdrop-blur))',
           }}
         >
-          <Typography.Title heading={3} style={{ marginTop: 0, marginBottom: 8, color: '#1d1b3a' }}>
+          <Typography.Title heading={3} style={{ marginTop: 0, marginBottom: 8, color: 'var(--theme-text-primary)' }}>
             欢迎回来
           </Typography.Title>
-          <Typography.Text style={{ color: 'rgba(29, 27, 58, 0.62)' }}>
+          <Typography.Text style={{ color: 'var(--theme-text-secondary)' }}>
             使用你的账号登录，进入 Builder 编辑器。
           </Typography.Text>
 
@@ -163,7 +165,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               marginTop: 14,
               minHeight: 22,
               fontSize: 13,
-              color: message ? '#d84a1b' : 'rgba(29, 27, 58, 0.52)',
+              color: message ? 'var(--theme-error)' : 'var(--theme-text-secondary)',
             }}
           >
             {message || '未登录或登录已过期，请重新登录后继续编辑。'}
@@ -182,8 +184,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               height: 48,
               border: 'none',
               borderRadius: 18,
-              background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
-              boxShadow: '0 18px 36px rgba(124, 58, 237, 0.22)',
+              background: 'var(--theme-gradient-accent)',
+              boxShadow: 'var(--theme-shadow-md)',
               fontWeight: 700,
             }}
             onClick={handleSubmit}
@@ -196,13 +198,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
               marginTop: 22,
               padding: 16,
               borderRadius: 20,
-              background: 'linear-gradient(135deg, rgba(124,58,237,0.07), rgba(236,72,153,0.06))',
+              background: 'rgba(255,255,255,0.44)',
+              border: '1px solid var(--theme-border-soft)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.72)',
             }}
           >
-            <Typography.Text style={{ display: 'block', fontWeight: 700, color: '#2a2359' }}>
+            <Typography.Text style={{ display: 'block', fontWeight: 700, color: 'var(--theme-text-primary)' }}>
               登录后会自动完成
             </Typography.Text>
-            <Typography.Paragraph style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.8, color: 'rgba(42, 35, 89, 0.7)' }}>
+            <Typography.Paragraph style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.8, color: 'var(--theme-text-secondary)' }}>
               获取当前用户信息、拉取 `builder/init`、读取 `project/page/pageVersion`，并将最新 `pageSchema` 自动注入编辑器。
             </Typography.Paragraph>
           </div>
@@ -215,7 +219,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
 const inputStyle: React.CSSProperties = {
   height: 48,
   borderRadius: 16,
-  background: 'rgba(255,255,255,0.94)',
+  background: 'rgba(255,255,255,0.92)',
+  border: '1px solid var(--theme-border-soft)',
+  boxShadow: 'var(--theme-shadow-sm)',
 };
 
 const FeatureCard: React.FC<{ title: string; description: string }> = ({ title, description }) => (
@@ -223,15 +229,16 @@ const FeatureCard: React.FC<{ title: string; description: string }> = ({ title, 
     style={{
       padding: '18px 18px 16px',
       borderRadius: 22,
-      background: 'rgba(255,255,255,0.72)',
-      boxShadow: '0 18px 40px rgba(74, 58, 164, 0.08)',
-      backdropFilter: 'blur(12px)',
+      background: 'var(--theme-surface-glass)',
+      border: '1px solid var(--theme-border-soft)',
+      boxShadow: 'var(--theme-shadow-md)',
+      backdropFilter: 'blur(var(--theme-backdrop-blur))',
     }}
   >
-    <Typography.Text style={{ display: 'block', fontSize: 16, fontWeight: 800, color: '#1d1b3a' }}>
+    <Typography.Text style={{ display: 'block', fontSize: 16, fontWeight: 800, color: 'var(--theme-text-primary)' }}>
       {title}
     </Typography.Text>
-    <Typography.Paragraph style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.8, color: 'rgba(29, 27, 58, 0.64)' }}>
+    <Typography.Paragraph style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.8, color: 'var(--theme-text-secondary)' }}>
       {description}
     </Typography.Paragraph>
   </div>

@@ -41,9 +41,9 @@ export const Grid: React.FC<GridProps> = ({
       y1={0}
       x2={i * adjustedGridSize}
       y2={height}
-      stroke="#e0e0e0"
+      stroke="var(--theme-grid-line)"
       strokeWidth={1 / zoom}
-      strokeDasharray={`${2 / zoom} ${2 / zoom}`}
+      strokeDasharray={`${2 / zoom} ${5 / zoom}`}
     />
   ));
 
@@ -55,9 +55,9 @@ export const Grid: React.FC<GridProps> = ({
       y1={i * adjustedGridSize}
       x2={width}
       y2={i * adjustedGridSize}
-      stroke="#e0e0e0"
+      stroke="var(--theme-grid-line)"
       strokeWidth={1 / zoom}
-      strokeDasharray={`${2 / zoom} ${2 / zoom}`}
+      strokeDasharray={`${2 / zoom} ${5 / zoom}`}
     />
   ));
 

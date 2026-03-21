@@ -97,16 +97,26 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }}
+    >
       <Button
         icon={<IconEyeOpened />}
         type="primary"
         size="small"
         onClick={openPreview}
         style={{
-          backgroundColor: primaryColor,
-          borderColor: primaryColor,
+          background: 'var(--theme-gradient-accent)',
+          border: 'none',
           color: '#fff',
+          borderRadius: 999,
+          minWidth: 84,
+          height: 34,
+          boxShadow: 'var(--theme-shadow-sm)',
         }}
       >预览</Button>
       <Button
@@ -117,8 +127,11 @@ export const Toolbar: React.FC = () => {
         onClick={handleSave}
         style={{
           color: primaryColor,
-          borderColor: primaryColor,
-          backgroundColor: '#fff',
+          borderColor: 'var(--theme-border-glow)',
+          background: 'rgba(255,255,255,0.76)',
+          borderRadius: 999,
+          height: 34,
+          boxShadow: 'var(--theme-shadow-sm)',
         }}
       >保存</Button>
       <Button
@@ -128,12 +141,15 @@ export const Toolbar: React.FC = () => {
         onClick={handleExport}
         style={{
           color: primaryColor,
-          borderColor: primaryColor,
+          borderColor: 'var(--theme-border-glow)',
+          background: 'rgba(255,255,255,0.68)',
+          borderRadius: 999,
+          height: 34,
         }}
       >导出</Button>
-      <Button icon={<IconUpload />} type="tertiary" size="small" onClick={handleImportClick}>导入</Button>
-      <Button icon={<IconCopy />} type="tertiary" size="small" onClick={handleCopy}>复制</Button>
-      <Button icon={<IconLink />} type="tertiary" size="small" onClick={handleShareLink}>分享</Button>
+      <Button icon={<IconUpload />} type="tertiary" size="small" onClick={handleImportClick} style={ghostButtonStyle}>导入</Button>
+      <Button icon={<IconCopy />} type="tertiary" size="small" onClick={handleCopy} style={ghostButtonStyle}>复制</Button>
+      <Button icon={<IconLink />} type="tertiary" size="small" onClick={handleShareLink} style={ghostButtonStyle}>分享</Button>
       <input
         ref={fileInputRef}
         type="file"
@@ -143,4 +159,12 @@ export const Toolbar: React.FC = () => {
       />
     </div>
   );
+};
+
+const ghostButtonStyle: React.CSSProperties = {
+  borderRadius: 999,
+  height: 34,
+  background: 'rgba(255,255,255,0.62)',
+  border: '1px solid var(--theme-border-soft)',
+  color: 'var(--theme-text-secondary)',
 };

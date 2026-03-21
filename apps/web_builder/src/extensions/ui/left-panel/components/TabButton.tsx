@@ -18,7 +18,6 @@ export const TabButton: React.FC<TabButtonProps> = ({
 
   // 使用CSS变量获取主题色
   const primaryColor = 'var(--theme-primary)';
-  const primaryLight = 'var(--theme-primary-light-bg)';
 
   return (
     <Button
@@ -32,16 +31,20 @@ export const TabButton: React.FC<TabButtonProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '4px',
-        borderRadius: 0,
-        borderLeft: isActive ? `3px solid ${primaryColor}` : '3px solid transparent',
+        borderRadius: 18,
+        borderLeft: 'none',
         padding: '0',
-        backgroundColor: isActive ? primaryLight : 'transparent',
-        color: isActive ? primaryColor : '#666',
+        margin: '0 8px',
+        background: isActive ? 'var(--theme-gradient-panel)' : 'rgba(255,255,255,0.36)',
+        color: isActive ? primaryColor : 'var(--theme-text-secondary)',
+        border: isActive ? `1px solid var(--theme-border-glow)` : '1px solid transparent',
+        boxShadow: isActive ? 'var(--theme-shadow-sm)' : 'none',
+        backdropFilter: 'blur(var(--theme-backdrop-blur))',
       }}
       onClick={() => setActiveTab(tabId)}
     >
       <Icon />
-      <span style={{ fontSize: '12px' }}>{title}</span>
+      <span style={{ fontSize: '12px', fontWeight: isActive ? 700 : 500 }}>{title}</span>
     </Button>
   );
 };

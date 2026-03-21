@@ -70,9 +70,9 @@ export const PropertiesPanel: React.FC = () => {
 
   if (!selectedNode) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
-          <Typography.Title heading={6} style={{ margin: 0 }}>属性配置</Typography.Title>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'transparent' }}>
+        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--theme-divider)' }}>
+          <Typography.Title heading={6} style={{ margin: 0, color: 'var(--theme-text-primary)' }}>属性配置</Typography.Title>
         </div>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Empty description="请选择单个组件" />
@@ -86,39 +86,50 @@ export const PropertiesPanel: React.FC = () => {
   const headerTitle = useMemo(() => (isRootSchema ? '根容器' : selectedNode.name), [isRootSchema, selectedNode.name]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'transparent' }}>
       {/* 组件信息 */}
       <div style={{
-        padding: '8px 12px',
-        borderBottom: '1px solid #e0e0e0',
+        padding: '16px 16px 14px',
+        borderBottom: '1px solid var(--theme-divider)',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.46) 100%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.72)',
       }}>
         <span style={{
           display: 'inline-block',
-          padding: '2px 8px',
-          borderRadius: 4,
-          background: 'var(--theme-primary-light, #fff3e8)',
-          color: 'var(--theme-primary, #e07a3f)',
+          padding: '4px 10px',
+          borderRadius: 999,
+          background: 'var(--theme-gradient-accent)',
+          color: '#fff',
           fontSize: 12,
-          fontWeight: 600,
+          fontWeight: 700,
+          boxShadow: 'var(--theme-shadow-sm)',
         }}>
           {selectedNode.type}
         </span>
-        <Typography.Text style={{ fontSize: 13, color: '#333' }}>
+        <Typography.Text style={{ fontSize: 13, color: 'var(--theme-text-primary)', fontWeight: 700 }}>
           {headerTitle}
         </Typography.Text>
-        <Typography.Text style={{ fontSize: 11, color: '#999', marginLeft: 'auto' }}>
+        <Typography.Text style={{ fontSize: 11, color: 'var(--theme-text-secondary)', marginLeft: 'auto' }}>
           {selectedNode.id}
         </Typography.Text>
       </div>
 
       {/* 属性/样式选项卡 */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <Tabs type="line" size="small" style={{ padding: '0 12px' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+        <Tabs
+          type="line"
+          size="small"
+          style={{
+            padding: '0 4px',
+            background: 'rgba(255,255,255,0.38)',
+            borderRadius: 22,
+          }}
+        >
           <TabPane tab="属性" itemKey="props">
-            <div style={{ padding: '8px 0' }}>
+            <div style={{ padding: '12px 0' }}>
               {config ? (
                 <PropertyForm
                   schema={selectedNode}
@@ -131,14 +142,14 @@ export const PropertiesPanel: React.FC = () => {
             </div>
           </TabPane>
           <TabPane tab="样式" itemKey="style">
-            <div style={{ padding: '8px 0' }}>
+            <div style={{ padding: '12px 0' }}>
               <StyleForm schema={selectedNode} onUpdate={handlePropsUpdate} />
             </div>
           </TabPane>
           <TabPane tab="Schema" itemKey="schema">
-            <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <MonacoSchemaEditor value={schemaText} onChange={handleSchemaChange} />
-              <div style={{ fontSize: 12, color: schemaError ? '#d84a1b' : '#999' }}>
+              <div style={{ fontSize: 12, color: schemaError ? 'var(--theme-error)' : 'var(--theme-text-secondary)' }}>
                 {schemaError ?? '编辑当前选中组件的 Schema，合法 JSON 会实时同步到画布'}
               </div>
             </div>

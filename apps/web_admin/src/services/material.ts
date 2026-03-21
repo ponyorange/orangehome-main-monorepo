@@ -5,6 +5,7 @@ import type {
   UpdateMaterialParams,
   MaterialListResponse,
   MaterialQueryParams,
+  PresignedUploadBody,
   PresignedUploadResponse,
 } from '@/types/material';
 import type { MaterialVersionListResponse } from '@/types/materialVersion';
@@ -69,17 +70,17 @@ export const materialApi = {
   /**
    * 获取物料版本列表
    */
-  async getVersions(materialId: string): Promise<ApiResponse<MaterialVersionListResponse>> {
+  async getVersions(materialId: string): Promise<MaterialVersionListResponse> {
     return request<MaterialVersionListResponse>(API_ENDPOINTS.MATERIAL.VERSIONS(materialId), { method: 'GET' });
   },
 
   /**
-   * 获取预签名上传URL
+   * 获取预签名上传 URL（PUT 直传 MinIO，创建版本时使用返回的 objectKey）
    */
-  async getPresignedUploadUrl(fileName: string, fileType: string): Promise<ApiResponse<PresignedUploadResponse>> {
+  async getPresignedUploadUrl(body: PresignedUploadBody): Promise<PresignedUploadResponse> {
     return request<PresignedUploadResponse>(API_ENDPOINTS.MATERIAL.PRESIGNED_UPLOAD, {
       method: 'POST',
-      body: JSON.stringify({ fileName, fileType }),
+      body: JSON.stringify(body),
     });
   },
 };

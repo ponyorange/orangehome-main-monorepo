@@ -31,7 +31,8 @@ export const AlignmentGuides: React.FC<AlignmentGuidesProps> = ({ lines, canvasW
                 width: canvasWidth,
                 height: 0,
                 borderTop: '1px dashed var(--theme-primary, #e07a3f)',
-                opacity: 0.7,
+                opacity: 0.95,
+                filter: 'drop-shadow(0 0 8px var(--theme-primary-light))',
               }}
             />
           );
@@ -46,7 +47,8 @@ export const AlignmentGuides: React.FC<AlignmentGuidesProps> = ({ lines, canvasW
               height: canvasHeight,
               width: 0,
               borderLeft: '1px dashed var(--theme-primary, #e07a3f)',
-              opacity: 0.7,
+              opacity: 0.95,
+              filter: 'drop-shadow(0 0 8px var(--theme-primary-light))',
             }}
           />
         );

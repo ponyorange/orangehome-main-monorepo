@@ -11,14 +11,32 @@ export const EditorView: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        background: 'var(--theme-gradient-page)',
+        color: 'var(--theme-text-primary)',
+        padding: 14,
+        gap: 14,
+        boxSizing: 'border-box',
+      }}
+    >
       {/* Header */}
-      <header style={{
-        background: '#fff',
-        borderBottom: '1px solid #e0e0e0',
-        height: '56px',
-        flexShrink: 0,
-      }}>
+      <header
+        style={{
+          background: 'var(--theme-gradient-panel)',
+          border: '1px solid var(--theme-border-soft)',
+          boxShadow: 'var(--theme-shadow-md)',
+          backdropFilter: 'blur(var(--theme-backdrop-blur))',
+          height: '64px',
+          flexShrink: 0,
+          borderRadius: 24,
+          overflow: 'hidden',
+        }}
+      >
         <SlotRenderer
           slotName="header"
           style={{ height: '100%', alignItems: 'center' }}
@@ -26,16 +44,20 @@ export const EditorView: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', gap: 14, minHeight: 0 }}>
         {/* Left Panel - 竖向Tab设计 */}
         <aside
           style={{
             width: '280px',
-            background: '#fff',
-            borderRight: '1px solid #e0e0e0',
+            background: 'var(--theme-gradient-panel)',
+            border: '1px solid var(--theme-border-soft)',
+            boxShadow: 'var(--theme-shadow-md)',
+            backdropFilter: 'blur(var(--theme-backdrop-blur))',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
+            borderRadius: 28,
+            overflow: 'hidden',
           }}
         >
           <SlotRenderer
@@ -46,10 +68,14 @@ export const EditorView: React.FC = () => {
 
         {/* Center Canvas */}
         <main style={{
-          background: '#f5f5f5',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.12) 100%)',
+          border: '1px solid var(--theme-border-soft)',
+          boxShadow: 'var(--theme-shadow-lg)',
+          backdropFilter: 'blur(calc(var(--theme-backdrop-blur) * 0.65))',
           position: 'relative',
           overflow: 'hidden',
           flex: 1,
+          borderRadius: 32,
         }}>
           <SlotRenderer slotName="center" style={{ height: '100%' }} />
         </main>
@@ -58,11 +84,15 @@ export const EditorView: React.FC = () => {
         <aside
           style={{
             width: '300px',
-            background: '#fff',
-            borderLeft: '1px solid #e0e0e0',
+            background: 'var(--theme-gradient-panel)',
+            border: '1px solid var(--theme-border-soft)',
+            boxShadow: 'var(--theme-shadow-md)',
+            backdropFilter: 'blur(var(--theme-backdrop-blur))',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
+            borderRadius: 28,
+            overflow: 'hidden',
           }}
         >
           <SlotRenderer

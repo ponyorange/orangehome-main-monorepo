@@ -37,6 +37,18 @@ export const Ruler: React.FC<RulerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const isHorizontal = direction === 'horizontal';
   const [forceUpdate, setForceUpdate] = useState(0);
+
+  const getThemeVars = useCallback(() => {
+    const root = document.documentElement;
+    const computedStyle = getComputedStyle(root);
+    return {
+      primary: computedStyle.getPropertyValue('--theme-primary').trim() || '#e07a3f',
+      rulerBg: computedStyle.getPropertyValue('--theme-ruler-bg').trim() || 'rgba(255,255,255,0.7)',
+      border: computedStyle.getPropertyValue('--theme-border').trim() || 'rgba(148,163,184,0.18)',
+      textPrimary: computedStyle.getPropertyValue('--theme-text-primary').trim() || '#101828',
+      textSecondary: computedStyle.getPropertyValue('--theme-text-secondary').trim() || '#667085',
+    };
+  }, []);
   
   // 强制重新绘制
   const redraw = useCallback(() => {
@@ -94,12 +106,14 @@ export const Ruler: React.FC<RulerProps> = ({
     // 清除画布
     ctx.clearRect(0, 0, containerWidth, containerHeight);
     
+    const themeVars = getThemeVars();
+
     // 绘制背景
-    ctx.fillStyle = '#f5f5f5';
+    ctx.fillStyle = themeVars.rulerBg;
     ctx.fillRect(0, 0, containerWidth, containerHeight);
     
     // 绘制边框
-    ctx.strokeStyle = '#d9d9d9';
+    ctx.strokeStyle = themeVars.border;
     ctx.lineWidth = 1;
     ctx.beginPath();
     if (isHorizontal) {
@@ -161,15 +175,8 @@ export const Ruler: React.FC<RulerProps> = ({
       drawTick(ctx, maxValue, endPos, containerWidth, containerHeight, isHorizontal, tickInterval, true);
     }
     
-  }, [isHorizontal, canvasWidth, canvasHeight, zoom, scrollX, scrollY, tickInterval, forceUpdate]);
+  }, [isHorizontal, canvasWidth, canvasHeight, zoom, scrollX, scrollY, tickInterval, forceUpdate, getThemeVars]);
   
-  // 获取当前主题色
-  const getThemeColor = () => {
-    const root = document.documentElement;
-    const computedStyle = getComputedStyle(root);
-    return computedStyle.getPropertyValue('--theme-primary').trim() || '#e07a3f';
-  };
-
   // 绘制单个刻度
   const drawTick = (
     ctx: CanvasRenderingContext2D,
@@ -182,10 +189,11 @@ export const Ruler: React.FC<RulerProps> = ({
     isEndTick: boolean = false
   ) => {
     const isMajor = isEndTick || (value / tickInterval) % 2 === 0;
-    const primaryColor = getThemeColor();
+    const themeVars = getThemeVars();
+    const primaryColor = themeVars.primary;
 
     // 刻度线样式（末尾刻度用主题色突出显示）
-    ctx.strokeStyle = isEndTick ? primaryColor : (isMajor ? '#8c8c8c' : '#bfbfbf');
+    ctx.strokeStyle = isEndTick ? primaryColor : (isMajor ? themeVars.textSecondary : 'rgba(152, 162, 179, 0.9)');
     ctx.lineWidth = isEndTick ? 2 : 1;
     ctx.beginPath();
 
@@ -205,7 +213,7 @@ export const Ruler: React.FC<RulerProps> = ({
 
     // 绘制刻度值（主刻度或末尾刻度显示）
     if (isMajor || isEndTick) {
-      ctx.fillStyle = isEndTick ? primaryColor : (value === 0 ? primaryColor : '#595959');
+      ctx.fillStyle = isEndTick ? primaryColor : (value === 0 ? primaryColor : themeVars.textPrimary);
       ctx.font = (isEndTick || value === 0)
         ? 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         : '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';

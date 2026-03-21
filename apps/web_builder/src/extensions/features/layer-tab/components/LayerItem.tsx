@@ -49,7 +49,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
       return { boxShadow: 'inset 0 -2px 0 var(--theme-primary)' };
     }
     if (dropPosition === 'inside') {
-      return { background: 'var(--theme-primary-light, #fff3e8)' };
+      return { background: 'var(--theme-surface-accent)' };
     }
     return {};
   }, [dropPosition]);
@@ -99,10 +99,12 @@ export const LayerItem: React.FC<LayerItemProps> = ({
         gap: 6,
         padding: '6px 8px',
         marginLeft: node.level * 16,
-        borderRadius: 6,
+        borderRadius: 16,
         cursor: 'pointer',
-        background: isSelected ? 'var(--theme-primary-light, #fff3e8)' : 'transparent',
-        color: '#333',
+        background: isSelected ? 'var(--theme-gradient-panel)' : 'transparent',
+        border: isSelected ? '1px solid var(--theme-border-glow)' : '1px solid transparent',
+        boxShadow: isSelected ? 'var(--theme-shadow-sm)' : 'none',
+        color: 'var(--theme-text-primary)',
         userSelect: 'none',
         ...dropIndicatorStyle,
       }}
@@ -130,7 +132,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
           background: 'transparent',
           padding: 0,
           cursor: node.children.length > 0 ? 'pointer' : 'default',
-          color: '#999',
+          color: 'var(--theme-text-disabled)',
           flexShrink: 0,
         }}
       >
@@ -141,7 +143,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
         style={{
           minWidth: 32,
           fontSize: 11,
-          color: '#888',
+          color: 'var(--theme-text-secondary)',
           fontFamily: 'monospace',
           flexShrink: 0,
         }}
@@ -156,6 +158,7 @@ export const LayerItem: React.FC<LayerItemProps> = ({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           fontSize: 12,
+          fontWeight: isSelected ? 700 : 500,
         }}
       >
         {node.name}

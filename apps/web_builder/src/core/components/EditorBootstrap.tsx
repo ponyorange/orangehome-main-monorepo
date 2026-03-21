@@ -82,7 +82,7 @@ const FullPageState: React.FC<FullPageStateProps> = ({ title, description, extra
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(180deg, #fff8fb 0%, #f7f8ff 100%)',
+      background: 'var(--theme-gradient-page)',
       padding: 24,
       boxSizing: 'border-box',
     }}
@@ -92,9 +92,11 @@ const FullPageState: React.FC<FullPageStateProps> = ({ title, description, extra
         width: 420,
         maxWidth: '100%',
         padding: 28,
-        borderRadius: 24,
-        background: '#fff',
-        boxShadow: '0 24px 60px rgba(37, 41, 89, 0.10)',
+        borderRadius: 28,
+        background: 'var(--theme-gradient-panel)',
+        border: '1px solid var(--theme-border-soft)',
+        boxShadow: 'var(--theme-shadow-lg)',
+        backdropFilter: 'blur(var(--theme-backdrop-blur))',
       }}
     >
       <Empty

@@ -9,7 +9,7 @@ const { TabPane } = Tabs;
 const gridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: 8,
+  gap: 10,
   padding: 12,
 };
 
@@ -28,13 +28,17 @@ export const ComponentPanel: React.FC = () => {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+      <div style={{ padding: '12px', borderBottom: '1px solid var(--theme-divider)' }}>
         <Input
           prefix={<IconSearch />}
           placeholder="搜索组件..."
           size="small"
           value={search}
           onChange={(v) => setSearch(v)}
+          style={{
+            borderRadius: 16,
+            background: 'rgba(255,255,255,0.72)',
+          }}
         />
       </div>
 

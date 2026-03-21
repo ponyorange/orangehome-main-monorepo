@@ -1,44 +1,50 @@
 /**
- * 物料版本类型定义
+ * 物料版本类型定义（与 core-service material_versions 及 HTTP 响应一致）
  */
 export interface MaterialVersion {
-  id: string;
+  _id?: string;
+  id?: string;
   materialId: string;
-  materialName?: string;
   version: string;
-  description?: string;
-  fileUrl: string;
-  fileSize?: number;
-  fileType?: string;
-  thumbnail?: string;
-  status: 'draft' | 'published' | 'deprecated';
-  publishedAt?: string;
-  publishedBy?: string;
-  createdAt: string;
-  updatedAt: string;
+  versionCode?: number;
+  changelog?: string;
+  fileObjectKey: string;
+  fileUrl?: string;
+  sourceObjectKey?: string;
+  sourceUrl?: string;
+  size?: number;
+  md5?: string;
+  /** 0 开发中 1 测试中 2 已发布 */
+  status: number;
+  isPublished?: boolean;
+  releaseTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
- * 创建物料版本参数
+ * 创建物料版本参数（CreateMaterialVersionDto）
  */
 export interface CreateMaterialVersionParams {
   materialId: string;
   version: string;
-  description?: string;
-  fileUrl: string;
-  fileSize?: number;
-  fileType?: string;
-  thumbnail?: string;
+  changelog?: string;
+  /** 上传完成后的 MinIO 对象键（非访问 URL） */
+  fileObjectKey: string;
+  sourceObjectKey?: string;
+  editorConfig?: Record<string, unknown>;
+  dependencies?: Array<Record<string, string>>;
+  md5?: string;
 }
 
 /**
- * 物料版本列表响应
+ * 物料版本列表响应（GET /materials/:materialId/versions）
  */
 export interface MaterialVersionListResponse {
-  items: MaterialVersion[];
+  data: MaterialVersion[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
 }
 
 /**

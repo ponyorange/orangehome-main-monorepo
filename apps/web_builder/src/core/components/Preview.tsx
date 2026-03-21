@@ -23,26 +23,42 @@ export const Preview: React.FC = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#f5f5f5',
+        background: 'var(--theme-gradient-page)',
+        padding: 14,
+        boxSizing: 'border-box',
+        gap: 14,
       }}
     >
       <div
         style={{
-          height: 56,
+          height: 64,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 16px',
-          background: '#fff',
-          borderBottom: '1px solid #e0e0e0',
+          padding: '0 18px',
+          background: 'var(--theme-gradient-panel)',
+          border: '1px solid var(--theme-border-soft)',
+          borderRadius: 24,
+          boxShadow: 'var(--theme-shadow-md)',
+          backdropFilter: 'blur(var(--theme-backdrop-blur))',
           flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Button icon={<IconArrowLeft />} theme="borderless" type="tertiary" onClick={closePreview}>
+          <Button
+            icon={<IconArrowLeft />}
+            theme="borderless"
+            type="tertiary"
+            onClick={closePreview}
+            style={{
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.62)',
+              border: '1px solid var(--theme-border-soft)',
+            }}
+          >
             返回编辑
           </Button>
-          <span style={{ fontSize: 13, color: '#666' }}>预览模式</span>
+          <span style={{ fontSize: 13, color: 'var(--theme-text-secondary)', fontWeight: 600 }}>预览模式</span>
         </div>
 
         <div style={{ width: 120 }}>
@@ -62,6 +78,10 @@ export const Preview: React.FC = () => {
           justifyContent: 'center',
           alignItems: 'center',
           padding: 24,
+          borderRadius: 32,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%)',
+          border: '1px solid var(--theme-border-soft)',
+          boxShadow: 'var(--theme-shadow-lg)',
         }}
       >
         <div
@@ -70,13 +90,31 @@ export const Preview: React.FC = () => {
             height: deviceSize.height,
             maxWidth: '100%',
             maxHeight: '100%',
-            background: '#fff',
-            borderRadius: device === 'desktop' ? 0 : 20,
-            boxShadow: device === 'desktop' ? 'none' : '0 10px 30px rgba(0,0,0,0.12)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 100%)',
+            border: '1px solid var(--theme-border-soft)',
+            borderRadius: device === 'desktop' ? 28 : 28,
+            boxShadow: device === 'desktop' ? 'var(--theme-shadow-md)' : 'var(--theme-shadow-lg)',
             overflow: 'auto',
             position: 'relative',
+            paddingTop: device === 'desktop' ? 0 : 18,
+            boxSizing: 'border-box',
           }}
         >
+          {device !== 'desktop' ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: '50%',
+                width: 92,
+                height: 6,
+                transform: 'translateX(-50%)',
+                borderRadius: 999,
+                background: 'rgba(15,23,42,0.12)',
+                zIndex: 2,
+              }}
+            />
+          ) : null}
           <SchemaNode schema={schema} />
         </div>
       </div>

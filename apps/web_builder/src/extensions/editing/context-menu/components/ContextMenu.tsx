@@ -133,11 +133,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
         left: adjustedX,
         top: adjustedY,
         zIndex: 10000,
-        background: '#fff',
-        borderRadius: 6,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-        padding: '4px 0',
-        minWidth: 180,
+        background: 'var(--theme-gradient-panel)',
+        border: '1px solid var(--theme-border-soft)',
+        borderRadius: 18,
+        boxShadow: 'var(--theme-shadow-lg)',
+        backdropFilter: 'blur(var(--theme-backdrop-blur))',
+        padding: '6px',
+        minWidth: 204,
         fontSize: 13,
         userSelect: 'none',
       }}
@@ -150,24 +152,29 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '6px 12px',
+              padding: '10px 12px',
               cursor: item.disabled ? 'default' : 'pointer',
-              color: item.disabled ? '#bbb' : '#333',
+              color: item.disabled ? 'var(--theme-text-disabled)' : 'var(--theme-text-primary)',
               background: 'transparent',
-              transition: 'background 0.15s',
+              borderRadius: 12,
+              transition: 'background 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={(e) => {
-              if (!item.disabled) (e.currentTarget as HTMLDivElement).style.background = '#f0f0f0';
+              if (!item.disabled) {
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.76)';
+                (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--theme-shadow-sm)';
+              }
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+              (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
             }}
           >
             <span>{item.label}</span>
-            <span style={{ color: '#aaa', fontSize: 12, marginLeft: 24 }}>{item.shortcut}</span>
+            <span style={{ color: 'var(--theme-text-secondary)', fontSize: 12, marginLeft: 24 }}>{item.shortcut}</span>
           </div>
           {item.dividerAfter && i < menuItems.length - 1 && (
-            <div style={{ height: 1, background: '#eee', margin: '4px 8px' }} />
+            <div style={{ height: 1, background: 'var(--theme-divider)', margin: '6px 8px' }} />
           )}
         </React.Fragment>
       ))}

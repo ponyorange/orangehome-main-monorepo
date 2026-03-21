@@ -15,6 +15,12 @@ export const UndoRedoButtons: React.FC = () => {
         theme="borderless"
         disabled={!canUndo}
         onClick={undo}
+        style={{
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.62)',
+          border: '1px solid var(--theme-border-soft)',
+          color: 'var(--theme-text-secondary)',
+        }}
       />
       <Button
         icon={<IconRedo />}
@@ -23,6 +29,12 @@ export const UndoRedoButtons: React.FC = () => {
         theme="borderless"
         disabled={!canRedo}
         onClick={redo}
+        style={{
+          borderRadius: 999,
+          background: 'rgba(255,255,255,0.62)',
+          border: '1px solid var(--theme-border-soft)',
+          color: 'var(--theme-text-secondary)',
+        }}
       />
     </>
   );

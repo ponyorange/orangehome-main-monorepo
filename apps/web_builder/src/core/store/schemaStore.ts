@@ -207,8 +207,10 @@ const createDemoSchema = (): ISchema => ({
         margin: '0 16px',
         padding: '22px 18px 20px',
         borderRadius: 32,
-        background: 'linear-gradient(135deg, #ffe3f5 0%, #e9ddff 45%, #dff5ff 100%)',
-        boxShadow: '0 20px 60px rgba(83, 48, 186, 0.16)',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.86) 0%, rgba(249,244,255,0.70) 48%, rgba(239,248,255,0.72) 100%)',
+        border: '1px solid rgba(255,255,255,0.72)',
+        boxShadow: '0 28px 80px rgba(83, 48, 186, 0.14)',
+        backdropFilter: 'blur(18px)',
         overflow: 'hidden',
       }
     ),
@@ -301,8 +303,10 @@ const createDemoSchema = (): ISchema => ({
         margin: '18px 16px 0',
         padding: 22,
         borderRadius: 30,
-        background: '#ffffff',
-        boxShadow: '0 16px 40px rgba(16,24,40,0.08)',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(248,250,255,0.74) 100%)',
+        border: '1px solid rgba(255,255,255,0.72)',
+        boxShadow: '0 24px 64px rgba(16,24,40,0.08)',
+        backdropFilter: 'blur(18px)',
       }
     ),
     createContainer(
@@ -368,8 +372,10 @@ const createDemoSchema = (): ISchema => ({
         margin: '18px 16px 0',
         padding: 22,
         borderRadius: 30,
-        background: 'linear-gradient(135deg, #18122b 0%, #2d1f62 52%, #4729a8 100%)',
-        boxShadow: '0 18px 42px rgba(71, 41, 168, 0.24)',
+        background: 'linear-gradient(135deg, rgba(17,24,39,0.92) 0%, rgba(36,32,92,0.90) 52%, rgba(65,57,160,0.88) 100%)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        boxShadow: '0 24px 80px rgba(56, 31, 140, 0.28)',
+        backdropFilter: 'blur(18px)',
       }
     ),
     createContainer(
@@ -404,8 +410,10 @@ const createDemoSchema = (): ISchema => ({
         margin: '18px 16px 24px',
         padding: 22,
         borderRadius: 30,
-        background: '#ffffff',
-        boxShadow: '0 16px 40px rgba(16,24,40,0.08)',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(250,247,255,0.74) 100%)',
+        border: '1px solid rgba(255,255,255,0.72)',
+        boxShadow: '0 24px 64px rgba(16,24,40,0.08)',
+        backdropFilter: 'blur(18px)',
       }
     ),
   ],
@@ -415,7 +423,7 @@ const createDemoSchema = (): ISchema => ({
       minHeight: '100%',
       boxSizing: 'border-box',
       padding: '20px 0 32px',
-      background: 'linear-gradient(180deg, #fff6fb 0%, #f6f7ff 42%, #fffdf8 100%)',
+      background: 'radial-gradient(circle at top left, rgba(255, 184, 213, 0.22), transparent 26%), radial-gradient(circle at top right, rgba(166, 199, 255, 0.18), transparent 24%), linear-gradient(180deg, #fff9fc 0%, #f7f8ff 42%, #f9fbff 100%)',
     },
   },
 });

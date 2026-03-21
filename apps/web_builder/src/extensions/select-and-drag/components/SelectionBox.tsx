@@ -53,6 +53,8 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         width: width + 2,
         height: height + 2,
         border: '1px solid var(--theme-primary)',
+        borderRadius: 14,
+        boxShadow: '0 0 0 4px var(--theme-primary-light), 0 12px 24px rgba(79, 124, 255, 0.12)',
         pointerEvents: 'none',
         zIndex: 1000,
       }}
@@ -62,14 +64,16 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       <div
         style={{
           position: 'absolute',
-          top: -22,
-          left: -1,
-          background: 'var(--theme-primary)',
+          top: -26,
+          left: 4,
+          background: 'var(--theme-gradient-accent)',
           color: '#fff',
           fontSize: 11,
-          padding: '2px 6px',
-          borderRadius: '2px 2px 2px 0',
+          fontWeight: 700,
+          padding: '4px 10px',
+          borderRadius: 999,
           whiteSpace: 'nowrap',
+          boxShadow: 'var(--theme-shadow-sm)',
         }}
       >
         {componentId}
@@ -79,14 +83,16 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       <div
         style={{
           position: 'absolute',
-          bottom: -22,
-          right: -1,
-          background: 'var(--theme-primary)',
+          bottom: -26,
+          right: 4,
+          background: 'rgba(16,24,40,0.82)',
           color: '#fff',
           fontSize: 11,
-          padding: '2px 6px',
-          borderRadius: '2px 0 2px 2px',
+          fontWeight: 700,
+          padding: '4px 10px',
+          borderRadius: 999,
           whiteSpace: 'nowrap',
+          boxShadow: 'var(--theme-shadow-sm)',
         }}
       >
         {Math.round(width)} x {Math.round(height)}
@@ -102,12 +108,13 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
             position: 'absolute',
             width: HANDLE_SIZE,
             height: HANDLE_SIZE,
-            background: '#fff',
+            background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.78) 100%)',
             border: '1px solid var(--theme-primary)',
             borderRadius: '50%',
             cursor,
             pointerEvents: 'auto',
             zIndex: 1001,
+            boxShadow: '0 0 0 2px rgba(255,255,255,0.85), 0 4px 10px rgba(79, 124, 255, 0.18)',
             ...style,
           }}
         />

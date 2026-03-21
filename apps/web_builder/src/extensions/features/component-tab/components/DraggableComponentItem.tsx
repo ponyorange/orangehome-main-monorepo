@@ -27,29 +27,33 @@ export const DraggableComponentItem: React.FC<Props> = ({ item }) => {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 4,
-        padding: '12px 4px',
-        borderRadius: 6,
-        border: '1px solid #eee',
+        padding: '14px 8px',
+        borderRadius: 20,
+        border: '1px solid var(--theme-border-soft)',
         cursor: 'grab',
         userSelect: 'none',
-        transition: 'all 0.15s',
-        background: '#fff',
+        transition: 'all 0.18s ease',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.68) 100%)',
+        boxShadow: 'var(--theme-shadow-sm)',
+        backdropFilter: 'blur(var(--theme-backdrop-blur))',
       }}
       onMouseEnter={(e) => {
         const t = e.currentTarget;
-        t.style.background = 'var(--theme-primary-light-bg, #fff7f0)';
-        t.style.borderColor = 'var(--theme-primary, #fa8c35)';
-        t.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+        t.style.background = 'var(--theme-gradient-panel)';
+        t.style.borderColor = 'var(--theme-border-glow)';
+        t.style.boxShadow = 'var(--theme-shadow-md)';
+        t.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
         const t = e.currentTarget;
-        t.style.background = '#fff';
-        t.style.borderColor = '#eee';
-        t.style.boxShadow = 'none';
+        t.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.68) 100%)';
+        t.style.borderColor = 'var(--theme-border-soft)';
+        t.style.boxShadow = 'var(--theme-shadow-sm)';
+        t.style.transform = 'translateY(0)';
       }}
     >
-      <span style={{ fontSize: 22, lineHeight: 1 }}>{item.icon}</span>
-      <span style={{ fontSize: 12, color: '#666' }}>{item.name}</span>
+      <span style={{ fontSize: 22, lineHeight: 1, color: 'var(--theme-primary)' }}>{item.icon}</span>
+      <span style={{ fontSize: 12, color: 'var(--theme-text-secondary)', fontWeight: 600 }}>{item.name}</span>
     </div>
   );
 };

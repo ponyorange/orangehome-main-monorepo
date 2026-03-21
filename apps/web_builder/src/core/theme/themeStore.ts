@@ -69,9 +69,29 @@ function applyThemeToCSS(theme: Theme) {
   root.style.setProperty('--theme-background', colors.background);
   root.style.setProperty('--theme-background-card', colors.backgroundCard);
   root.style.setProperty('--theme-background-hover', colors.backgroundHover);
+  root.style.setProperty('--theme-surface-base', colors.surfaceBase);
+  root.style.setProperty('--theme-surface-panel', colors.surfacePanel);
+  root.style.setProperty('--theme-surface-panel-solid', colors.surfacePanelSolid);
+  root.style.setProperty('--theme-surface-glass', colors.surfaceGlass);
+  root.style.setProperty('--theme-surface-overlay', colors.surfaceOverlay);
+  root.style.setProperty('--theme-surface-accent', colors.surfaceAccent);
 
   root.style.setProperty('--theme-border', colors.border);
   root.style.setProperty('--theme-divider', colors.divider);
+  root.style.setProperty('--theme-border-soft', colors.borderSoft);
+  root.style.setProperty('--theme-border-strong', colors.borderStrong);
+  root.style.setProperty('--theme-border-glow', colors.borderGlow);
+
+  root.style.setProperty('--theme-shadow-sm', colors.shadowSm);
+  root.style.setProperty('--theme-shadow-md', colors.shadowMd);
+  root.style.setProperty('--theme-shadow-lg', colors.shadowLg);
+  root.style.setProperty('--theme-gradient-page', colors.gradientPage);
+  root.style.setProperty('--theme-gradient-panel', colors.gradientPanel);
+  root.style.setProperty('--theme-gradient-accent', colors.gradientAccent);
+  root.style.setProperty('--theme-grid-line', colors.gridLine);
+  root.style.setProperty('--theme-ruler-bg', colors.rulerBg);
+  root.style.setProperty('--theme-scrollbar-thumb', colors.scrollbarThumb);
+  root.style.setProperty('--theme-backdrop-blur', colors.backdropBlur);
 
   root.style.setProperty('--theme-success', colors.success);
   root.style.setProperty('--theme-warning', colors.warning);

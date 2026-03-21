@@ -76,10 +76,16 @@ export interface MaterialListResponse {
 }
 
 /**
- * 获取预签名上传URL响应
+ * 获取预签名上传 URL 响应（与 core-service 一致：客户端 PUT 到 url，创建版本时传 objectKey）
  */
 export interface PresignedUploadResponse {
-  uploadUrl: string;
-  fileUrl: string;
+  url: string;
+  objectKey: string;
   expiresIn: number;
+}
+
+export interface PresignedUploadBody {
+  materialId: string;
+  version: string;
+  filename?: string;
 }

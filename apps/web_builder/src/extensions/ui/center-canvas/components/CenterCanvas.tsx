@@ -163,32 +163,52 @@ export const CenterCanvas: React.FC = () => {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)',
       }}>
         {/* 顶部工具栏 */}
         <header style={{
-          height: 40,
-          borderBottom: '1px solid #e0e0e0',
-          background: '#fafafa',
+          height: 48,
+          margin: '10px 12px 0',
+          border: '1px solid var(--theme-border-soft)',
+          background: 'rgba(255,255,255,0.56)',
+          backdropFilter: 'blur(var(--theme-backdrop-blur))',
+          borderRadius: 18,
+          boxShadow: 'var(--theme-shadow-sm)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 12px',
+          padding: '0 14px',
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: 12, color: primaryColor, fontWeight: 500 }}>
+          <span style={{ fontSize: 12, color: 'var(--theme-text-secondary)', fontWeight: 600, letterSpacing: 0.2 }}>
             画布: {CANVAS_WIDTH}x{CANVAS_HEIGHT}
           </span>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 6px',
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.72)',
+              border: '1px solid var(--theme-border-soft)',
+            }}
+          >
             <Button
               icon={<IconMinus />}
               size="small"
               theme="solid"
               type="tertiary"
-              style={{ color: primaryColor, backgroundColor: 'transparent' }}
+              style={{
+                color: primaryColor,
+                backgroundColor: 'rgba(255,255,255,0.72)',
+                borderRadius: 999,
+                boxShadow: 'var(--theme-shadow-sm)',
+              }}
               onClick={zoomOut}
             />
-            <span style={{ fontSize: 12, color: primaryColor, fontWeight: 500, minWidth: 50, textAlign: 'center' }}>
+            <span style={{ fontSize: 12, color: 'var(--theme-text-primary)', fontWeight: 700, minWidth: 52, textAlign: 'center' }}>
               {formatZoomPercent(zoom)}
             </span>
             <Button
@@ -196,7 +216,12 @@ export const CenterCanvas: React.FC = () => {
               size="small"
               theme="solid"
               type="tertiary"
-              style={{ color: primaryColor, backgroundColor: 'transparent' }}
+              style={{
+                color: primaryColor,
+                backgroundColor: 'rgba(255,255,255,0.72)',
+                borderRadius: 999,
+                boxShadow: 'var(--theme-shadow-sm)',
+              }}
               onClick={zoomIn}
             />
             <Button
@@ -204,7 +229,12 @@ export const CenterCanvas: React.FC = () => {
               size="small"
               theme="solid"
               type="tertiary"
-              style={{ color: primaryColor, backgroundColor: 'transparent' }}
+              style={{
+                color: primaryColor,
+                backgroundColor: 'rgba(255,255,255,0.72)',
+                borderRadius: 999,
+                boxShadow: 'var(--theme-shadow-sm)',
+              }}
               onClick={resetZoom}
             />
           </div>
@@ -223,13 +253,15 @@ export const CenterCanvas: React.FC = () => {
             flexDirection: 'column',
             flexShrink: 0,
             width: RULER_SIZE,
+            marginTop: 10,
           }}>
             <div style={{
               height: RULER_SIZE,
-              background: '#f5f5f5',
-              borderRight: '1px solid #d9d9d9',
-              borderBottom: '1px solid #d9d9d9',
+              background: 'var(--theme-ruler-bg)',
+              borderRight: '1px solid var(--theme-border)',
+              borderBottom: '1px solid var(--theme-border)',
               flexShrink: 0,
+              borderTopLeftRadius: 14,
             }} />
             <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
               <RulerY canvasHeight={CANVAS_HEIGHT} zoom={zoom} scrollY={scrollY - VERTICAL_OFFSET} />
@@ -242,9 +274,12 @@ export const CenterCanvas: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            marginTop: 10,
+            marginRight: 12,
+            marginBottom: 12,
           }}>
             {/* 标尺 */}
-            <div style={{ flexShrink: 0, height: RULER_SIZE, overflow: 'hidden' }}>
+            <div style={{ flexShrink: 0, height: RULER_SIZE, overflow: 'hidden', borderTopRightRadius: 14 }}>
               <RulerX canvasWidth={CANVAS_WIDTH} zoom={zoom} scrollX={scrollX - canvasLeftOffset} />
             </div>
 
@@ -255,8 +290,11 @@ export const CenterCanvas: React.FC = () => {
               style={{
                 flex: 1,
                 overflow: 'auto',
-                background: '#e0e0e0',
+                background: 'radial-gradient(circle at top, rgba(255,255,255,0.38), transparent 24%), linear-gradient(180deg, rgba(235,241,251,0.96) 0%, rgba(226,234,248,0.78) 100%)',
                 position: 'relative',
+                borderBottomLeftRadius: 24,
+                borderBottomRightRadius: 24,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
               }}
             >
               <div style={{
@@ -274,6 +312,7 @@ export const CenterCanvas: React.FC = () => {
                     top: VERTICAL_OFFSET,
                     width: scaledWidth,
                     height: scaledHeight,
+                    filter: isDragOver ? 'drop-shadow(0 0 18px var(--theme-primary-light))' : 'none',
                   }}
                 >
                   {/* 画布容器 */}
@@ -281,18 +320,29 @@ export const CenterCanvas: React.FC = () => {
                     style={{
                       width: scaledWidth,
                       height: scaledHeight,
-                      background: '#fff',
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 100%)',
+                      border: '1px solid var(--theme-border-soft)',
                       boxShadow: isDragOver
-                        ? '0 0 0 3px var(--theme-primary, #fa8c35), 0 4px 12px rgba(0,0,0,0.15)'
-                        : '0 4px 12px rgba(0,0,0,0.15)',
-                      borderRadius: 4,
+                        ? '0 0 0 3px var(--theme-primary-light), 0 18px 60px rgba(76, 91, 132, 0.20), inset 0 0 0 1px var(--theme-primary)'
+                        : '0 22px 70px rgba(58, 72, 109, 0.16), inset 0 1px 0 rgba(255,255,255,0.82)',
+                      borderRadius: 28,
                       position: 'relative',
                       overflow: 'visible',
-                      transition: 'box-shadow 0.2s',
+                      transition: 'box-shadow 0.2s, filter 0.2s',
                     }}
                   >
                     {/* 网格层 */}
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 0,
+                        pointerEvents: 'none',
+                        opacity: 0.42,
+                        mixBlendMode: 'screen',
+                        borderRadius: 28,
+                      }}
+                    >
                       <Grid width={scaledWidth} height={scaledHeight} gridSize={20} zoom={1} />
                     </div>
 
