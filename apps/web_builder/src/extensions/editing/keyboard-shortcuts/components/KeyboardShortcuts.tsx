@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useSelectionContext } from '../../../../common/components/SchemaRenderer/SelectableSchemaRenderer';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
+import { useSelectionStore } from '../../../../core/store/selectionStore';
 import { useClipboardStore } from '../../../../core/store/clipboardStore';
 import {
   removeById,
@@ -41,27 +42,24 @@ export const KeyboardShortcuts: React.FC = () => {
     if (newNodes.length === 0) return;
 
     let updated = schema;
-    let lastId = '';
 
     if (selectedIds.length > 0) {
       const parentNode = findParentById(schema, selectedIds[0]);
       const targetParentId = parentNode ? parentNode.id : schema.id;
       for (const node of newNodes) {
         updated = addChild(updated, targetParentId, node);
-        lastId = node.id;
       }
     } else {
       for (const node of newNodes) {
         updated = addChild(updated, schema.id, node);
-        lastId = node.id;
       }
     }
 
     setSchema(updated);
-    if (lastId) {
-      clearSelection();
+    if (newNodes.length > 0) {
+      useSelectionStore.getState().setSelectedIds(newNodes.map((n) => n.id));
     }
-  }, [schema, selectedIds, setSchema, paste, hasCopied, clearSelection]);
+  }, [schema, selectedIds, setSchema, paste, hasCopied]);
 
   const handleCut = useCallback(() => {
     handleCopy();

@@ -2,7 +2,7 @@ import React from 'react';
 import type { SchemaComponentProps } from '../../common/components/SchemaRenderer/ComponentManager';
 import { getResolvedInlineStyle } from '../../common/base/schemaOperator';
 
-export const ButtonComponent: React.FC<SchemaComponentProps> = React.memo(({ schema, eventHandlers }) => {
+export const ButtonComponent: React.FC<SchemaComponentProps> = ({ schema, eventHandlers }) => {
   const text = (schema.props?.text as string) ?? '按钮';
   const style = getResolvedInlineStyle(schema) as React.CSSProperties;
 
@@ -23,4 +23,4 @@ export const ButtonComponent: React.FC<SchemaComponentProps> = React.memo(({ sch
       {text}
     </button>
   );
-});
+};

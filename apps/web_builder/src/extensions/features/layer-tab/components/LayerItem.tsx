@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { LayerDropPosition, LayerTreeNode } from '../hooks/useLayerTree';
+import { isBuiltInLayoutContainerType } from '../../../../common/base/schemaLayout';
 
 interface LayerItemProps {
   node: LayerTreeNode;
@@ -15,6 +16,7 @@ interface LayerItemProps {
 }
 
 function getTypeIcon(type: string): string {
+  if (isBuiltInLayoutContainerType(type)) return 'BOX';
   switch (type) {
     case 'Text':
       return 'T';
@@ -22,8 +24,6 @@ function getTypeIcon(type: string): string {
       return 'IMG';
     case 'Button':
       return 'BTN';
-    case 'Container':
-      return 'BOX';
     default:
       return 'CMP';
   }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useSelectionContext } from '../../../../common/components/SchemaRenderer/SelectableSchemaRenderer';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
+import { useSelectionStore } from '../../../../core/store/selectionStore';
 import { useClipboardStore } from '../../../../core/store/clipboardStore';
 import {
   removeById,
@@ -52,10 +53,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
       ? findParentById(schema, selectedIds[0])?.id ?? schema.id
       : schema.id;
 
+    const pastedIds: string[] = [];
     for (const node of newNodes) {
       updated = addChild(updated, pasteTargetId, node);
+      pastedIds.push(node.id);
     }
     setSchema(updated);
+    if (pastedIds.length > 0) {
+      useSelectionStore.getState().setSelectedIds(pastedIds);
+    }
     onClose();
   }, [schema, selectedIds, hasSelection, setSchema, paste, hasCopied, onClose]);
 

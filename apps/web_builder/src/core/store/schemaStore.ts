@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ISchema } from '../../types/base';
 import { generateIdWithPrefix } from '../../utils/id';
+import { ROOT_CONTAINER_MATERIAL_UID } from '../../common/base/schemaLayout';
 import { historyService } from '../../extensions/undo-redo/services/HistoryService';
 
 const createText = (name: string, text: string, style: Record<string, unknown> = {}): ISchema => ({
@@ -43,7 +44,7 @@ const createContainer = (name: string, children: ISchema[], style: Record<string
 const createDemoSchema = (): ISchema => ({
   id: generateIdWithPrefix('root'),
   name: '根节点',
-  type: 'Container',
+  type: ROOT_CONTAINER_MATERIAL_UID,
   children: [
     createContainer(
       '欢迎首屏',

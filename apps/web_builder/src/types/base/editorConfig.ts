@@ -10,6 +10,8 @@ export interface ISchemaEditorConfigPropItem {
   min?: number;
   max?: number;
   step?: number;
+  /** 拖入画布时写入 schema.props[key] 的初始值 */
+  initValue?: unknown;
 }
 
 export interface ISchemaEditorConfig {

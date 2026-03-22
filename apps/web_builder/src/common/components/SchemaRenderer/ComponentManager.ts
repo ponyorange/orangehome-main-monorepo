@@ -2,6 +2,7 @@ import React from 'react';
 import type { ISchema } from '../../../types/base';
 import { loadRemoteComponent } from './utils/remoteLoader';
 import { runtimeContextService } from '../../../core/services/RuntimeContextService';
+import { remoteComponentDebug } from '../../../utils/remoteComponentDebug';
 
 export interface RemoteComponentDefinition {
   /** 通过 RequireJS（AMD）加载的脚本 URL，与 moduleUrl 二选一优先使用 */
@@ -60,16 +61,33 @@ export const ComponentManager = {
    */
   async loadRemote(type: string, definition: RemoteComponentDefinition): Promise<SchemaComponent | null> {
     const cacheKey = `${type}:${getRemoteCacheKey(definition)}`;
-    if (!remoteComponentCache.has(cacheKey)) {
+    const cacheHit = remoteComponentCache.has(cacheKey);
+    remoteComponentDebug('ComponentManager.loadRemote', {
+      type,
+      cacheHit,
+      amdUrl: definition.amdUrl,
+      moduleUrl: definition.moduleUrl,
+      exportName: definition.exportName,
+    });
+    if (!cacheHit) {
       remoteComponentCache.set(
         cacheKey,
         (async () => {
           let component: SchemaComponent | null = null;
           if (definition.amdUrl) {
+            remoteComponentDebug('ComponentManager.loadRemote: 走 AMD → runtimeContextService.loadRemoteMaterial', {
+              type,
+            });
             component = await runtimeContextService.loadRemoteMaterial(type, definition);
           } else {
+            remoteComponentDebug('ComponentManager.loadRemote: 走 ESM/script → loadRemoteComponent', { type });
             component = await loadRemoteComponent(definition);
           }
+          remoteComponentDebug('ComponentManager.loadRemote: 解析结果', {
+            type,
+            ok: Boolean(component),
+            displayName: component?.displayName ?? component?.name,
+          });
           if (component) {
             componentMap[type] = component;
           }

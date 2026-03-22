@@ -31,6 +31,7 @@ function normalizeEditorConfigProps(raw: unknown): ISchemaEditorConfigPropItem[]
       }
       if (options.length === 0) options = undefined;
     }
+    const initValue = 'initValue' in o ? o.initValue : undefined;
     out.push({
       key: key.trim(),
       type: type.trim(),
@@ -40,6 +41,7 @@ function normalizeEditorConfigProps(raw: unknown): ISchemaEditorConfigPropItem[]
       min: typeof o.min === 'number' ? o.min : undefined,
       max: typeof o.max === 'number' ? o.max : undefined,
       step: typeof o.step === 'number' ? o.step : undefined,
+      ...(initValue !== undefined ? { initValue } : {}),
     });
   }
   return out.length > 0 ? out : undefined;

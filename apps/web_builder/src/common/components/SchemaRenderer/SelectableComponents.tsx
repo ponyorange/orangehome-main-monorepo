@@ -1,7 +1,10 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { ISchema } from '../../../types/base';
 import { getResolvedInlineStyle } from '../../base/schemaOperator';
 import { ComponentManager } from './ComponentManager';
+import { useMaterialBundleStore } from '../../../core/store/materialBundleStore';
+import { mergeRemoteDefinition, RemoteSchemaNode } from './BaseComponents';
+import { ROOT_CONTAINER_MATERIAL_UID } from '../../base/schemaLayout';
 import { SelectionBox } from '../../../extensions/select-and-drag/components/SelectionBox';
 import type { ResizeDirection } from '../../../extensions/select-and-drag/hooks/useResize';
 import { useSchemaEventHandlers } from './utils/eventActions';
@@ -39,7 +42,7 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const [boxRect, setBoxRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [localHovered, setLocalHovered] = useState(false);
-  
+
   // 测量真实组件位置和尺寸
   useEffect(() => {
     if (!nodeRef.current || !contentRef.current) return;
@@ -55,14 +58,14 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
       height: Math.round(targetRect.height),
     });
   }, [isSelected, schema]);
-  
+
   // 处理点击
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
     e.stopPropagation();
     onClick?.(schema.id, e);
   }, [schema.id, onClick, selectable]);
-  
+
   // 处理悬停 - 使用本地状态和父状态结合
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
@@ -70,7 +73,7 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
     setLocalHovered(true);
     onMouseEnter?.(schema.id);
   }, [schema.id, onMouseEnter, selectable]);
-  
+
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
     e.stopPropagation();
@@ -95,26 +98,30 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
     e.stopPropagation();
     onResizeStart?.(schema.id, direction, e.clientX, e.clientY, boxRect.width, boxRect.height);
   }, [schema.id, boxRect, onResizeStart]);
-  
-  const Component = ComponentManager.get(schema.type);
+
+  const bundleUrl = useMaterialBundleStore((s) => s.bundles[schema.type]);
+  const LocalComponent = ComponentManager.get(schema.type);
+  const remoteDefinition = useMemo(() => mergeRemoteDefinition(schema, bundleUrl), [schema, bundleUrl]);
+  /** 物料目录有 bundle 时优先 AMD 远程实现，避免 materialUid 与内置 type（如 Button）重名时永远走不到 RemoteSchemaNode */
+  const materialBundleHit = Boolean(bundleUrl?.trim()) && schema.type !== ROOT_CONTAINER_MATERIAL_UID;
   const eventHandlers = useSchemaEventHandlers(schema);
-  
+
   const showHover = selectable && (isHovered || localHovered);
-  
+
   const baseStyle: React.CSSProperties = {
     position: 'relative',
     cursor: selectable ? (isSelected ? 'move' : onClick ? 'pointer' : 'default') : 'default',
     display: 'inline-block',
     verticalAlign: 'top',
   };
-  
+
   const borderStyle: React.CSSProperties = {
     outline: showHover
-        ? '1px dashed var(--theme-primary)'
-        : 'none',
+      ? '1px dashed var(--theme-primary)'
+      : 'none',
     outlineOffset: '-1px',
   };
-  
+
   return (
     <div
       ref={nodeRef}
@@ -128,9 +135,17 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
       onContextMenu={handleContextMenu}
     >
       <div ref={contentRef} style={{ position: 'relative', display: 'inline-block', verticalAlign: 'top' }}>
-        {Component ? <Component schema={schema} eventHandlers={eventHandlers} /> : <div style={{ color: '#999', fontSize: 12 }}>[未知组件: {schema.type}]</div>}
+        {materialBundleHit && remoteDefinition ? (
+          <RemoteSchemaNode schema={schema} />
+        ) : LocalComponent ? (
+          <LocalComponent schema={schema} eventHandlers={eventHandlers} />
+        ) : remoteDefinition ? (
+          <RemoteSchemaNode schema={schema} />
+        ) : (
+          <div style={{ color: '#999', fontSize: 12 }}>[未知组件: {schema.type}]</div>
+        )}
       </div>
-      
+
       {selectable && isSelected && (
         <SelectionBox
           x={boxRect.x}
@@ -180,7 +195,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [localHovered, setLocalHovered] = useState(false);
   const eventHandlers = useSchemaEventHandlers(schema);
-  
+
   // 测量节点尺寸
   useEffect(() => {
     if (nodeRef.current) {
@@ -191,7 +206,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
       });
     }
   }, [isSelected, schema]);
-  
+
   // 处理点击
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
@@ -200,7 +215,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
     eventClick?.(e as React.MouseEvent<HTMLElement>);
     onClick?.(schema.id, e);
   }, [eventHandlers, schema.id, onClick, selectable]);
-  
+
   // 处理悬停
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
@@ -208,7 +223,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
     setLocalHovered(true);
     onMouseEnter?.(schema.id);
   }, [schema.id, onMouseEnter, selectable]);
-  
+
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
     if (!selectable) return;
     e.stopPropagation();
@@ -233,11 +248,11 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
     e.stopPropagation();
     onResizeStart?.(schema.id, direction, e.clientX, e.clientY, dimensions.width, dimensions.height);
   }, [schema.id, dimensions, onResizeStart]);
-  
+
   const style = getResolvedInlineStyle(schema) as React.CSSProperties;
-  
+
   const showHover = selectable && (isHovered || localHovered);
-  
+
   const borderStyle: React.CSSProperties = {
     outline: selectable && isSelected
       ? '2px solid var(--theme-primary)'
@@ -246,7 +261,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
         : 'none',
     outlineOffset: selectable && isSelected ? '-2px' : '-1px',
   };
-  
+
   return (
     <div
       ref={nodeRef}
@@ -259,7 +274,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
       onContextMenu={handleContextMenu}
     >
       {children}
-      
+
       {selectable && isSelected && (
         <SelectionBox
           x={0}

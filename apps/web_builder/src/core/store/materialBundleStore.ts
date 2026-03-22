@@ -5,6 +5,7 @@ import {
   parseMaterialEditorConfig,
   pickVersionFileUrl,
 } from '../../data/modules/componentMaterialMeta';
+import { remoteComponentDebug } from '../../utils/remoteComponentDebug';
 
 export interface MaterialCatalogListRow {
   material: { materialUid: string };
@@ -42,7 +43,7 @@ export const useMaterialBundleStore = create<MaterialBundleState>((set) => ({
       if (s.bundles[materialUid] === t) return s;
       return { bundles: { ...s.bundles, [materialUid]: t } };
     }),
-  hydrateFromComponentList: (items) =>
+  hydrateFromComponentList: (items) => {
     set((s) => {
       const nextBundles = { ...s.bundles };
       const nextEditor = { ...s.editorConfigs };
@@ -57,6 +58,15 @@ export const useMaterialBundleStore = create<MaterialBundleState>((set) => ({
         else delete nextEditor[uid];
       }
       return { bundles: nextBundles, editorConfigs: nextEditor };
-    }),
+    });
+    const { bundles, editorConfigs } = useMaterialBundleStore.getState();
+    const uids = Object.keys(bundles);
+    remoteComponentDebug('materialBundleStore.hydrateFromComponentList', {
+      listRowCount: items.length,
+      bundleCount: uids.length,
+      bundleUidsSample: uids.slice(0, 24),
+      editorConfigCount: Object.keys(editorConfigs).length,
+    });
+  },
   clear: () => set({ bundles: {}, editorConfigs: {} }),
 }));

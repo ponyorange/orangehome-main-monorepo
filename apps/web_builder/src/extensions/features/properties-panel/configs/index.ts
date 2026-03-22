@@ -1,4 +1,5 @@
 import type { ComponentConfig } from './types';
+import { ROOT_CONTAINER_MATERIAL_UID } from '../../../../common/base/schemaLayout';
 
 const textConfig: ComponentConfig = {
   type: 'Text',
@@ -103,11 +104,18 @@ const containerConfig: ComponentConfig = {
   ],
 };
 
+const rootContainerConfig: ComponentConfig = {
+  ...containerConfig,
+  type: ROOT_CONTAINER_MATERIAL_UID,
+  name: '根容器',
+};
+
 const componentConfigMap: Record<string, ComponentConfig> = {
   Text: textConfig,
   Image: imageConfig,
   Button: buttonConfig,
   Container: containerConfig,
+  [ROOT_CONTAINER_MATERIAL_UID]: rootContainerConfig,
 };
 
 export function getComponentConfig(type: string): ComponentConfig | undefined {

@@ -3,6 +3,7 @@ import type { ISchema } from '../../../../types/base';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
 import { useSelectionStore } from '../../../../core/store/selectionStore';
 import { addChild, findById, findParentById, moveNode, removeById } from '../../../../common/base/schemaOperator';
+import { isBuiltInLayoutContainerType } from '../../../../common/base/schemaLayout';
 
 export interface LayerTreeNode {
   id: string;
@@ -21,7 +22,7 @@ function buildTree(node: ISchema, level: number): LayerTreeNode {
     name: node.name,
     type: node.type,
     level,
-    isContainer: node.type === 'Container' || node.children.length > 0,
+    isContainer: isBuiltInLayoutContainerType(node.type) || node.children.length > 0,
     children: node.children.map((child) => buildTree(child, level + 1)),
   };
 }
@@ -38,7 +39,7 @@ function moveNodeByPosition(
   const sourceParent = findParentById(schema, sourceId);
   if (!target || !sourceParent) return null;
 
-  if (position === 'inside' && target.type === 'Container') {
+  if (position === 'inside' && isBuiltInLayoutContainerType(target.type)) {
     return moveNode(schema, sourceId, target.id);
   }
 

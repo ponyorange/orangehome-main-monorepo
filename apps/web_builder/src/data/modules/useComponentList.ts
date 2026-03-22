@@ -4,6 +4,11 @@ import type { ComponentCatalogItem } from '../../extensions/features/component-t
 import { generateIdWithPrefix } from '../../utils/id';
 import { get } from '../api/client';
 import { useMaterialBundleStore } from '../../core/store/materialBundleStore';
+import {
+  buildEditorConfigFromMaterial,
+  parseMaterialEditorConfig,
+} from './componentMaterialMeta';
+import type { ISchemaEditorConfig } from '../../types/base';
 
 export type BuilderComponentListType = 'online' | 'dev';
 
@@ -55,19 +60,32 @@ export interface GetComponentListResponseDto {
   items: ComponentListItemDto[];
 }
 
+function propsFromEditorInitValues(ec: ISchemaEditorConfig | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const p of ec?.props ?? []) {
+    if (p.initValue !== undefined) {
+      out[p.key] = p.initValue;
+    }
+  }
+  return out;
+}
+
 /**
  * 由接口行生成画布节点：type 为 materialUid；bundle / editorConfig 不写入 schema，由组件列表 hydrate 到 store。
+ * editorConfig 中的 props[].initValue 会写入节点 props，便于拖入即带默认值。
  */
 export function buildSchemaFromComponentListItem(item: ComponentListItemDto): ISchema | null {
   const { material, latestVersion } = item;
   if (!latestVersion) return null;
+
+  const editorCfg = buildEditorConfigFromMaterial(parseMaterialEditorConfig(latestVersion.editorConfigJson));
 
   return {
     id: '',
     name: material.materialName,
     type: material.materialUid,
     children: [],
-    props: {},
+    props: propsFromEditorInitValues(editorCfg),
   };
 }
 

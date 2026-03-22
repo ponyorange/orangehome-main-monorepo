@@ -19,7 +19,7 @@ export const CanvasAmdRequireBootstrap: React.FC = () => {
             console.warn('[CanvasAmdRequireBootstrap] VITE_AMD_RUNTIME_CONFIG 不是合法 JSON，已忽略');
           }
         }
-        await runtimeContextService.getScopedRequire();
+        await runtimeContextService.ensureInitialized();
       } catch (e) {
         console.error('[CanvasAmdRequireBootstrap]', e);
       }

@@ -36,7 +36,7 @@ export type { ISchemaEditorConfig, ISchemaEditorConfigPropItem } from './editorC
 export interface ISchema {
   id: string;                    // 全局唯一 ID
   name: string;                   // 组件名称（可读）
-  type: string;                   // 组件类型（如 'Text', 'Image', 'Container'）；远端物料为 materialUid
+  type: string;                   // 组件类型（如 'Text'、内置 'Container'、根节点 @orangehome/common-component-rootcontainer）；远端物料为 materialUid
   children: ISchema[];           // 子组件
   props: Record<string, unknown>; // 组件业务属性（不含内联 style；不含 remote，bundle 从组件列表按 type 解析）
   /** 内联样式，与 props 同级；旧数据 props.style 会在反序列化时迁移到此 */

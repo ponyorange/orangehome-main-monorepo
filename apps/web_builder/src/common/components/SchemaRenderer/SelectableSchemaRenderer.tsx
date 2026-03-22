@@ -1,10 +1,13 @@
 import React, { useContext } from 'react';
 import type { ISchema } from '../../../types/base';
 import type { ResizeDirection } from '../../../extensions/select-and-drag/hooks/useResize';
-import { 
-  SelectableSchemaNode, 
-  SelectableContainer 
+import { findById } from '../../../common/base/schemaOperator';
+import { useSchemaStore } from '../../../core/store/schemaStore';
+import {
+  SelectableSchemaNode,
+  SelectableContainer,
 } from './SelectableComponents';
+import { isBuiltInLayoutContainerType } from '../../base/schemaLayout';
 
 export interface SelectableSchemaRendererProps {
   schema: ISchema | null;
@@ -75,14 +78,18 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
   isRoot = false,
 }) => {
   const { isSelected, isHovered, handleClick, handleMouseEnter, handleMouseLeave, handleContextMenu, onMoveStart, onResizeStart } = useSelectionContext();
-  
-  const selected = isSelected(schema.id);
-  const hovered = isHovered(schema.id);
-  
-  if (schema.type === 'Container' || schema.children?.length) {
+
+  /** 始终从 store 按 id 取当前节点，避免父链 props 与右侧面板 setSchema 后的树不同步 */
+  const fromStore = useSchemaStore((s) => findById(s.schema, schema.id));
+  const node = fromStore ?? schema;
+
+  const selected = isSelected(node.id);
+  const hovered = isHovered(node.id);
+
+  if (isBuiltInLayoutContainerType(node.type) || node.children?.length) {
     return (
       <SelectableContainer
-        schema={schema}
+        schema={node}
         selectable={!isRoot}
         isSelected={selected}
         isHovered={hovered}
@@ -93,16 +100,16 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
         onMoveStart={onMoveStart}
         onResizeStart={onResizeStart}
       >
-        {schema.children?.map((child) => (
+        {node.children?.map((child) => (
           <SelectableSchemaNodeRecursive key={child.id} schema={child} />
         ))}
       </SelectableContainer>
     );
   }
-  
+
   return (
     <SelectableSchemaNode
-      schema={schema}
+      schema={node}
       selectable={!isRoot}
       isSelected={selected}
       isHovered={hovered}

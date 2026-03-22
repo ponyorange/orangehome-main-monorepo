@@ -6,6 +6,17 @@ export interface AlignLine {
   position: number;
 }
 
+/** 避免 mousemove 每帧 setState 相同内容导致整画布无意义重渲染（与 uniqueLines 的取整一致） */
+export function alignLinesEqual(a: AlignLine[], b: AlignLine[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (x.type !== y.type || Math.round(x.position) !== Math.round(y.position)) return false;
+  }
+  return true;
+}
+
 export interface AlignResult {
   snappedX: number | null;
   snappedY: number | null;

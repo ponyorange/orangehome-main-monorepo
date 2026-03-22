@@ -12,7 +12,11 @@ import { useMove } from '../../../../extensions/select-and-drag/hooks/useMove';
 import { useResize } from '../../../../extensions/select-and-drag/hooks/useResize';
 import type { ResizeDirection } from '../../../../extensions/select-and-drag/hooks/useResize';
 import { AlignmentGuides } from '../../../../extensions/select-and-drag/components/AlignmentGuides';
-import { computeAlignLines, type AlignLine } from '../../../../extensions/select-and-drag/services/AlignmentService';
+import {
+  alignLinesEqual,
+  computeAlignLines,
+  type AlignLine,
+} from '../../../../extensions/select-and-drag/services/AlignmentService';
 import { KeyboardShortcuts } from '../../../../extensions/editing/keyboard-shortcuts';
 import { ContextMenu } from '../../../../extensions/editing/context-menu';
 
@@ -64,11 +68,7 @@ export const CenterCanvas: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
-  const handleComponentAdded = useCallback((id: string) => {
-    selectionState.handleClick(id, { ctrlKey: false, metaKey: false } as React.MouseEvent);
-  }, [selectionState]);
-
-  const { isDragOver, dropTargetId } = useCanvasDrop(canvasWrapperRef, zoom, handleComponentAdded);
+  const { isDragOver, dropTargetId } = useCanvasDrop(canvasWrapperRef, zoom);
 
   useEffect(() => {
     if (!dropTargetId) {
@@ -89,7 +89,7 @@ export const CenterCanvas: React.FC = () => {
         if (selectionState.selectedIds.length === 1 && canvasWrapperRef.current) {
           const container = canvasWrapperRef.current.querySelector('[data-canvas-area="true"]')?.parentElement ?? canvasWrapperRef.current;
           const lines = computeAlignLines(selectionState.selectedIds[0], schema, container);
-          setAlignLines(lines);
+          setAlignLines((prev) => (alignLinesEqual(prev, lines) ? prev : lines));
         }
       });
     };
@@ -135,8 +135,9 @@ export const CenterCanvas: React.FC = () => {
   // 使用CSS变量获取主题色
   const primaryColor = 'var(--theme-primary)';
 
-  // 全局点击监听 - 点击空白区域（画布背景/灰色区域）取消选中
-  // 组件的 stopPropagation 会阻止事件到达 document，所以到达这里的点击一定不在组件上
+  // 全局点击：仅点击画布手机框外的区域（灰底滚动区等）取消选中。
+  // 手机框内（data-canvas-area）不在这里清：根节点 selectable=false 不会 stopPropagation，
+  // 拖放结束后的 click 也会冒泡到 document，否则会误清刚选中的节点。
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -144,7 +145,8 @@ export const CenterCanvas: React.FC = () => {
       if (
         target.closest('header') ||
         target.closest('[data-sidebar="true"]') ||
-        target.closest('[data-right-panel="true"]')
+        target.closest('[data-right-panel="true"]') ||
+        target.closest('[data-canvas-area="true"]')
       ) {
         return;
       }
