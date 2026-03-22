@@ -5,7 +5,7 @@ export interface MaterialEditorConfigJson {
   uid?: string;
   dependencies?: unknown[];
   props?: unknown;
-  editorCapabilities?: { isContainer?: boolean };
+  editorCapabilities?: { isContainer?: boolean; hideInComponentList?: boolean };
 }
 
 function normalizeEditorConfigProps(raw: unknown): ISchemaEditorConfigPropItem[] | undefined {

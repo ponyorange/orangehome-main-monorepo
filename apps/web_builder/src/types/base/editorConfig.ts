@@ -18,5 +18,5 @@ export interface ISchemaEditorConfig {
   uid?: string;
   dependencies?: unknown[];
   props?: ISchemaEditorConfigPropItem[];
-  editorCapabilities?: { isContainer?: boolean };
+  editorCapabilities?: { isContainer?: boolean; hideInComponentList?: boolean };
 }

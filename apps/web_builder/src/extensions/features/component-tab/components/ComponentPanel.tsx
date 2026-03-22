@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Input, Empty, Spin } from '@douyinfe/semi-ui';
 import { IconSearch } from '@douyinfe/semi-icons';
-import { basicComponents, type ComponentCatalogItem } from '../catalog';
+import type { ComponentCatalogItem } from '../catalog';
 import { DraggableComponentItem } from './DraggableComponentItem';
 import { componentListItemToCatalogItem, useComponentList } from '../../../../data/modules';
 import { useEditorPageId } from '../../../../core/context/EditorPageContext';
+import { useMaterialBundleStore } from '../../../../core/store/materialBundleStore';
+import type { ISchemaEditorConfig } from '../../../../types/base';
 
 const gridStyle: React.CSSProperties = {
   display: 'grid',
@@ -33,9 +35,18 @@ function matchesSearch(item: ComponentCatalogItem, search: string): boolean {
   return item.name.includes(search) || item.type.toLowerCase().includes(search.toLowerCase());
 }
 
+function isHiddenInComponentList(
+  editorConfigs: Record<string, ISchemaEditorConfig>,
+  materialUid: string,
+): boolean {
+  const caps = editorConfigs[materialUid]?.editorCapabilities;
+  return caps?.hideInComponentList === true;
+}
+
 export const ComponentPanel: React.FC = () => {
   const [search, setSearch] = useState('');
   const pageId = useEditorPageId();
+  const editorConfigs = useMaterialBundleStore((s) => s.editorConfigs);
 
   const { data: componentListData, error: componentListError, isLoading: componentListLoading } = useComponentList(
     pageId,
@@ -47,13 +58,15 @@ export const ComponentPanel: React.FC = () => {
     if (!componentListData?.items?.length) return [];
     return componentListData.items
       .map((row) => {
+        const uid = row.material.materialUid?.trim();
+        if (uid && isHiddenInComponentList(editorConfigs, uid)) return null;
         const item = componentListItemToCatalogItem(row);
         if (!item) return null;
         const categoryName = row.material.categoryName?.trim() || '基础';
         return { key: row.material.id, item, categoryName };
       })
       .filter((x): x is RemoteRow => x != null);
-  }, [componentListData]);
+  }, [componentListData, editorConfigs]);
 
   const remoteBasicRows = useMemo(
     () => remoteRows.filter((r) => !isRemoteContainerCategory(r.categoryName)),
@@ -63,11 +76,6 @@ export const ComponentPanel: React.FC = () => {
   const remoteContainerRows = useMemo(
     () => remoteRows.filter((r) => isRemoteContainerCategory(r.categoryName)),
     [remoteRows],
-  );
-
-  const filteredLocalBasic = useMemo(
-    () => basicComponents.filter((c) => matchesSearch(c, search)),
-    [search],
   );
 
   const filteredRemoteBasic = useMemo(
@@ -80,7 +88,7 @@ export const ComponentPanel: React.FC = () => {
     [remoteContainerRows, search],
   );
 
-  const hasBasicSection = filteredLocalBasic.length > 0 || filteredRemoteBasic.length > 0;
+  const hasBasicSection = filteredRemoteBasic.length > 0;
   const hasContainerSection = filteredRemoteContainer.length > 0;
 
   return (
@@ -116,9 +124,6 @@ export const ComponentPanel: React.FC = () => {
               <div>
                 <div style={sectionTitleStyle}>基础</div>
                 <div style={gridStyle}>
-                  {filteredLocalBasic.map((item) => (
-                    <DraggableComponentItem key={`local-${item.type}`} item={item} />
-                  ))}
                   {filteredRemoteBasic.map(({ key, item }) => (
                     <DraggableComponentItem key={key} item={item} />
                   ))}

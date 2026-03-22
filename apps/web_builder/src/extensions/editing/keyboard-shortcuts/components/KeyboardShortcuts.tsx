@@ -12,6 +12,7 @@ import {
   getResolvedInlineStyle,
   updateInlineStyle,
 } from '../../../../common/base/schemaOperator';
+import { nudgeInlinePosition } from '../../../../common/base/editorLayerStyle';
 
 export const KeyboardShortcuts: React.FC = () => {
   const { selectedIds, clearSelection } = useSelectionContext();
@@ -83,21 +84,7 @@ export const KeyboardShortcuts: React.FC = () => {
       const node = findById(updated, id);
       if (!node) continue;
       const currentStyle = getResolvedInlineStyle(node);
-      const mt = typeof currentStyle.marginTop === 'number' ? currentStyle.marginTop : 0;
-      const ml = typeof currentStyle.marginLeft === 'number' ? currentStyle.marginLeft : 0;
-
-      let newMt = mt;
-      let newMl = ml;
-      if (direction === 'up') newMt -= amount;
-      else if (direction === 'down') newMt += amount;
-      else if (direction === 'left') newMl -= amount;
-      else if (direction === 'right') newMl += amount;
-
-      updated = updateInlineStyle(updated, id, {
-        ...currentStyle,
-        marginTop: newMt,
-        marginLeft: newMl,
-      });
+      updated = updateInlineStyle(updated, id, nudgeInlinePosition(currentStyle, direction, amount));
     }
     setSchema(updated);
   }, [selectedIds, schema, setSchema]);

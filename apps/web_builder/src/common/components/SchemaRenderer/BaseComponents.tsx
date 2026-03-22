@@ -4,12 +4,7 @@ import { ComponentManager, type RemoteComponentDefinition } from './ComponentMan
 import { useSchemaEventHandlers } from './utils/eventActions';
 import { useRuntimeComponentsStore } from '../../../core/store/runtimeComponentsStore';
 import { useMaterialBundleStore } from '../../../core/store/materialBundleStore';
-import { TextComponent } from '../../../components/Text';
-import { ImageComponent } from '../../../components/Image';
-import { ButtonComponent } from '../../../components/Button';
-import { ContainerComponent } from '../../../components/Container';
 import { remoteComponentDebug, REMOTE_COMPONENT_DEBUG_TAG } from '../../../utils/remoteComponentDebug';
-import { ROOT_CONTAINER_MATERIAL_UID } from '../../base/schemaLayout';
 
 function getRemoteDefinitionFromProps(schema: ISchema): RemoteComponentDefinition | null {
   const props = schema.props as Record<string, unknown> | undefined;
@@ -180,7 +175,6 @@ export const RemoteSchemaNode: React.FC<{ schema: ISchema; children?: React.Reac
       </div>
     );
   }
-  console.log('schema.props', schema.props);
   return (
     <RemoteComponent
       key={remoteRenderKey}
@@ -194,42 +188,18 @@ export const RemoteSchemaNode: React.FC<{ schema: ISchema; children?: React.Reac
   );
 };
 
-/** 递归渲染单个 Schema 节点 */
+/** 递归渲染单个 Schema 节点（仅远端：物料 bundle 或 props.remote） */
 const SchemaNode: React.FC<{ schema: ISchema }> = React.memo(({ schema }) => {
   const bundleUrl = useMaterialBundleStore((s) => s.bundles[schema.type]);
-  const Component = ComponentManager.get(schema.type);
-  const eventHandlers = useSchemaEventHandlers(schema);
   const children = useMemo(
     () => schema.children?.map((child) => <SchemaNode key={child.id} schema={child} />),
     [schema.children],
   );
 
   const remoteDefinition = useMemo(() => mergeRemoteDefinition(schema, bundleUrl), [schema, bundleUrl]);
-  const materialBundleHit = Boolean(bundleUrl?.trim()) && schema.type !== ROOT_CONTAINER_MATERIAL_UID;
-
-  if (materialBundleHit && remoteDefinition) {
-    remoteComponentDebug('SchemaNode: 物料 bundle 优先 → RemoteSchemaNode', {
-      type: schema.type,
-      id: schema.id,
-      bundleUrl: bundleUrl ?? '(无)',
-    });
-    return (
-      <RemoteSchemaNode schema={schema}>
-        {children}
-      </RemoteSchemaNode>
-    );
-  }
-
-  if (Component) {
-    return (
-      <Component key={schema.id} schema={schema} eventHandlers={eventHandlers}>
-        {children}
-      </Component>
-    );
-  }
 
   if (remoteDefinition) {
-    remoteComponentDebug('SchemaNode: 走 RemoteSchemaNode', {
+    remoteComponentDebug('SchemaNode: RemoteSchemaNode', {
       type: schema.type,
       id: schema.id,
       name: schema.name,
@@ -244,7 +214,7 @@ const SchemaNode: React.FC<{ schema: ISchema }> = React.memo(({ schema }) => {
     );
   }
 
-  remoteComponentDebug('SchemaNode: 无本地注册且无 bundle/remote → 未知组件', {
+  remoteComponentDebug('SchemaNode: 无 bundle/remote → 未知组件', {
     type: schema.type,
     id: schema.id,
     name: schema.name,
@@ -254,11 +224,4 @@ const SchemaNode: React.FC<{ schema: ISchema }> = React.memo(({ schema }) => {
   return <UnknownComponent schema={schema} />;
 });
 
-/** 注册基础组件 */
-ComponentManager.register('Text', TextComponent);
-ComponentManager.register('Image', ImageComponent);
-ComponentManager.register('Container', ContainerComponent);
-ComponentManager.register(ROOT_CONTAINER_MATERIAL_UID, ContainerComponent);
-ComponentManager.register('Button', ButtonComponent);
-
-export { SchemaNode, TextComponent, ImageComponent, ContainerComponent, ButtonComponent };
+export { SchemaNode };

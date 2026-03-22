@@ -1,12 +1,16 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useSchemaStore } from '../../../core/store/schemaStore';
 import { findById, getResolvedInlineStyle, updateInlineStyle } from '../../../common/base/schemaOperator';
+import { isStyleLayerFloating, nudgeInlinePosition } from '../../../common/base/editorLayerStyle';
 import type { ISchema } from '../../../types/base';
 
 interface MoveState {
   isMoving: boolean;
   startX: number;
   startY: number;
+  floating: boolean;
+  originalTop: number;
+  originalLeft: number;
   originalMarginTop: number;
   originalMarginLeft: number;
   targetId: string;
@@ -28,10 +32,16 @@ export function useMove(selectedIds: string[]) {
     const node = findById(schemaRef.current, id);
     if (!node) return;
 
+    const st = getResolvedInlineStyle(node);
+    const floating = isStyleLayerFloating(st);
+
     stateRef.current = {
       isMoving: false,
       startX: clientX,
       startY: clientY,
+      floating,
+      originalTop: getStyleNum(node, 'top'),
+      originalLeft: getStyleNum(node, 'left'),
       originalMarginTop: getStyleNum(node, 'marginTop'),
       originalMarginLeft: getStyleNum(node, 'marginLeft'),
       targetId: id,
@@ -49,16 +59,21 @@ export function useMove(selectedIds: string[]) {
       if (!state.isMoving && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
       state.isMoving = true;
 
-      const newMarginTop = state.originalMarginTop + dy;
-      const newMarginLeft = state.originalMarginLeft + dx;
-
       const target = findById(schemaRef.current, state.targetId);
       if (!target) return;
-      const updated = updateInlineStyle(schemaRef.current, state.targetId, {
-        ...getResolvedInlineStyle(target),
-        marginTop: newMarginTop,
-        marginLeft: newMarginLeft,
-      });
+      const base = getResolvedInlineStyle(target);
+      const nextStyle = state.floating
+        ? {
+            ...base,
+            top: state.originalTop + dy,
+            left: state.originalLeft + dx,
+          }
+        : {
+            ...base,
+            marginTop: state.originalMarginTop + dy,
+            marginLeft: state.originalMarginLeft + dx,
+          };
+      const updated = updateInlineStyle(schemaRef.current, state.targetId, nextStyle);
       setSchema(updated);
     };
 
@@ -81,21 +96,7 @@ export function useMove(selectedIds: string[]) {
       const node = findById(updated, id);
       if (!node) continue;
       const currentStyle = getResolvedInlineStyle(node);
-      const mt = typeof currentStyle.marginTop === 'number' ? currentStyle.marginTop : 0;
-      const ml = typeof currentStyle.marginLeft === 'number' ? currentStyle.marginLeft : 0;
-
-      let newMt = mt as number;
-      let newMl = ml as number;
-      if (direction === 'up') newMt -= amount;
-      else if (direction === 'down') newMt += amount;
-      else if (direction === 'left') newMl -= amount;
-      else if (direction === 'right') newMl += amount;
-
-      updated = updateInlineStyle(updated, id, {
-        ...currentStyle,
-        marginTop: newMt,
-        marginLeft: newMl,
-      });
+      updated = updateInlineStyle(updated, id, nudgeInlinePosition(currentStyle, direction, amount));
     }
     setSchema(updated);
   }, [selectedIds, setSchema]);

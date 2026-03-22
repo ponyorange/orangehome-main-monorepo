@@ -1,10 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { ISchema } from '../../../types/base';
 import { getResolvedInlineStyle } from '../../base/schemaOperator';
-import { ComponentManager } from './ComponentManager';
 import { useMaterialBundleStore } from '../../../core/store/materialBundleStore';
 import { mergeRemoteDefinition, RemoteSchemaNode } from './BaseComponents';
-import { ROOT_CONTAINER_MATERIAL_UID } from '../../base/schemaLayout';
 import { SelectionBox } from '../../../extensions/select-and-drag/components/SelectionBox';
 import type { ResizeDirection } from '../../../extensions/select-and-drag/hooks/useResize';
 import { useSchemaEventHandlers } from './utils/eventActions';
@@ -100,11 +98,7 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
   }, [schema.id, boxRect, onResizeStart]);
 
   const bundleUrl = useMaterialBundleStore((s) => s.bundles[schema.type]);
-  const LocalComponent = ComponentManager.get(schema.type);
   const remoteDefinition = useMemo(() => mergeRemoteDefinition(schema, bundleUrl), [schema, bundleUrl]);
-  /** 物料目录有 bundle 时优先 AMD 远程实现，避免 materialUid 与内置 type（如 Button）重名时永远走不到 RemoteSchemaNode */
-  const materialBundleHit = Boolean(bundleUrl?.trim()) && schema.type !== ROOT_CONTAINER_MATERIAL_UID;
-  const eventHandlers = useSchemaEventHandlers(schema);
 
   const showHover = selectable && (isHovered || localHovered);
 
@@ -135,11 +129,7 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
       onContextMenu={handleContextMenu}
     >
       <div ref={contentRef} style={{ position: 'relative', display: 'inline-block', verticalAlign: 'top' }}>
-        {materialBundleHit && remoteDefinition ? (
-          <RemoteSchemaNode schema={schema} />
-        ) : LocalComponent ? (
-          <LocalComponent schema={schema} eventHandlers={eventHandlers} />
-        ) : remoteDefinition ? (
+        {remoteDefinition ? (
           <RemoteSchemaNode schema={schema} />
         ) : (
           <div style={{ color: '#999', fontSize: 12 }}>[未知组件: {schema.type}]</div>

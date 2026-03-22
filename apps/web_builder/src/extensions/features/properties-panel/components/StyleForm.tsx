@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
-import { InputNumber } from '@douyinfe/semi-ui';
+import { InputNumber, Radio } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
 import { getResolvedInlineStyle } from '../../../../common/base/schemaOperator';
+import { isStyleLayerFloating } from '../../../../common/base/editorLayerStyle';
 import { ColorPicker } from './ColorPicker';
 
 interface StyleFormProps {
@@ -11,10 +12,47 @@ interface StyleFormProps {
 
 export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) => {
   const style = getResolvedInlineStyle(schema);
+  const floating = isStyleLayerFloating(style);
+  const layerMode: 'relative' | 'absolute' = floating ? 'absolute' : 'relative';
 
   const updateStyle = useCallback((key: string, value: unknown) => {
     onUpdateStyle({ ...style, [key]: value });
   }, [style, onUpdateStyle]);
+
+  const setLayerMode = useCallback(
+    (pos: 'relative' | 'absolute') => {
+      const s = { ...getResolvedInlineStyle(schema) };
+      if (pos === 'absolute') {
+        const mt = typeof s.marginTop === 'number' ? s.marginTop : 0;
+        const ml = typeof s.marginLeft === 'number' ? s.marginLeft : 0;
+        const top = typeof s.top === 'number' ? s.top : mt;
+        const left = typeof s.left === 'number' ? s.left : ml;
+        onUpdateStyle({
+          ...s,
+          position: 'absolute',
+          top,
+          left,
+          marginTop: 0,
+          marginLeft: 0,
+        });
+      } else {
+        const top = typeof s.top === 'number' ? s.top : 0;
+        const left = typeof s.left === 'number' ? s.left : 0;
+        const mt = typeof s.marginTop === 'number' ? s.marginTop : 0;
+        const ml = typeof s.marginLeft === 'number' ? s.marginLeft : 0;
+        const next = { ...s };
+        delete next.top;
+        delete next.left;
+        onUpdateStyle({
+          ...next,
+          position: 'relative',
+          marginTop: mt + top,
+          marginLeft: ml + left,
+        });
+      }
+    },
+    [schema, onUpdateStyle],
+  );
 
   const numVal = (key: string) => {
     const v = style[key];
@@ -43,27 +81,53 @@ export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) =
         </div>
       </div>
 
-      {/* 位置偏移 */}
+      {/* 图层：固定 = relative + 外边距；移动 = absolute + top/left（与画布拖动一致） */}
       <div style={{ marginBottom: 16 }}>
-        <div style={groupTitleStyle}>位置偏移</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <FieldRow label="上边距">
-            <InputNumber size="small" value={numVal('marginTop') ?? 0} style={{ width: '100%' }}
-              onChange={(v) => updateStyle('marginTop', v ?? 0)} />
-          </FieldRow>
-          <FieldRow label="左边距">
-            <InputNumber size="small" value={numVal('marginLeft') ?? 0} style={{ width: '100%' }}
-              onChange={(v) => updateStyle('marginLeft', v ?? 0)} />
-          </FieldRow>
-          <FieldRow label="下边距">
-            <InputNumber size="small" value={numVal('marginBottom') ?? 0} style={{ width: '100%' }}
-              onChange={(v) => updateStyle('marginBottom', v ?? 0)} />
-          </FieldRow>
-          <FieldRow label="右边距">
-            <InputNumber size="small" value={numVal('marginRight') ?? 0} style={{ width: '100%' }}
-              onChange={(v) => updateStyle('marginRight', v ?? 0)} />
-          </FieldRow>
-        </div>
+        <div style={groupTitleStyle}>图层</div>
+        <Radio.Group
+          type="button"
+          buttonSize="small"
+          value={layerMode}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === 'relative' || v === 'absolute') setLayerMode(v);
+          }}
+        >
+          <Radio value="relative">固定</Radio>
+          <Radio value="absolute">移动</Radio>
+        </Radio.Group>
+
+        {floating ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+            <FieldRow label="Top">
+              <InputNumber size="small" value={numVal('top') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('top', v ?? 0)} />
+            </FieldRow>
+            <FieldRow label="Left">
+              <InputNumber size="small" value={numVal('left') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('left', v ?? 0)} />
+            </FieldRow>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+            <FieldRow label="上边距">
+              <InputNumber size="small" value={numVal('marginTop') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('marginTop', v ?? 0)} />
+            </FieldRow>
+            <FieldRow label="左边距">
+              <InputNumber size="small" value={numVal('marginLeft') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('marginLeft', v ?? 0)} />
+            </FieldRow>
+            <FieldRow label="下边距">
+              <InputNumber size="small" value={numVal('marginBottom') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('marginBottom', v ?? 0)} />
+            </FieldRow>
+            <FieldRow label="右边距">
+              <InputNumber size="small" value={numVal('marginRight') ?? 0} style={{ width: '100%' }}
+                onChange={(v) => updateStyle('marginRight', v ?? 0)} />
+            </FieldRow>
+          </div>
+        )}
       </div>
 
       {/* 内边距 */}
