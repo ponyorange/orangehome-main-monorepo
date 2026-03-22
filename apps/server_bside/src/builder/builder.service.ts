@@ -51,12 +51,7 @@ export class BuilderService {
     const metadata = this.grpcClient.createAuthMetadata(authHeader);
 
     const materials = await this.listAllMaterialsByBusinessId(businessId, metadata);
-    const activeMaterials = materials.filter((m: any) => !m.is_deleted);
-
-    const allowedStatuses =
-      type === 'online'
-        ? new Set<number>([MATERIAL_VERSION_PUBLISHED])
-        : new Set<number>([MATERIAL_VERSION_DEV, MATERIAL_VERSION_PUBLISHED]);
+    const activeMaterials = materials.filter((m: any) => !(m.isDeleted ?? m.is_deleted));
 
     const items: ComponentListItemDto[] = await Promise.all(
       activeMaterials.map(async (raw: any) => {
@@ -64,7 +59,6 @@ export class BuilderService {
         const latestVersion = await this.resolveLatestMaterialVersion(
           material.id,
           type,
-          allowedStatuses,
           metadata,
         );
         return {
@@ -88,7 +82,7 @@ export class BuilderService {
             {
               page: grpcPage,
               limit,
-              business_id: this.grpcClient.wrapStringValue(businessId),
+              businessId: this.grpcClient.wrapStringValue(businessId),
             },
             metadata,
           ),
@@ -110,7 +104,6 @@ export class BuilderService {
   private async resolveLatestMaterialVersion(
     materialId: string,
     type: 'online' | 'dev',
-    allowedStatuses: Set<number>,
     metadata: any,
   ): Promise<ComponentVersionDto | null> {
     try {
@@ -120,12 +113,12 @@ export class BuilderService {
           MATERIAL_VERSION_PUBLISHED,
           metadata,
         );
-        const best = this.pickLatestByVersionCode(versions, allowedStatuses);
+        const best = this.pickLatestVersion(versions, (v) => this.versionMatchesOnline(v));
         return best ? this.mapVersion(best) : null;
       }
 
       const allVersions = await this.listAllVersionsForMaterial(materialId, metadata);
-      const best = this.pickLatestByVersionCode(allVersions, allowedStatuses);
+      const best = this.pickLatestVersion(allVersions, (v) => this.versionMatchesDev(v));
       return best ? this.mapVersion(best) : null;
     } catch (error) {
       this.handleGrpcError(error);
@@ -144,7 +137,7 @@ export class BuilderService {
       const result = await firstValueFrom(
         this.grpcClient.materialVersion.listMaterialVersions(
           {
-            material_id: materialId,
+            materialId,
             page: grpcPage,
             limit,
             status: status === undefined ? undefined : this.grpcClient.wrapInt32Value(status),
@@ -153,7 +146,7 @@ export class BuilderService {
         ),
       );
       const rawBatch = result.data || [];
-      acc.push(...rawBatch.filter((v: any) => !v.is_deleted));
+      acc.push(...rawBatch.filter((v: any) => !(v.isDeleted ?? v.is_deleted)));
       if (rawBatch.length < limit) {
         break;
       }
@@ -166,15 +159,46 @@ export class BuilderService {
     return this.listAllVersionsForMaterialWithOptionalStatus(materialId, undefined, metadata);
   }
 
-  private pickLatestByVersionCode(versions: any[], allowedStatuses: Set<number>): any | null {
+  /** 已上线：状态为已发布(2)，或 core 标记 isPublished */
+  private versionMatchesOnline(v: any): boolean {
+    const st = this.numericStatus(v);
+    const published = this.field(v, 'isPublished', 'is_published') === true;
+    return st === MATERIAL_VERSION_PUBLISHED || published;
+  }
+
+  /** 开发环境：开发中(0)、已发布(2)，或已标记发布 */
+  private versionMatchesDev(v: any): boolean {
+    const st = this.numericStatus(v);
+    const published = this.field(v, 'isPublished', 'is_published') === true;
+    return st === MATERIAL_VERSION_DEV || st === MATERIAL_VERSION_PUBLISHED || published;
+  }
+
+  private toNumber(v: any): number {
+    if (v === undefined || v === null) {
+      return 0;
+    }
+    if (typeof v === 'number') {
+      return v;
+    }
+    if (typeof v === 'object' && v.low !== undefined) {
+      return Number(v.low);
+    }
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  private numericStatus(v: any): number {
+    return this.toNumber(this.field(v, 'status', 'status'));
+  }
+
+  private pickLatestVersion(versions: any[], predicate: (v: any) => boolean): any | null {
     let best: any | null = null;
     let bestCode = -1;
     for (const v of versions) {
-      const st = Number(v.status);
-      if (!allowedStatuses.has(st)) {
+      if (!predicate(v)) {
         continue;
       }
-      const code = Number(v.version_code) || 0;
+      const code = this.toNumber(this.field(v, 'versionCode', 'version_code'));
       if (code > bestCode) {
         bestCode = code;
         best = v;
@@ -183,43 +207,64 @@ export class BuilderService {
     return best;
   }
 
+  private field(data: any, camel: string, snake: string): any {
+    if (data[camel] !== undefined && data[camel] !== null) {
+      return data[camel];
+    }
+    return data[snake];
+  }
+
+  private unwrapStringField(v: any): string | undefined {
+    if (v === undefined || v === null) {
+      return undefined;
+    }
+    if (typeof v === 'string') {
+      return v;
+    }
+    if (typeof v === 'object' && v.value !== undefined && v.value !== null) {
+      return String(v.value);
+    }
+    return undefined;
+  }
+
   private mapMaterial(data: any): ComponentMaterialDto {
     return {
       id: data.id,
-      materialUid: data.material_uid,
-      materialName: data.material_name,
-      description: data.description?.value,
-      icon: data.icon?.value,
-      platformId: data.platform_id,
-      platformName: data.platform_name,
-      typeId: data.type_id,
-      typeName: data.type_name,
-      categoryId: data.category_id,
-      categoryName: data.category_name,
-      status: data.status,
-      visibility: data.visibility,
-      businessId: data.business_id?.value,
-      businessName: data.business_name?.value,
+      materialUid: String(this.field(data, 'materialUid', 'material_uid') ?? ''),
+      materialName: String(this.field(data, 'materialName', 'material_name') ?? ''),
+      description: this.unwrapStringField(data.description),
+      icon: this.unwrapStringField(data.icon),
+      platformId: String(this.field(data, 'platformId', 'platform_id') ?? ''),
+      platformName: String(this.field(data, 'platformName', 'platform_name') ?? ''),
+      typeId: String(this.field(data, 'typeId', 'type_id') ?? ''),
+      typeName: String(this.field(data, 'typeName', 'type_name') ?? ''),
+      categoryId: String(this.field(data, 'categoryId', 'category_id') ?? ''),
+      categoryName: String(this.field(data, 'categoryName', 'category_name') ?? ''),
+      status: String(this.field(data, 'status', 'status') ?? ''),
+      visibility: String(this.field(data, 'visibility', 'visibility') ?? ''),
+      businessId: this.unwrapStringField(this.field(data, 'businessId', 'business_id')),
+      businessName: this.unwrapStringField(this.field(data, 'businessName', 'business_name')),
     };
   }
 
   private mapVersion(data: any): ComponentVersionDto {
+    const materialId = this.field(data, 'materialId', 'material_id');
     return {
       id: data.id,
-      materialId: data.material_id,
-      version: data.version,
-      versionCode: data.version_code,
-      changelog: data.changelog?.value,
-      fileObjectKey: data.file_object_key,
-      fileUrl: data.file_url?.value,
-      sourceObjectKey: data.source_object_key?.value,
-      sourceUrl: data.source_url?.value,
-      status: data.status,
-      isPublished: data.is_published,
-      editorConfigJson: data.editor_config_json,
-      releaseTime: this.normalizeTimestamp(data.release_time),
-      createdAt: this.normalizeTimestamp(data.created_at),
-      updatedAt: this.normalizeTimestamp(data.updated_at),
+      materialId: String(materialId ?? ''),
+      version: String(this.field(data, 'version', 'version') ?? ''),
+      versionCode: this.toNumber(this.field(data, 'versionCode', 'version_code')),
+      changelog: this.unwrapStringField(this.field(data, 'changelog', 'changelog')),
+      fileObjectKey: String(this.field(data, 'fileObjectKey', 'file_object_key') ?? ''),
+      fileUrl: this.unwrapStringField(this.field(data, 'fileUrl', 'file_url')),
+      sourceObjectKey: this.unwrapStringField(this.field(data, 'sourceObjectKey', 'source_object_key')),
+      sourceUrl: this.unwrapStringField(this.field(data, 'sourceUrl', 'source_url')),
+      status: this.numericStatus(data),
+      isPublished: Boolean(this.field(data, 'isPublished', 'is_published')),
+      editorConfigJson: this.field(data, 'editorConfigJson', 'editor_config_json'),
+      releaseTime: this.normalizeTimestamp(this.field(data, 'releaseTime', 'release_time')),
+      createdAt: this.normalizeTimestamp(this.field(data, 'createdAt', 'created_at')),
+      updatedAt: this.normalizeTimestamp(this.field(data, 'updatedAt', 'updated_at')),
     };
   }
 

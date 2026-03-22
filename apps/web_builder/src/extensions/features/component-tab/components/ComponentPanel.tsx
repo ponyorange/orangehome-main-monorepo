@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Input, Tabs, Empty } from '@douyinfe/semi-ui';
+import { Input, Tabs, Empty, Spin } from '@douyinfe/semi-ui';
 import { IconSearch } from '@douyinfe/semi-icons';
-import { basicComponents, businessComponents } from '../catalog';
+import { basicComponents, type ComponentCatalogItem } from '../catalog';
 import { DraggableComponentItem } from './DraggableComponentItem';
+import { componentListItemToCatalogItem, useComponentList } from '../../../../data/modules';
 
 const { TabPane } = Tabs;
 
@@ -13,8 +14,30 @@ const gridStyle: React.CSSProperties = {
   padding: 12,
 };
 
+function getPageIdFromLocation(): string | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('pageId');
+}
+
 export const ComponentPanel: React.FC = () => {
   const [search, setSearch] = useState('');
+  const pageId = useMemo(() => getPageIdFromLocation(), []);
+
+  const { data: componentListData, error: componentListError, isLoading: componentListLoading } = useComponentList(
+    pageId,
+    'dev',
+    Boolean(pageId),
+  );
+
+  const businessRows = useMemo(() => {
+    if (!componentListData?.items?.length) return [];
+    return componentListData.items
+      .map((row) => {
+        const item = componentListItemToCatalogItem(row);
+        return item ? { key: row.material.id, item } : null;
+      })
+      .filter((x): x is { key: string; item: ComponentCatalogItem } => x != null);
+  }, [componentListData]);
 
   const filteredBasic = useMemo(
     () => basicComponents.filter((c) => c.name.includes(search) || c.type.toLowerCase().includes(search.toLowerCase())),
@@ -22,8 +45,11 @@ export const ComponentPanel: React.FC = () => {
   );
 
   const filteredBusiness = useMemo(
-    () => businessComponents.filter((c) => c.name.includes(search) || c.type.toLowerCase().includes(search.toLowerCase())),
-    [search],
+    () =>
+      businessRows.filter(
+        ({ item }) => item.name.includes(search) || item.type.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [businessRows, search],
   );
 
   return (
@@ -64,14 +90,22 @@ export const ComponentPanel: React.FC = () => {
           </TabPane>
           <TabPane tab="业务" itemKey="business" className="component-tabpane">
             <div style={{ height: '100%', overflow: 'auto' }}>
-              {filteredBusiness.length > 0 ? (
+              {!pageId ? (
+                <Empty description="缺少 pageId 参数，无法加载业务组件" style={{ marginTop: 40 }} />
+              ) : componentListLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 48 }}>
+                  <Spin />
+                </div>
+              ) : componentListError ? (
+                <Empty description={componentListError.message || '业务组件列表加载失败'} style={{ marginTop: 40 }} />
+              ) : filteredBusiness.length > 0 ? (
                 <div style={gridStyle}>
-                  {filteredBusiness.map((item) => (
-                    <DraggableComponentItem key={item.type} item={item} />
+                  {filteredBusiness.map(({ key, item }) => (
+                    <DraggableComponentItem key={key} item={item} />
                   ))}
                 </div>
               ) : (
-                <Empty description="暂无业务组件" style={{ marginTop: 40 }} />
+                <Empty description="暂无可用业务组件（需物料版本含 bundle 地址或 editorConfig 中的 remote）" style={{ marginTop: 40 }} />
               )}
             </div>
           </TabPane>
