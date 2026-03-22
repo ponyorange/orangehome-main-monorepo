@@ -7,6 +7,7 @@ function cloneWithNewIds(node: ISchema): ISchema {
     ...node,
     id: generateIdWithPrefix(node.type.toLowerCase()),
     props: { ...node.props },
+    style: node.style ? { ...node.style } : undefined,
     propStyle: node.propStyle ? { ...node.propStyle } : undefined,
     event2action: node.event2action ? [...node.event2action] : undefined,
     api: node.api ? { ...node.api } : undefined,

@@ -52,7 +52,16 @@ export const DraggableComponentItem: React.FC<Props> = ({ item }) => {
         t.style.transform = 'translateY(0)';
       }}
     >
-      <span style={{ fontSize: 22, lineHeight: 1, color: 'var(--theme-primary)' }}>{item.icon}</span>
+      {item.iconUrl ? (
+        <img
+          src={item.iconUrl}
+          alt=""
+          draggable={false}
+          style={{ width: 28, height: 28, objectFit: 'contain', borderRadius: 6 }}
+        />
+      ) : (
+        <span style={{ fontSize: 22, lineHeight: 1, color: 'var(--theme-primary)' }}>{item.icon || '📦'}</span>
+      )}
       <span style={{ fontSize: 12, color: 'var(--theme-text-secondary)', fontWeight: 600 }}>{item.name}</span>
     </div>
   );

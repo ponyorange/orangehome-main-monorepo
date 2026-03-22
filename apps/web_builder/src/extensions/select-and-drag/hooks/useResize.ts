@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useSchemaStore } from '../../../core/store/schemaStore';
-import { findById, updateProps } from '../../../common/base/schemaOperator';
+import { findById, getResolvedInlineStyle, updateInlineStyle } from '../../../common/base/schemaOperator';
 import type { ISchema } from '../../../types/base';
 
 export type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -20,8 +20,7 @@ interface ResizeState {
 }
 
 function getStyleNum(schema: ISchema, prop: string): number {
-  const style = schema.props?.style as Record<string, unknown> | undefined;
-  if (!style) return 0;
+  const style = getResolvedInlineStyle(schema);
   const val = style[prop];
   return typeof val === 'number' ? val : 0;
 }
@@ -102,15 +101,13 @@ export function useResize() {
       const node = findById(schemaRef.current, state.targetId);
       if (!node) return;
 
-      const currentStyle = (node.props?.style as Record<string, unknown>) ?? {};
-      const updated = updateProps(schemaRef.current, state.targetId, {
-        style: {
-          ...currentStyle,
-          width: Math.round(newWidth),
-          height: Math.round(newHeight),
-          marginTop: Math.round(newMarginTop),
-          marginLeft: Math.round(newMarginLeft),
-        },
+      const currentStyle = getResolvedInlineStyle(node);
+      const updated = updateInlineStyle(schemaRef.current, state.targetId, {
+        ...currentStyle,
+        width: Math.round(newWidth),
+        height: Math.round(newHeight),
+        marginTop: Math.round(newMarginTop),
+        marginLeft: Math.round(newMarginLeft),
       });
       setSchema(updated);
     };

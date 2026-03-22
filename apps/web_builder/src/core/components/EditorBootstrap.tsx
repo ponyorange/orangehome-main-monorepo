@@ -1,25 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Empty, Spin, Typography } from '@douyinfe/semi-ui';
 import { useSchemaStore } from '../store/schemaStore';
-import { useBuilderData, useUserData } from '../../data/modules';
+import { useBuilderData, useComponentList, useUserData } from '../../data/modules';
 import { ApiError } from '../../data/api/client';
 import { LoginPage } from '../../features/auth/components/LoginPage';
+import { EditorPageProvider } from '../context/EditorPageContext';
+import { getPageIdFromLocation } from '../../utils/pageRoute';
 
 interface EditorBootstrapProps {
   children: React.ReactNode;
 }
 
-function getPageIdFromLocation(): string | null {
-  if (typeof window === 'undefined') return null;
-  return new URLSearchParams(window.location.search).get('pageId');
-}
-
 export const EditorBootstrap: React.FC<EditorBootstrapProps> = ({ children }) => {
-  const pageId = useMemo(() => getPageIdFromLocation(), []);
+  const [pageId, setPageId] = useState<string | null>(() => getPageIdFromLocation());
+  useEffect(() => {
+    const sync = () => setPageId(getPageIdFromLocation());
+    window.addEventListener('popstate', sync);
+    window.addEventListener('hashchange', sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('hashchange', sync);
+    };
+  }, []);
   const [appliedVersionId, setAppliedVersionId] = useState<string | null>(null);
   const setSchema = useSchemaStore((state) => state.setSchema);
   const { user, hasToken, isLoading: userLoading, error: userError, login } = useUserData();
   const { data, error, isLoading, mutate } = useBuilderData(pageId, hasToken);
+  /** 与左侧面板共用 SWR key，提前拉取并写入 materialBundleStore，避免拖入物料时尚无 bundle URL */
+  useComponentList(pageId, 'dev', Boolean(pageId && hasToken));
 
   const unauthorizedMessage = useMemo(() => {
     const authError = userError instanceof ApiError && userError.status === 401 ? userError.message : null;
@@ -66,7 +74,11 @@ export const EditorBootstrap: React.FC<EditorBootstrapProps> = ({ children }) =>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <EditorPageProvider pageIdFromInit={data?.page?.id ?? null}>
+      {children}
+    </EditorPageProvider>
+  );
 };
 
 interface FullPageStateProps {

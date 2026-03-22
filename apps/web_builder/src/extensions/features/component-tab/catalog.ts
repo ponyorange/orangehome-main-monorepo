@@ -5,6 +5,8 @@ export interface ComponentCatalogItem {
   type: string;
   name: string;
   icon: string;
+  /** 物料管理平台上传的图标 URL（与 icon 二选一展示） */
+  iconUrl?: string;
   category: 'basic' | 'business';
   createSchema: () => ISchema;
 }
@@ -20,7 +22,8 @@ export const basicComponents: ComponentCatalogItem[] = [
       name: '文本',
       type: 'Text',
       children: [],
-      props: { text: '文本内容', style: { fontSize: 14 } },
+      props: { text: '文本内容' },
+      style: { fontSize: 14 },
     }),
   },
   {
@@ -36,8 +39,8 @@ export const basicComponents: ComponentCatalogItem[] = [
       props: {
         src: 'https://via.placeholder.com/100x100/eee/999?text=Image',
         alt: '图片',
-        style: { width: 100, height: 100 },
       },
+      style: { width: 100, height: 100 },
     }),
   },
   {
@@ -50,13 +53,12 @@ export const basicComponents: ComponentCatalogItem[] = [
       name: '容器',
       type: 'Container',
       children: [],
-      props: {
-        style: {
-          padding: 16,
-          minHeight: 80,
-          border: '1px dashed #d9d9d9',
-          borderRadius: 4,
-        },
+      props: {},
+      style: {
+        padding: 16,
+        minHeight: 80,
+        border: '1px dashed #d9d9d9',
+        borderRadius: 4,
       },
     }),
   },
@@ -70,7 +72,8 @@ export const basicComponents: ComponentCatalogItem[] = [
       name: '按钮',
       type: 'Button',
       children: [],
-      props: { text: '按钮', style: {} },
+      props: { text: '按钮' },
+      style: {},
     }),
   },
 ];

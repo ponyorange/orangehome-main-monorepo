@@ -1,20 +1,27 @@
 import React, { useEffect, useRef } from 'react';
 import * as monaco from 'monaco-editor';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 
 declare global {
   interface Window {
     MonacoEnvironment?: {
-      getWorker?: () => Worker;
+      getWorker?: (_workerId: string, label: string) => Worker;
     };
   }
 }
 
-if (!window.MonacoEnvironment) {
-  window.MonacoEnvironment = {
-    getWorker: () => new editorWorker(),
-  };
-}
+window.MonacoEnvironment = {
+  ...(window.MonacoEnvironment ?? {}),
+  getWorker(_workerId, label) {
+    switch (label) {
+      case 'json':
+        return new JsonWorker();
+      default:
+        return new EditorWorker();
+    }
+  },
+};
 
 interface MonacoSchemaEditorProps {
   value: string;

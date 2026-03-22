@@ -3,12 +3,19 @@ import { subscribeDrag } from '../../../../common/base/OrangeDrag';
 import type { DragData } from '../../../../common/base/OrangeDrag/types';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
 import { addChild, findById } from '../../../../common/base/schemaOperator';
+import { useMaterialBundleStore } from '../../../../core/store/materialBundleStore';
 import { generateIdWithPrefix } from '../../../../utils/id';
 import type { ISchema } from '../../../../types/base';
 
 interface CanvasDropState {
   isDragOver: boolean;
   dropTargetId: string | null;
+}
+
+function isDropContainerNode(node: ISchema): boolean {
+  if (node.type === 'Container') return true;
+  const caps = useMaterialBundleStore.getState().editorConfigs[node.type]?.editorCapabilities;
+  return caps?.isContainer === true;
 }
 
 function findDropTarget(clientX: number, clientY: number, schema: ISchema): string {
@@ -18,7 +25,7 @@ function findDropTarget(clientX: number, clientY: number, schema: ISchema): stri
     if (!schemaId) continue;
     const node = findById(schema, schemaId);
     if (!node) continue;
-    if (node.type === 'Container') return schemaId;
+    if (isDropContainerNode(node)) return schemaId;
   }
   return schema.id;
 }
@@ -53,9 +60,10 @@ export function useCanvasDrop(
     (data: DragData, clientX: number, clientY: number) => {
       if (data.type !== 'add-component') return;
 
+      const idPrefix = data.componentType.toLowerCase().replace(/\W/g, '') || 'node';
       const newSchema: ISchema = {
         ...data.defaultSchema,
-        id: generateIdWithPrefix(data.componentType.toLowerCase()),
+        id: generateIdWithPrefix(idPrefix),
       };
 
       const targetId = findDropTarget(clientX, clientY, schemaRef.current);

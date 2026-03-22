@@ -2,28 +2,36 @@ import React from 'react';
 import { SlotRenderer } from '../slots/SlotRenderer';
 import { usePreviewStore } from '../store/previewStore';
 import { Preview } from './Preview';
+import { CanvasAmdRequireBootstrap } from '../../extensions/ui/center-canvas/components/CanvasAmdRequireBootstrap';
 
 export const EditorView: React.FC = () => {
   const isPreviewMode = usePreviewStore((state) => state.isPreviewMode);
 
   if (isPreviewMode) {
-    return <Preview />;
+    return (
+      <>
+        <CanvasAmdRequireBootstrap />
+        <Preview />
+      </>
+    );
   }
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-        background: 'var(--theme-gradient-page)',
-        color: 'var(--theme-text-primary)',
-        padding: 14,
-        gap: 14,
-        boxSizing: 'border-box',
-      }}
-    >
+    <>
+      <CanvasAmdRequireBootstrap />
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+          background: 'var(--theme-gradient-page)',
+          color: 'var(--theme-text-primary)',
+          padding: 14,
+          gap: 14,
+          boxSizing: 'border-box',
+        }}
+      >
       {/* Header */}
       <header
         style={{
@@ -102,5 +110,6 @@ export const EditorView: React.FC = () => {
         </aside>
       </div>
     </div>
+    </>
   );
 };

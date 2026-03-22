@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { Input, InputNumber, Select, Switch, Slider } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
+import { getResolvedInlineStyle } from '../../../../common/base/schemaOperator';
 import type { FieldConfig, ComponentConfig } from '../configs/types';
 import { ColorPicker } from './ColorPicker';
 import { ImageInput } from './ImageInput';
@@ -8,7 +9,8 @@ import { ImageInput } from './ImageInput';
 interface PropertyFormProps {
   schema: ISchema;
   config: ComponentConfig;
-  onUpdate: (props: Record<string, unknown>) => void;
+  onUpdateProps: (props: Record<string, unknown>) => void;
+  onUpdateStyle: (style: Record<string, unknown>) => void;
 }
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
@@ -31,14 +33,28 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
   return { ...obj, [first]: setNestedValue(child, rest.join('.'), value) };
 }
 
-export const PropertyForm: React.FC<PropertyFormProps> = ({ schema, config, onUpdate }) => {
+export const PropertyForm: React.FC<PropertyFormProps> = ({
+  schema,
+  config,
+  onUpdateProps,
+  onUpdateStyle,
+}) => {
   const handleChange = useCallback((field: FieldConfig, value: unknown) => {
-    const newProps = setNestedValue(schema.props, field.key, value);
-    onUpdate(newProps);
-  }, [schema.props, onUpdate]);
+    if (field.key.startsWith('style.')) {
+      const sk = field.key.slice('style.'.length);
+      onUpdateStyle({ ...getResolvedInlineStyle(schema), [sk]: value });
+      return;
+    }
+    const base = { ...schema.props } as Record<string, unknown>;
+    delete base.style;
+    const newProps = setNestedValue(base, field.key, value);
+    onUpdateProps(newProps);
+  }, [schema, onUpdateProps, onUpdateStyle]);
 
   const renderField = (field: FieldConfig) => {
-    const value = getNestedValue(schema.props, field.key);
+    const value = field.key.startsWith('style.')
+      ? getResolvedInlineStyle(schema)[field.key.slice('style.'.length)]
+      : getNestedValue(schema.props, field.key);
 
     switch (field.type) {
       case 'text':

@@ -8,7 +8,8 @@ import {
   findParentById,
   addChild,
   duplicateNode,
-  updateProps,
+  getResolvedInlineStyle,
+  updateInlineStyle,
 } from '../../../../common/base/schemaOperator';
 
 export const KeyboardShortcuts: React.FC = () => {
@@ -83,7 +84,7 @@ export const KeyboardShortcuts: React.FC = () => {
     for (const id of selectedIds) {
       const node = findById(updated, id);
       if (!node) continue;
-      const currentStyle = (node.props?.style as Record<string, unknown>) ?? {};
+      const currentStyle = getResolvedInlineStyle(node);
       const mt = typeof currentStyle.marginTop === 'number' ? currentStyle.marginTop : 0;
       const ml = typeof currentStyle.marginLeft === 'number' ? currentStyle.marginLeft : 0;
 
@@ -94,8 +95,10 @@ export const KeyboardShortcuts: React.FC = () => {
       else if (direction === 'left') newMl -= amount;
       else if (direction === 'right') newMl += amount;
 
-      updated = updateProps(updated, id, {
-        style: { ...currentStyle, marginTop: newMt, marginLeft: newMl },
+      updated = updateInlineStyle(updated, id, {
+        ...currentStyle,
+        marginTop: newMt,
+        marginLeft: newMl,
       });
     }
     setSchema(updated);

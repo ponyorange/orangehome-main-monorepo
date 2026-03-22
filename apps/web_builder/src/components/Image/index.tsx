@@ -1,10 +1,11 @@
 import React from 'react';
 import type { SchemaComponentProps } from '../../common/components/SchemaRenderer/ComponentManager';
+import { getResolvedInlineStyle } from '../../common/base/schemaOperator';
 
 export const ImageComponent: React.FC<SchemaComponentProps> = React.memo(({ schema, eventHandlers }) => {
   const src = (schema.props?.src as string) ?? '';
   const alt = (schema.props?.alt as string) ?? '';
-  const style = (schema.props?.style as React.CSSProperties) ?? {};
+  const style = getResolvedInlineStyle(schema) as React.CSSProperties;
 
   return (
     <img

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button, Toast } from '@douyinfe/semi-ui';
 import { IconEyeOpened, IconDownload, IconUpload, IconCopy, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
@@ -6,11 +6,7 @@ import { usePreviewStore } from '../../../../core/store/previewStore';
 import { exportService } from '../../../../core/services/ExportService';
 import { importService } from '../../../../core/services/ImportService';
 import { saveBuilderPageVersion, useBuilderData, useUserData } from '../../../../data/modules';
-
-function getPageIdFromLocation(): string | null {
-  if (typeof window === 'undefined') return null;
-  return new URLSearchParams(window.location.search).get('pageId');
-}
+import { useEditorPageId } from '../../../../core/context/EditorPageContext';
 
 export const Toolbar: React.FC = () => {
   const primaryColor = 'var(--theme-primary)';
@@ -18,7 +14,7 @@ export const Toolbar: React.FC = () => {
   const openPreview = usePreviewStore((state) => state.openPreview);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
-  const pageId = useMemo(() => getPageIdFromLocation(), []);
+  const pageId = useEditorPageId();
   const { user } = useUserData();
   const { mutate: mutateBuilder } = useBuilderData(pageId, Boolean(pageId));
 

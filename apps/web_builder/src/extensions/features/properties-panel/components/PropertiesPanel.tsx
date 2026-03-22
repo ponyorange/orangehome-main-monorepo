@@ -3,10 +3,18 @@ import { Empty, Typography, Tabs, TabPane } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
 import { useSelectionStore } from '../../../../core/store/selectionStore';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
-import { findById, updateProps, validate } from '../../../../common/base/schemaOperator';
+import {
+  findById,
+  updateProps,
+  validate,
+  normalizeSchemaNode,
+  updateInlineStyle,
+} from '../../../../common/base/schemaOperator';
+import { useMaterialBundleStore } from '../../../../core/store/materialBundleStore';
 import { getComponentConfig } from '../configs';
 import { PropertyForm } from './PropertyForm';
 import { StyleForm } from './StyleForm';
+import { EditorConfigPropsForm } from './EditorConfigPropsForm';
 import { MonacoSchemaEditor } from './MonacoSchemaEditor';
 
 function replaceNode(root: ISchema, targetId: string, nextNode: ISchema): ISchema {
@@ -33,11 +41,20 @@ export const PropertiesPanel: React.FC = () => {
       ? schema.id
       : null;
   const selectedNode = selectedId ? findById(schema, selectedId) : null;
+  const materialUidForCatalog = selectedNode?.type;
+  const editorCfgProps = useMaterialBundleStore((s) =>
+    materialUidForCatalog ? s.editorConfigs[materialUidForCatalog]?.props : undefined,
+  );
 
   const handlePropsUpdate = useCallback((newProps: Record<string, unknown>) => {
     if (!selectedId) return;
     const updated = updateProps(schema, selectedId, newProps);
     setSchema(updated);
+  }, [selectedId, schema, setSchema]);
+
+  const handleInlineStyleUpdate = useCallback((nextStyle: Record<string, unknown>) => {
+    if (!selectedId) return;
+    setSchema(updateInlineStyle(schema, selectedId, nextStyle));
   }, [selectedId, schema, setSchema]);
 
   useEffect(() => {
@@ -51,7 +68,7 @@ export const PropertiesPanel: React.FC = () => {
     if (!selectedNode) return;
 
     try {
-      const parsed = JSON.parse(value) as ISchema;
+      const parsed = normalizeSchemaNode(JSON.parse(value) as ISchema);
       if (!validate(parsed)) {
         setSchemaError('Schema 结构无效');
         return;
@@ -134,7 +151,14 @@ export const PropertiesPanel: React.FC = () => {
                 <PropertyForm
                   schema={selectedNode}
                   config={config}
-                  onUpdate={handlePropsUpdate}
+                  onUpdateProps={handlePropsUpdate}
+                  onUpdateStyle={handleInlineStyleUpdate}
+                />
+              ) : editorCfgProps && editorCfgProps.length > 0 ? (
+                <EditorConfigPropsForm
+                  schema={selectedNode}
+                  items={editorCfgProps}
+                  onUpdateProps={handlePropsUpdate}
                 />
               ) : (
                 <Empty description={`${selectedNode.type} 暂无属性配置`} />
@@ -143,7 +167,7 @@ export const PropertiesPanel: React.FC = () => {
           </TabPane>
           <TabPane tab="样式" itemKey="style">
             <div style={{ padding: '12px 0' }}>
-              <StyleForm schema={selectedNode} onUpdate={handlePropsUpdate} />
+              <StyleForm schema={selectedNode} onUpdateStyle={handleInlineStyleUpdate} />
             </div>
           </TabPane>
           <TabPane tab="Schema" itemKey="schema">

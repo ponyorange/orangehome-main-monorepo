@@ -1,22 +1,20 @@
 import React, { useCallback } from 'react';
 import { InputNumber } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
+import { getResolvedInlineStyle } from '../../../../common/base/schemaOperator';
 import { ColorPicker } from './ColorPicker';
 
 interface StyleFormProps {
   schema: ISchema;
-  onUpdate: (props: Record<string, unknown>) => void;
+  onUpdateStyle: (style: Record<string, unknown>) => void;
 }
 
-export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdate }) => {
-  const style = (schema.props?.style as Record<string, unknown>) ?? {};
+export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) => {
+  const style = getResolvedInlineStyle(schema);
 
   const updateStyle = useCallback((key: string, value: unknown) => {
-    onUpdate({
-      ...schema.props,
-      style: { ...style, [key]: value },
-    });
-  }, [schema.props, style, onUpdate]);
+    onUpdateStyle({ ...style, [key]: value });
+  }, [style, onUpdateStyle]);
 
   const numVal = (key: string) => {
     const v = style[key];

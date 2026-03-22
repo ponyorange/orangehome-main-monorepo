@@ -3,6 +3,7 @@ import type { ISchema } from '../../types/base';
 import type { ComponentCatalogItem } from '../../extensions/features/component-tab/catalog';
 import { generateIdWithPrefix } from '../../utils/id';
 import { get } from '../api/client';
+import { useMaterialBundleStore } from '../../core/store/materialBundleStore';
 
 export type BuilderComponentListType = 'online' | 'dev';
 
@@ -32,6 +33,8 @@ export interface ComponentVersionDto {
   changelog?: string;
   fileObjectKey: string;
   fileUrl?: string;
+  /** 部分网关/序列化可能仍为 snake_case */
+  file_url?: string;
   sourceObjectKey?: string;
   sourceUrl?: string;
   status: number;
@@ -52,69 +55,31 @@ export interface GetComponentListResponseDto {
   items: ComponentListItemDto[];
 }
 
-function schemaHasRemoteLoadTarget(schema: ISchema): boolean {
-  const props = schema.props;
-  const remote = props.remote as Record<string, unknown> | undefined;
-  if (remote && (typeof remote.moduleUrl === 'string' || typeof remote.scriptUrl === 'string')) {
-    return true;
-  }
-  return typeof props.remoteUrl === 'string';
-}
-
-function parseEditorConfigPartial(json: string | undefined): Partial<ISchema> {
-  if (!json?.trim()) return {};
-  try {
-    const o = JSON.parse(json) as unknown;
-    if (!o || typeof o !== 'object' || Array.isArray(o)) return {};
-    return o as Partial<ISchema>;
-  } catch {
-    return {};
-  }
-}
-
+/**
+ * 由接口行生成画布节点：type 为 materialUid；bundle / editorConfig 不写入 schema，由组件列表 hydrate 到 store。
+ */
 export function buildSchemaFromComponentListItem(item: ComponentListItemDto): ISchema | null {
   const { material, latestVersion } = item;
   if (!latestVersion) return null;
 
-  const fromConfig = parseEditorConfigPartial(latestVersion.editorConfigJson);
-  const type = fromConfig.type ?? material.materialUid;
-  const name = fromConfig.name ?? material.materialName;
-  const children = Array.isArray(fromConfig.children) ? fromConfig.children : [];
-  const props = {
-    ...(typeof fromConfig.props === 'object' && fromConfig.props ? fromConfig.props : {}),
-  } as Record<string, unknown>;
-
-  if (!props.remote && typeof props.remoteUrl !== 'string' && latestVersion.fileUrl) {
-    props.remote = { moduleUrl: latestVersion.fileUrl };
-  }
-
-  const schema: ISchema = {
+  return {
     id: '',
-    name,
-    type,
-    children,
-    props,
-    ...(fromConfig.propStyle ? { propStyle: fromConfig.propStyle } : {}),
-    ...(fromConfig.event2action ? { event2action: fromConfig.event2action } : {}),
-    ...(fromConfig.api ? { api: fromConfig.api } : {}),
+    name: material.materialName,
+    type: material.materialUid,
+    children: [],
+    props: {},
   };
-
-  if (!schemaHasRemoteLoadTarget(schema)) {
-    return null;
-  }
-
-  return schema;
 }
 
-function catalogIcon(material: ComponentMaterialDto): string {
+function catalogIcon(material: ComponentMaterialDto): { icon: string; iconUrl?: string } {
   const { icon, materialName } = material;
-  if (icon?.trim()) {
-    if (/^https?:\/\//i.test(icon)) {
-      return '🧩';
-    }
-    return icon.length <= 4 ? icon : icon.slice(0, 2);
+  if (icon?.trim() && /^https?:\/\//i.test(icon)) {
+    return { icon: '', iconUrl: icon };
   }
-  return materialName.trim().slice(0, 1) || '📦';
+  if (icon?.trim()) {
+    return { icon: icon.length <= 4 ? icon : icon.slice(0, 2) };
+  }
+  return { icon: materialName.trim().slice(0, 1) || '📦' };
 }
 
 function schemaWithNewIds(node: ISchema): ISchema {
@@ -127,13 +92,17 @@ function schemaWithNewIds(node: ISchema): ISchema {
 }
 
 export function componentListItemToCatalogItem(item: ComponentListItemDto): ComponentCatalogItem | null {
+  if (!item.latestVersion) return null;
   const template = buildSchemaFromComponentListItem(item);
   if (!template) return null;
+
+  const { icon, iconUrl } = catalogIcon(item.material);
 
   return {
     type: template.type,
     name: item.material.materialName,
-    icon: catalogIcon(item.material),
+    icon,
+    ...(iconUrl ? { iconUrl } : {}),
     category: 'business',
     createSchema: () => schemaWithNewIds(template),
   };
@@ -144,7 +113,9 @@ async function fetchComponentList(
   type: BuilderComponentListType,
 ): Promise<GetComponentListResponseDto> {
   const q = new URLSearchParams({ pageId, type });
-  return get<GetComponentListResponseDto>(`/builder/component-list?${q.toString()}`);
+  const res = await get<GetComponentListResponseDto>(`/builder/component-list?${q.toString()}`);
+  useMaterialBundleStore.getState().hydrateFromComponentList(res.items ?? []);
+  return res;
 }
 
 export function useComponentList(

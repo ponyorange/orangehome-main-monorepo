@@ -2,6 +2,41 @@ import type { ISchema } from '../../../types/base';
 import { generateIdWithPrefix } from '../../../utils/id';
 
 /**
+ * 合并顶层 style 与旧版 props.style（顶层优先），用于渲染与编辑
+ */
+export function getResolvedInlineStyle(node: ISchema): Record<string, unknown> {
+  const legacy = (node.props?.style as Record<string, unknown>) ?? {};
+  const top = (node.style as Record<string, unknown>) ?? {};
+  return { ...legacy, ...top };
+}
+
+/**
+ * 将 props.style 迁到顶层 style，并递归子节点（加载旧数据时用）
+ */
+export function normalizeSchemaNode(node: ISchema): ISchema {
+  const raw = node as ISchema & { editorConfig?: unknown };
+  const { editorConfig: _omitEditorConfig, children, ...rest } = raw;
+  const props = { ...(rest.props ?? {}) } as Record<string, unknown>;
+  delete props.remote;
+  delete props.remoteUrl;
+  let style = { ...((rest.style as Record<string, unknown>) ?? {}) };
+  const legacy = props.style;
+  if (legacy != null && typeof legacy === 'object' && !Array.isArray(legacy)) {
+    style = { ...(legacy as Record<string, unknown>), ...style };
+    delete props.style;
+  }
+  const childrenNorm = Array.isArray(children)
+    ? children.map(normalizeSchemaNode)
+    : [];
+  return {
+    ...rest,
+    props,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    children: childrenNorm,
+  };
+}
+
+/**
  * 根据 ID 查找节点
  * @param schema - Schema 树
  * @param id - 节点 ID
@@ -53,6 +88,7 @@ function cloneSchema(schema: ISchema): ISchema {
   return {
     ...schema,
     props: { ...schema.props },
+    style: schema.style ? { ...schema.style } : undefined,
     propStyle: schema.propStyle ? { ...schema.propStyle } : undefined,
     event2action: schema.event2action ? [...schema.event2action] : undefined,
     api: schema.api ? { ...schema.api } : undefined,
@@ -73,14 +109,52 @@ export function updateProps(
   props: Record<string, unknown>
 ): ISchema {
   if (schema.id === id) {
-    return {
-      ...cloneSchema(schema),
-      props: { ...schema.props, ...props },
-    };
+    const next = cloneSchema(schema);
+    const merged = { ...next.props, ...props } as Record<string, unknown>;
+    const embedded = merged.style;
+    delete merged.style;
+    delete merged.remote;
+    delete merged.remoteUrl;
+    next.props = merged;
+    if (
+      embedded !== null &&
+      typeof embedded === 'object' &&
+      !Array.isArray(embedded)
+    ) {
+      next.style = {
+        ...getResolvedInlineStyle(next),
+        ...(embedded as Record<string, unknown>),
+      };
+    }
+    return next;
   }
   return {
     ...cloneSchema(schema),
     children: schema.children.map((child) => updateProps(child, id, props)),
+  };
+}
+
+/**
+ * 更新节点内联 style（顶层），并移除 props.style
+ */
+export function updateInlineStyle(
+  schema: ISchema,
+  id: string,
+  style: Record<string, unknown>
+): ISchema {
+  if (schema.id === id) {
+    const next = cloneSchema(schema);
+    next.style = { ...style };
+    const p = { ...next.props } as Record<string, unknown>;
+    delete p.style;
+    delete p.remote;
+    delete p.remoteUrl;
+    next.props = p;
+    return next;
+  }
+  return {
+    ...cloneSchema(schema),
+    children: schema.children.map((child) => updateInlineStyle(child, id, style)),
   };
 }
 
@@ -207,6 +281,7 @@ export function duplicateNode(schema: ISchema, id: string): ISchema | null {
       ...node,
       id: generateIdWithPrefix(node.type.toLowerCase()),
       props: { ...node.props },
+      style: node.style ? { ...node.style } : undefined,
       propStyle: node.propStyle ? { ...node.propStyle } : undefined,
       event2action: node.event2action ? [...node.event2action] : undefined,
       api: node.api ? { ...node.api } : undefined,
@@ -246,6 +321,12 @@ export function validate(schema: ISchema): boolean {
   if (!schema.type || typeof schema.type !== 'string') return false;
   if (!Array.isArray(schema.children)) return false;
   if (typeof schema.props !== 'object') return false;
+  if (
+    schema.style != null &&
+    (typeof schema.style !== 'object' || Array.isArray(schema.style))
+  ) {
+    return false;
+  }
 
   // 递归验证子节点
   for (const child of schema.children) {
@@ -271,7 +352,8 @@ export function serialize(schema: ISchema): string {
  */
 export function deserialize(json: string): ISchema | null {
   try {
-    const schema = JSON.parse(json) as ISchema;
+    const raw = JSON.parse(json) as ISchema;
+    const schema = normalizeSchemaNode(raw);
     return validate(schema) ? schema : null;
   } catch {
     return null;
@@ -286,7 +368,10 @@ export const schemaOperator = {
   findById,
   findParentById,
   findPathById,
+  getResolvedInlineStyle,
+  normalizeSchemaNode,
   updateProps,
+  updateInlineStyle,
   updateStyle,
   addChild,
   removeById,

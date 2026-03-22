@@ -1,32 +1,33 @@
-import React from 'react';
+import type { ComponentType } from 'react';
 import type { RemoteComponentDefinition, SchemaComponentProps } from '../ComponentManager';
+import { loadRemoteStyle } from './remoteStyle';
 
-const remoteStyleCache = new Set<string>();
-
-async function loadRemoteStyle(cssUrl?: string): Promise<void> {
-  if (!cssUrl || remoteStyleCache.has(cssUrl)) return;
-
-  await new Promise<void>((resolve, reject) => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = cssUrl;
-    link.onload = () => resolve();
-    link.onerror = () => reject(new Error(`远程样式加载失败: ${cssUrl}`));
-    document.head.appendChild(link);
-  });
-
-  remoteStyleCache.add(cssUrl);
+function normalizeExportedComponent(
+  mod: unknown,
+  exportName?: string,
+): ComponentType<SchemaComponentProps> | null {
+  if (mod == null) return null;
+  let v: unknown = mod;
+  if (exportName && typeof mod === 'object' && mod !== null && exportName in mod) {
+    v = (mod as Record<string, unknown>)[exportName];
+  }
+  if (typeof v === 'function') return v as ComponentType<SchemaComponentProps>;
+  if (typeof v === 'object' && v !== null && 'default' in v) {
+    const d = (v as { default: unknown }).default;
+    if (typeof d === 'function') return d as ComponentType<SchemaComponentProps>;
+  }
+  return null;
 }
 
+/** 非 AMD：ESM dynamic import / 全局脚本 */
 export async function loadRemoteComponent(
-  definition: RemoteComponentDefinition
-): Promise<React.ComponentType<SchemaComponentProps> | null> {
+  definition: RemoteComponentDefinition,
+): Promise<ComponentType<SchemaComponentProps> | null> {
   await loadRemoteStyle(definition.cssUrl);
 
   if (definition.moduleUrl) {
     const mod = await import(/* @vite-ignore */ definition.moduleUrl);
-    const exported = definition.exportName ? mod[definition.exportName] : mod.default;
-    return (exported as React.ComponentType<SchemaComponentProps> | undefined) ?? null;
+    return normalizeExportedComponent(mod, definition.exportName);
   }
 
   if (definition.scriptUrl) {
@@ -60,7 +61,7 @@ export async function loadRemoteComponent(
       ? globalWindow[definition.globalName]
       : globalWindow.__OrangeRemoteComponent__;
 
-    return (globalValue as React.ComponentType<SchemaComponentProps> | undefined) ?? null;
+    return normalizeExportedComponent(globalValue, definition.exportName);
   }
 
   return null;

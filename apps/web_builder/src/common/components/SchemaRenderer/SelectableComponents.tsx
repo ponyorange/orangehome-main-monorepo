@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import type { ISchema } from '../../../types/base';
+import { getResolvedInlineStyle } from '../../base/schemaOperator';
 import { ComponentManager } from './ComponentManager';
 import { SelectionBox } from '../../../extensions/select-and-drag/components/SelectionBox';
 import type { ResizeDirection } from '../../../extensions/select-and-drag/hooks/useResize';
@@ -233,7 +234,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
     onResizeStart?.(schema.id, direction, e.clientX, e.clientY, dimensions.width, dimensions.height);
   }, [schema.id, dimensions, onResizeStart]);
   
-  const style = (schema.props?.style as React.CSSProperties) ?? {};
+  const style = getResolvedInlineStyle(schema) as React.CSSProperties;
   
   const showHover = selectable && (isHovered || localHovered);
   

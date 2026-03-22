@@ -27,6 +27,8 @@ export interface IApiInSchema {
   interval?: number;  // 轮询间隔（毫秒）
 }
 
+export type { ISchemaEditorConfig, ISchemaEditorConfigPropItem } from './editorConfig';
+
 /**
  * Schema 节点结构
  * 描述页面组件树的 JSON 结构
@@ -34,9 +36,11 @@ export interface IApiInSchema {
 export interface ISchema {
   id: string;                    // 全局唯一 ID
   name: string;                   // 组件名称（可读）
-  type: string;                   // 组件类型（如 'Text', 'Image', 'Container'）
+  type: string;                   // 组件类型（如 'Text', 'Image', 'Container'）；远端物料为 materialUid
   children: ISchema[];           // 子组件
-  props: Record<string, unknown>; // 组件属性
+  props: Record<string, unknown>; // 组件业务属性（不含内联 style；不含 remote，bundle 从组件列表按 type 解析）
+  /** 内联样式，与 props 同级；旧数据 props.style 会在反序列化时迁移到此 */
+  style?: Record<string, unknown>;
   propStyle?: Record<string, ICSSRule>;  // 样式配置，键为 CSS 选择器
   event2action?: IEvent2Action[];  // 事件动作绑定
   api?: IApiInSchema;            // API 数据配置

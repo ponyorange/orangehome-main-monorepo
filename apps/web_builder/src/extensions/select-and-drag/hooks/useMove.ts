@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useSchemaStore } from '../../../core/store/schemaStore';
-import { findById, updateProps } from '../../../common/base/schemaOperator';
+import { findById, getResolvedInlineStyle, updateInlineStyle } from '../../../common/base/schemaOperator';
 import type { ISchema } from '../../../types/base';
 
 interface MoveState {
@@ -13,8 +13,7 @@ interface MoveState {
 }
 
 function getStyleNum(schema: ISchema, prop: string): number {
-  const style = schema.props?.style as Record<string, unknown> | undefined;
-  if (!style) return 0;
+  const style = getResolvedInlineStyle(schema);
   const val = style[prop];
   return typeof val === 'number' ? val : 0;
 }
@@ -53,12 +52,12 @@ export function useMove(selectedIds: string[]) {
       const newMarginTop = state.originalMarginTop + dy;
       const newMarginLeft = state.originalMarginLeft + dx;
 
-      const updated = updateProps(schemaRef.current, state.targetId, {
-        style: {
-          ...(findById(schemaRef.current, state.targetId)?.props?.style as Record<string, unknown> ?? {}),
-          marginTop: newMarginTop,
-          marginLeft: newMarginLeft,
-        },
+      const target = findById(schemaRef.current, state.targetId);
+      if (!target) return;
+      const updated = updateInlineStyle(schemaRef.current, state.targetId, {
+        ...getResolvedInlineStyle(target),
+        marginTop: newMarginTop,
+        marginLeft: newMarginLeft,
       });
       setSchema(updated);
     };
@@ -81,7 +80,7 @@ export function useMove(selectedIds: string[]) {
     for (const id of selectedIds) {
       const node = findById(updated, id);
       if (!node) continue;
-      const currentStyle = (node.props?.style as Record<string, unknown>) ?? {};
+      const currentStyle = getResolvedInlineStyle(node);
       const mt = typeof currentStyle.marginTop === 'number' ? currentStyle.marginTop : 0;
       const ml = typeof currentStyle.marginLeft === 'number' ? currentStyle.marginLeft : 0;
 
@@ -92,8 +91,10 @@ export function useMove(selectedIds: string[]) {
       else if (direction === 'left') newMl -= amount;
       else if (direction === 'right') newMl += amount;
 
-      updated = updateProps(updated, id, {
-        style: { ...currentStyle, marginTop: newMt, marginLeft: newMl },
+      updated = updateInlineStyle(updated, id, {
+        ...currentStyle,
+        marginTop: newMt,
+        marginLeft: newMl,
       });
     }
     setSchema(updated);

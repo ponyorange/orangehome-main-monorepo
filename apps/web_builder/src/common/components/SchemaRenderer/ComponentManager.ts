@@ -1,8 +1,11 @@
 import React from 'react';
 import type { ISchema } from '../../../types/base';
 import { loadRemoteComponent } from './utils/remoteLoader';
+import { runtimeContextService } from '../../../core/services/RuntimeContextService';
 
 export interface RemoteComponentDefinition {
+  /** 通过 RequireJS（AMD）加载的脚本 URL，与 moduleUrl 二选一优先使用 */
+  amdUrl?: string;
   moduleUrl?: string;
   scriptUrl?: string;
   cssUrl?: string;
@@ -61,7 +64,12 @@ export const ComponentManager = {
       remoteComponentCache.set(
         cacheKey,
         (async () => {
-          const component = await loadRemoteComponent(definition);
+          let component: SchemaComponent | null = null;
+          if (definition.amdUrl) {
+            component = await runtimeContextService.loadRemoteMaterial(type, definition);
+          } else {
+            component = await loadRemoteComponent(definition);
+          }
           if (component) {
             componentMap[type] = component;
           }

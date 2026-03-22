@@ -8,10 +8,8 @@ const createText = (name: string, text: string, style: Record<string, unknown> =
   name,
   type: 'Text',
   children: [],
-  props: {
-    text,
-    style,
-  },
+  props: { text },
+  style,
 });
 
 const createImage = (name: string, src: string, style: Record<string, unknown> = {}, alt = name): ISchema => ({
@@ -19,11 +17,8 @@ const createImage = (name: string, src: string, style: Record<string, unknown> =
   name,
   type: 'Image',
   children: [],
-  props: {
-    src,
-    alt,
-    style,
-  },
+  props: { src, alt },
+  style,
 });
 
 const createButton = (name: string, text: string, style: Record<string, unknown> = {}): ISchema => ({
@@ -31,10 +26,8 @@ const createButton = (name: string, text: string, style: Record<string, unknown>
   name,
   type: 'Button',
   children: [],
-  props: {
-    text,
-    style,
-  },
+  props: { text },
+  style,
 });
 
 const createContainer = (name: string, children: ISchema[], style: Record<string, unknown> = {}): ISchema => ({
@@ -42,9 +35,8 @@ const createContainer = (name: string, children: ISchema[], style: Record<string
   name,
   type: 'Container',
   children,
-  props: {
-    style,
-  },
+  props: {},
+  style,
 });
 
 /** 默认示例 Schema */
@@ -417,14 +409,13 @@ const createDemoSchema = (): ISchema => ({
       }
     ),
   ],
-  props: {
-    style: {
-      width: '100%',
-      minHeight: '100%',
-      boxSizing: 'border-box',
-      padding: '20px 0 32px',
-      background: 'radial-gradient(circle at top left, rgba(255, 184, 213, 0.22), transparent 26%), radial-gradient(circle at top right, rgba(166, 199, 255, 0.18), transparent 24%), linear-gradient(180deg, #fff9fc 0%, #f7f8ff 42%, #f9fbff 100%)',
-    },
+  props: {},
+  style: {
+    width: '100%',
+    minHeight: '100%',
+    boxSizing: 'border-box',
+    padding: '20px 0 32px',
+    background: 'radial-gradient(circle at top left, rgba(255, 184, 213, 0.22), transparent 26%), radial-gradient(circle at top right, rgba(166, 199, 255, 0.18), transparent 24%), linear-gradient(180deg, #fff9fc 0%, #f7f8ff 42%, #f9fbff 100%)',
   },
 });
 
