@@ -426,6 +426,8 @@ message ListMaterialsRequest {
   google.protobuf.StringValue status = 6;
   google.protobuf.StringValue visibility = 7;
   google.protobuf.StringValue search_keyword = 8;
+  /** 按业务线筛选物料（与 Material.business_id 对应） */
+  google.protobuf.StringValue business_id = 9;
 }
 
 message MaterialResponse {

@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@/types';
 import type {
   MaterialType,
   CreateMaterialTypeParams,

@@ -24,9 +24,14 @@ export interface CreateMaterialTypeParams {
 }
 
 /**
- * 更新物料类别参数
+ * 更新物料类别参数（UpdateMaterialTypeDto，不允许改 typeCode）
  */
-export type UpdateMaterialTypeParams = Partial<CreateMaterialTypeParams>;
+export interface UpdateMaterialTypeParams {
+  typeName?: string;
+  description?: string;
+  icon?: string;
+  sortOrder?: number;
+}
 
 /**
  * 物料类别列表响应

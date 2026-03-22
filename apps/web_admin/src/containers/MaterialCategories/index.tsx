@@ -6,7 +6,11 @@ import useSWRMutation from 'swr/mutation';
 import { materialCategoryApi } from '@/services/materialCategory';
 import { materialTypeApi } from '@/services/materialType';
 import { platformApi } from '@/services/platform';
-import type { MaterialCategory, CreateMaterialCategoryParams } from '@/types/materialCategory';
+import type {
+  MaterialCategory,
+  CreateMaterialCategoryParams,
+  UpdateMaterialCategoryParams,
+} from '@/types/materialCategory';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -17,7 +21,7 @@ export function MaterialCategories() {
   const [formValues, setFormValues] = useState<Partial<CreateMaterialCategoryParams>>({
     categoryName: '',
     categoryCode: '',
-    description: '',
+    icon: '',
     typeId: '',
     platformId: '',
     parentId: null,
@@ -42,7 +46,7 @@ export function MaterialCategories() {
 
   const { trigger: updateTrigger } = useSWRMutation(
     'materialCategories',
-    (_, { arg }: { arg: { id: string; data: Partial<CreateMaterialCategoryParams> } }) =>
+    (_, { arg }: { arg: { id: string; data: UpdateMaterialCategoryParams } }) =>
       materialCategoryApi.update(arg.id, arg.data)
   );
 
@@ -89,7 +93,7 @@ export function MaterialCategories() {
     setFormValues({
       categoryName: '',
       categoryCode: '',
-      description: '',
+      icon: '',
       typeId: '',
       platformId: '',
       parentId: parentId || null,
@@ -103,7 +107,7 @@ export function MaterialCategories() {
     setFormValues({
       categoryName: record.categoryName || (record as { name?: string }).name,
       categoryCode: record.categoryCode || (record as { code?: string }).code,
-      description: record.description,
+      icon: record.icon ?? '',
       typeId: record.typeId,
       platformId: record.platformId,
       parentId: record.parentId,
@@ -124,18 +128,36 @@ export function MaterialCategories() {
 
   const handleSubmit: () => void | Promise<void> = useCallback(async () => {
     try {
-      const data = { ...formValues, parentId: formValues.parentId || null };
       if (editingId) {
-        await updateTrigger({ id: editingId, data });
+        const sortOrder = Number(formValues.sortOrder);
+        await updateTrigger({
+          id: editingId,
+          data: {
+            categoryName: formValues.categoryName?.trim(),
+            icon: formValues.icon?.trim() || undefined,
+            sortOrder: Number.isFinite(sortOrder) ? Math.max(0, Math.round(sortOrder)) : undefined,
+          },
+        });
         Toast.success('更新成功');
       } else {
-        await createTrigger(data as CreateMaterialCategoryParams);
+        const sortOrder = Number(formValues.sortOrder);
+        const payload: CreateMaterialCategoryParams = {
+          categoryCode: formValues.categoryCode!.trim(),
+          categoryName: formValues.categoryName!.trim(),
+          typeId: formValues.typeId!,
+          platformId: formValues.platformId!,
+          sortOrder: Number.isFinite(sortOrder) ? Math.max(0, Math.round(sortOrder)) : undefined,
+        };
+        const icon = formValues.icon?.trim();
+        if (icon) payload.icon = icon;
+        if (formValues.parentId) payload.parentId = formValues.parentId;
+        await createTrigger(payload);
         Toast.success('创建成功');
       }
       setVisible(false);
       mutate();
-    } catch {
-      // error
+    } catch (e) {
+      Toast.error(e instanceof Error ? e.message : '保存失败');
     }
   }, [editingId, formValues, createTrigger, updateTrigger, mutate]);
 
@@ -212,12 +234,14 @@ export function MaterialCategories() {
             initValue={formValues.categoryCode}
             onChange={(v) => setFormValues(p => ({ ...p, categoryCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
+            disabled={!!editingId}
           />
-          <Form.Input 
-            field="description" 
-            label="描述" 
-            initValue={formValues.description}
-            onChange={(v) => setFormValues(p => ({ ...p, description: v }))}
+          <Form.Input
+            field="icon"
+            label="图标"
+            initValue={formValues.icon}
+            onChange={(v) => setFormValues(p => ({ ...p, icon: v }))}
+            placeholder="选填"
           />
           <Form.Select
             field="typeId"
@@ -226,6 +250,7 @@ export function MaterialCategories() {
             initValue={formValues.typeId}
             onChange={(v) => setFormValues(p => ({ ...p, typeId: v as string }))}
             rules={[{ required: true, message: '请选择物料类别' }]}
+            disabled={!!editingId}
           >
             {types.map((t: { id: string; typeName: string }) => (
               <Option key={t.id} value={t.id}>{t.typeName}</Option>
@@ -238,6 +263,7 @@ export function MaterialCategories() {
             initValue={formValues.platformId}
             onChange={(v) => setFormValues(p => ({ ...p, platformId: v as string }))}
             rules={[{ required: true, message: '请选择平台' }]}
+            disabled={!!editingId}
           >
             {platforms.map((p: { id: string; platformName: string }) => (
               <Option key={p.id} value={p.id}>{p.platformName}</Option>
@@ -249,6 +275,7 @@ export function MaterialCategories() {
             placeholder="不选则为根分类"
             initValue={formValues.parentId}
             onChange={(v) => setFormValues(p => ({ ...p, parentId: v === '' ? null : (v as string) }))}
+            disabled={!!editingId}
           >
             <Option value="">无（根分类）</Option>
             {flatCategories.filter(c => c.id !== editingId).map(c => (

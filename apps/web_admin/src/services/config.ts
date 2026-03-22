@@ -68,8 +68,14 @@ export const API_ENDPOINTS = {
   MATERIAL_VERSION: {
     CREATE: '/versions',
     DETAIL: (versionId: string) => `/versions/${versionId}`,
+    UPDATE: (versionId: string) => `/versions/${versionId}`,
     PUBLISH: (versionId: string) => `/versions/${versionId}/publish`,
+    OFFLINE: (versionId: string) => `/versions/${versionId}/offline`,
     DELETE: (versionId: string) => `/versions/${versionId}`,
+  },
+  /** 管理端直传 MinIO（multipart），返回 url / objectKey */
+  UPLOAD: {
+    FILE: '/uploads',
   },
 } as const;
 

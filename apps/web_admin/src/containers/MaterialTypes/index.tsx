@@ -1,10 +1,10 @@
-import { Card, Typography, Button, Table, Modal, Form, Toast, Popconfirm, Switch, Space } from '@douyinfe/semi-ui';
+import { Card, Typography, Button, Table, Modal, Form, Toast, Popconfirm, Space } from '@douyinfe/semi-ui';
 import { IconPlus, IconEdit, IconDelete } from '@douyinfe/semi-icons';
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { materialTypeApi } from '@/services/materialType';
-import type { MaterialType, CreateMaterialTypeParams } from '@/types/materialType';
+import type { MaterialType, CreateMaterialTypeParams, UpdateMaterialTypeParams } from '@/types/materialType';
 
 const { Title } = Typography;
 
@@ -32,7 +32,7 @@ export function MaterialTypes() {
 
   const { trigger: updateTrigger } = useSWRMutation(
     'materialTypes',
-    (_, { arg }: { arg: { id: string; data: Partial<CreateMaterialTypeParams> } }) =>
+    (_, { arg }: { arg: { id: string; data: UpdateMaterialTypeParams } }) =>
       materialTypeApi.update(arg.id, arg.data)
   );
 
@@ -73,17 +73,32 @@ export function MaterialTypes() {
 
   const handleSubmit: () => void | Promise<void> = useCallback(async () => {
     try {
+      const sortOrder = Number(formValues.sortOrder);
+      const sortInt = Number.isFinite(sortOrder) ? Math.max(0, Math.round(sortOrder)) : undefined;
       if (editingId) {
-        await updateTrigger({ id: editingId, data: formValues });
+        const updateBody: UpdateMaterialTypeParams = {
+          typeName: formValues.typeName?.trim(),
+          description: formValues.description?.trim() || undefined,
+          icon: formValues.icon?.trim() || undefined,
+          sortOrder: sortInt,
+        };
+        await updateTrigger({ id: editingId, data: updateBody });
         Toast.success('更新成功');
       } else {
-        await createTrigger(formValues as CreateMaterialTypeParams);
+        const createBody: CreateMaterialTypeParams = {
+          typeCode: formValues.typeCode!.trim(),
+          typeName: formValues.typeName!.trim(),
+          description: formValues.description?.trim() || undefined,
+          icon: formValues.icon?.trim() || undefined,
+          sortOrder: sortInt,
+        };
+        await createTrigger(createBody);
         Toast.success('创建成功');
       }
       setVisible(false);
       mutate();
-    } catch {
-      // error
+    } catch (e) {
+      Toast.error(e instanceof Error ? e.message : '保存失败');
     }
   }, [editingId, formValues, createTrigger, updateTrigger, mutate]);
 
@@ -155,6 +170,7 @@ export function MaterialTypes() {
             initValue={formValues.typeCode}
             onChange={(v) => setFormValues(p => ({ ...p, typeCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
+            disabled={!!editingId}
           />
           <Form.Input
             field="description"

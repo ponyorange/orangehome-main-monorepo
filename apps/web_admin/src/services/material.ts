@@ -3,7 +3,6 @@ import type {
   Material,
   CreateMaterialParams,
   UpdateMaterialParams,
-  MaterialListResponse,
   MaterialQueryParams,
   PresignedUploadBody,
   PresignedUploadResponse,
@@ -28,6 +27,7 @@ export const materialApi = {
     if (params?.categoryId) query.append('categoryId', params.categoryId);
     if (params?.platformId) query.append('platformId', params.platformId);
     if (params?.status) query.append('status', params.status);
+    if (params?.visibility) query.append('visibility', params.visibility);
     const queryString = query.toString();
     const url = `${API_ENDPOINTS.MATERIAL.LIST}${queryString ? `?${queryString}` : ''}`;
     return request<{ data: Material[]; total: number; page: number; limit: number }>(url, { method: 'GET' });

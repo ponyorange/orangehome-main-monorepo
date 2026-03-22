@@ -14,12 +14,14 @@ export interface MaterialVersion {
   sourceUrl?: string;
   size?: number;
   md5?: string;
-  /** 0 开发中 1 测试中 2 已发布 */
+  /** 0 开发中 1 测试中 2 已发布 3 已下线 */
   status: number;
   isPublished?: boolean;
   releaseTime?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** 低代码/编辑器配置（与后端 editorConfig 一致） */
+  editorConfig?: Record<string, unknown>;
 }
 
 /**
@@ -31,6 +33,18 @@ export interface CreateMaterialVersionParams {
   changelog?: string;
   /** 上传完成后的 MinIO 对象键（非访问 URL） */
   fileObjectKey: string;
+  sourceObjectKey?: string;
+  editorConfig?: Record<string, unknown>;
+  dependencies?: Array<Record<string, string>>;
+  md5?: string;
+}
+
+/**
+ * 更新物料版本（UpdateMaterialVersionDto，仅开发中；字段均可选）
+ */
+export interface UpdateMaterialVersionParams {
+  changelog?: string;
+  fileObjectKey?: string;
   sourceObjectKey?: string;
   editorConfig?: Record<string, unknown>;
   dependencies?: Array<Record<string, string>>;

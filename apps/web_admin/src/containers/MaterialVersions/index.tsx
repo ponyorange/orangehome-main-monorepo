@@ -14,14 +14,18 @@ import {
 } from '@douyinfe/semi-ui';
 import type { customRequestArgs } from '@douyinfe/semi-ui/lib/es/upload';
 import type { TagColor } from '@douyinfe/semi-ui/lib/es/tag';
-import { IconPlus, IconDelete, IconPlayCircle, IconUpload } from '@douyinfe/semi-icons';
+import { IconPlus, IconDelete, IconPlayCircle, IconUpload, IconEdit, IconStop } from '@douyinfe/semi-icons';
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { materialApi } from '@/services/material';
 import { materialVersionApi } from '@/services/materialVersion';
-import type { CreateMaterialVersionParams, MaterialVersion } from '@/types/materialVersion';
+import type {
+  CreateMaterialVersionParams,
+  MaterialVersion,
+  UpdateMaterialVersionParams,
+} from '@/types/materialVersion';
 import type { Material } from '@/types/material';
 
 const { Title, Text } = Typography;
@@ -31,24 +35,57 @@ const versionStatusMap: Record<number, { text: string; color: TagColor }> = {
   0: { text: '开发中', color: 'grey' },
   1: { text: '测试中', color: 'blue' },
   2: { text: '已发布', color: 'green' },
+  3: { text: '已下线', color: 'red' },
 };
 
 function rowId(record: MaterialVersion): string {
   return String(record.id ?? record._id ?? '');
 }
 
+function parseEditorConfigJson(raw: string): Record<string, unknown> | undefined {
+  const t = raw.trim();
+  if (!t) return undefined;
+  const parsed = JSON.parse(t) as unknown;
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('editorConfig 须为 JSON 对象，例如 {"uid":"..."}');
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function editorConfigToJson(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') {
+    try {
+      const o = JSON.parse(v) as unknown;
+      return JSON.stringify(o, null, 2);
+    } catch {
+      return v;
+    }
+  }
+  if (typeof v === 'object') {
+    return JSON.stringify(v, null, 2);
+  }
+  return '';
+}
+
 export function MaterialVersions() {
   const { materialId } = useParams<{ materialId: string }>();
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
+  const [editingVersionId, setEditingVersionId] = useState<string | null>(null);
   const [uploadResetKey, setUploadResetKey] = useState(0);
   const [fileObjectKey, setFileObjectKey] = useState('');
+  /** 进入编辑时的 objectKey，用于取消替换文件 */
+  const [baselineFileObjectKey, setBaselineFileObjectKey] = useState('');
+  const [fileReplaced, setFileReplaced] = useState(false);
   const [formValues, setFormValues] = useState<{
     version: string;
     changelog: string;
+    editorConfigJson: string;
   }>({
     version: '',
     changelog: '',
+    editorConfigJson: '',
   });
 
   const { data: materialData } = useSWR<Material>(
@@ -68,6 +105,12 @@ export function MaterialVersions() {
     (_, { arg }: { arg: CreateMaterialVersionParams }) => materialVersionApi.create(arg)
   );
 
+  const { trigger: updateTrigger } = useSWRMutation(
+    'versions-update',
+    (_, { arg }: { arg: { id: string; data: UpdateMaterialVersionParams } }) =>
+      materialVersionApi.update(arg.id, arg.data)
+  );
+
   const { trigger: deleteTrigger } = useSWRMutation(
     'versions',
     (_, { arg }: { arg: string }) => materialVersionApi.delete(arg)
@@ -78,12 +121,21 @@ export function MaterialVersions() {
     (_, { arg }: { arg: string }) => materialVersionApi.publish(arg)
   );
 
+  const { trigger: offlineTrigger } = useSWRMutation(
+    'versions-offline',
+    (_, { arg }: { arg: string }) => materialVersionApi.offline(arg)
+  );
+
   const versions = data?.data ?? [];
   const materialTitle = materialData?.materialName || materialData?.name || materialId;
+  const isEditing = !!editingVersionId;
 
   const resetForm = useCallback(() => {
-    setFormValues({ version: '', changelog: '' });
+    setEditingVersionId(null);
+    setFormValues({ version: '', changelog: '', editorConfigJson: '' });
     setFileObjectKey('');
+    setBaselineFileObjectKey('');
+    setFileReplaced(false);
     setUploadResetKey((k) => k + 1);
   }, []);
 
@@ -91,6 +143,22 @@ export function MaterialVersions() {
     resetForm();
     setVisible(true);
   }, [resetForm]);
+
+  const handleEdit = useCallback((record: MaterialVersion) => {
+    if (record.status !== 0) return;
+    const id = rowId(record);
+    setEditingVersionId(id);
+    setBaselineFileObjectKey(record.fileObjectKey || '');
+    setFileReplaced(false);
+    setFileObjectKey(record.fileObjectKey || '');
+    setFormValues({
+      version: record.version || '',
+      changelog: record.changelog || '',
+      editorConfigJson: editorConfigToJson((record as { editorConfig?: unknown }).editorConfig),
+    });
+    setUploadResetKey((k) => k + 1);
+    setVisible(true);
+  }, []);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -118,6 +186,19 @@ export function MaterialVersions() {
     [publishTrigger, mutate]
   );
 
+  const handleOffline = useCallback(
+    async (id: string) => {
+      try {
+        await offlineTrigger(id);
+        Toast.success('已下线');
+        mutate();
+      } catch (e) {
+        Toast.error(e instanceof Error ? e.message : '下线失败');
+      }
+    },
+    [offlineTrigger, mutate]
+  );
+
   const handleJsUpload = useCallback(
     async ({ fileInstance, onSuccess, onError }: customRequestArgs) => {
       try {
@@ -142,13 +223,14 @@ export function MaterialVersions() {
           throw new Error(`上传失败 (${res.status})`);
         }
         setFileObjectKey(presigned.objectKey);
+        if (editingVersionId) setFileReplaced(true);
         onSuccess(res as unknown as object);
       } catch (e) {
         Toast.error(e instanceof Error ? e.message : '上传失败');
         onError({ status: 500 });
       }
     },
-    [materialId, formValues.version]
+    [materialId, formValues.version, editingVersionId]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -158,6 +240,33 @@ export function MaterialVersions() {
       Toast.error('请输入版本号');
       return;
     }
+
+    let editorConfig: Record<string, unknown> | undefined;
+    try {
+      editorConfig = parseEditorConfigJson(formValues.editorConfigJson);
+    } catch (e) {
+      Toast.error(e instanceof Error ? e.message : 'editorConfig 格式错误');
+      return;
+    }
+
+    if (isEditing && editingVersionId) {
+      try {
+        const body: UpdateMaterialVersionParams = {
+          changelog: formValues.changelog.trim(),
+        };
+        if (editorConfig !== undefined) body.editorConfig = editorConfig;
+        if (fileReplaced && fileObjectKey) body.fileObjectKey = fileObjectKey;
+        await updateTrigger({ id: editingVersionId, data: body });
+        Toast.success('更新成功');
+        setVisible(false);
+        resetForm();
+        mutate();
+      } catch (e) {
+        Toast.error(e instanceof Error ? e.message : '更新失败');
+      }
+      return;
+    }
+
     if (!fileObjectKey) {
       Toast.error('请上传 JS 文件');
       return;
@@ -168,6 +277,7 @@ export function MaterialVersions() {
         version: ver,
         changelog: formValues.changelog?.trim() || undefined,
         fileObjectKey,
+        ...(editorConfig !== undefined ? { editorConfig } : {}),
       });
       Toast.success('创建成功');
       setVisible(false);
@@ -176,7 +286,18 @@ export function MaterialVersions() {
     } catch (e) {
       Toast.error(e instanceof Error ? e.message : '创建失败');
     }
-  }, [materialId, formValues, fileObjectKey, createTrigger, mutate, resetForm]);
+  }, [
+    materialId,
+    formValues,
+    fileObjectKey,
+    isEditing,
+    editingVersionId,
+    fileReplaced,
+    createTrigger,
+    updateTrigger,
+    mutate,
+    resetForm,
+  ]);
 
   const columns = [
     { title: '版本号', dataIndex: 'version' },
@@ -209,19 +330,33 @@ export function MaterialVersions() {
         return (
           <Space>
             {record.status === 0 && (
-              <Button
-                icon={<IconPlayCircle />}
-                theme="borderless"
-                onClick={() => handlePublish(id)}
-              />
+              <>
+                <Button icon={<IconEdit />} theme="borderless" onClick={() => handleEdit(record)} />
+                <Button
+                  icon={<IconPlayCircle />}
+                  theme="borderless"
+                  onClick={() => handlePublish(id)}
+                />
+              </>
             )}
-            <Popconfirm
-              title="确认删除？"
-              content="此操作不可恢复"
-              onConfirm={() => handleDelete(id)}
-            >
-              <Button icon={<IconDelete />} theme="borderless" type="danger" />
-            </Popconfirm>
+            {record.status === 2 && (
+              <Popconfirm
+                title="确认下线该版本？"
+                content="下线后状态变为「已下线」；若当前为物料最新版本，将自动回退到其他已发布版本或清空"
+                onConfirm={() => handleOffline(id)}
+              >
+                <Button icon={<IconStop />} theme="borderless" type="warning" />
+              </Popconfirm>
+            )}
+            {record.status === 0 && (
+              <Popconfirm
+                title="确认删除？"
+                content="此操作不可恢复"
+                onConfirm={() => handleDelete(id)}
+              >
+                <Button icon={<IconDelete />} theme="borderless" type="danger" />
+              </Popconfirm>
+            )}
           </Space>
         );
       },
@@ -252,7 +387,7 @@ export function MaterialVersions() {
       </Card>
 
       <Modal
-        title="新增版本"
+        title={isEditing ? '编辑版本（仅开发中）' : '新增版本'}
         visible={visible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -269,10 +404,13 @@ export function MaterialVersions() {
             <Input
               placeholder="例如: 1.0.0"
               value={formValues.version}
+              disabled={isEditing}
               onChange={(v) => {
                 setFormValues((p) => ({ ...p, version: v }));
-                setFileObjectKey('');
-                setUploadResetKey((k) => k + 1);
+                if (!isEditing) {
+                  setFileObjectKey('');
+                  setUploadResetKey((k) => k + 1);
+                }
               }}
             />
           </div>
@@ -287,9 +425,20 @@ export function MaterialVersions() {
               onChange={(v) => setFormValues((p) => ({ ...p, changelog: v }))}
             />
           </div>
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>
+              编辑器配置 editorConfig（可选，JSON 对象）
+            </Text>
+            <TextArea
+              rows={5}
+              placeholder='例如 {"uid":"xxx","dependencies":[],"props":[]}'
+              value={formValues.editorConfigJson}
+              onChange={(v) => setFormValues((p) => ({ ...p, editorConfigJson: v }))}
+            />
+          </div>
           <div style={{ marginBottom: 12 }}>
             <Text strong style={{ display: 'block', marginBottom: 8 }}>
-              JS 构建产物
+              JS 构建产物{isEditing ? '（可选重新上传替换）' : ''}
             </Text>
             <Upload
               key={uploadResetKey}
@@ -299,18 +448,26 @@ export function MaterialVersions() {
               disabled={!formValues.version?.trim()}
               customRequest={handleJsUpload}
               onRemove={() => {
-                setFileObjectKey('');
+                if (isEditing) {
+                  setFileObjectKey(baselineFileObjectKey);
+                  setFileReplaced(false);
+                } else {
+                  setFileObjectKey('');
+                }
                 return true;
               }}
             >
               <IconUpload size="extra-large" />
               <Text type="tertiary" size="small">
-                请先填写版本号；将文件直传到 MinIO，创建版本时提交 objectKey（与 api-docs 一致）
+                {isEditing
+                  ? '当前版本已绑定文件；可重新上传替换（将调用更新接口写入新 objectKey）'
+                  : '请先填写版本号；将文件直传到 MinIO，创建版本时提交 objectKey'}
               </Text>
             </Upload>
             {fileObjectKey ? (
               <Text type="secondary" size="small" style={{ display: 'block', marginTop: 8 }}>
-                已上传，objectKey: {fileObjectKey}
+                {fileReplaced ? '新 objectKey: ' : 'objectKey: '}
+                {fileObjectKey}
               </Text>
             ) : null}
           </div>

@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@/types';
 import type {
   MaterialCategory,
   CreateMaterialCategoryParams,
@@ -20,10 +21,15 @@ export const materialCategoryApi = {
   },
 
   /**
-   * 获取物料分类树形列表
+   * 获取物料分类树（与 api-docs 一致，可按 platformId、typeId 筛选）
    */
-  async getTreeList() {
-    return request<{ data: MaterialCategoryTree[] }>(API_ENDPOINTS.MATERIAL_CATEGORY.TREE_LIST, { method: 'GET' });
+  async getTreeList(params?: { platformId?: string; typeId?: string }) {
+    const q = new URLSearchParams();
+    if (params?.platformId) q.append('platformId', params.platformId);
+    if (params?.typeId) q.append('typeId', params.typeId);
+    const qs = q.toString();
+    const url = `${API_ENDPOINTS.MATERIAL_CATEGORY.TREE_LIST}${qs ? `?${qs}` : ''}`;
+    return request<{ data: MaterialCategoryTree[] }>(url, { method: 'GET' });
   },
 
   /**

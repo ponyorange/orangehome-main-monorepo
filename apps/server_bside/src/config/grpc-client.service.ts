@@ -34,6 +34,14 @@ export interface PageVersionService {
   getPageVersion(data: any, metadata?: Metadata): Observable<any>;
 }
 
+export interface MaterialGrpcService {
+  listMaterials(data: any, metadata?: Metadata): Observable<any>;
+}
+
+export interface MaterialVersionGrpcService {
+  listMaterialVersions(data: any, metadata?: Metadata): Observable<any>;
+}
+
 @Injectable()
 export class GrpcClientService implements OnModuleInit {
   constructor(@Inject(CORE_GRPC_CLIENT) private readonly client: ClientGrpc) {}
@@ -42,12 +50,16 @@ export class GrpcClientService implements OnModuleInit {
   private projectService!: ProjectService;
   private pageService!: PageService;
   private pageVersionService!: PageVersionService;
+  private materialGrpcService!: MaterialGrpcService;
+  private materialVersionGrpcService!: MaterialVersionGrpcService;
 
   onModuleInit() {
     this.businessService = this.client.getService<BusinessService>('BusinessService');
     this.projectService = this.client.getService<ProjectService>('ProjectService');
     this.pageService = this.client.getService<PageService>('PageService');
     this.pageVersionService = this.client.getService<PageVersionService>('PageVersionService');
+    this.materialGrpcService = this.client.getService<MaterialGrpcService>('MaterialService');
+    this.materialVersionGrpcService = this.client.getService<MaterialVersionGrpcService>('MaterialVersionService');
   }
 
   get business(): BusinessService {
@@ -66,6 +78,14 @@ export class GrpcClientService implements OnModuleInit {
     return this.pageVersionService;
   }
 
+  get material(): MaterialGrpcService {
+    return this.materialGrpcService;
+  }
+
+  get materialVersion(): MaterialVersionGrpcService {
+    return this.materialVersionGrpcService;
+  }
+
   createAuthMetadata(authHeader?: string): Metadata {
     const metadata = new Metadata();
     const normalized = authHeader?.trim();
@@ -81,6 +101,13 @@ export class GrpcClientService implements OnModuleInit {
   }
 
   wrapStringValue(value?: string): { value: string } | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    return { value };
+  }
+
+  wrapInt32Value(value?: number): { value: number } | undefined {
     if (value === undefined) {
       return undefined;
     }

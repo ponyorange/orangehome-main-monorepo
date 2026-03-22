@@ -9,6 +9,7 @@ export interface MaterialCategory {
   typeName?: string;
   platformId: string;
   platformName?: string;
+  icon?: string;
   parentId?: string | null;
   level: number;
   sortOrder: number;
@@ -22,22 +23,26 @@ export interface MaterialCategory {
 }
 
 /**
- * 创建物料分类参数
+ * 创建物料分类参数（CreateMaterialCategoryDto）
  */
 export interface CreateMaterialCategoryParams {
   categoryCode: string;
   categoryName: string;
   typeId: string;
   platformId: string;
-  description?: string;
+  icon?: string;
   parentId?: string | null;
   sortOrder?: number;
 }
 
 /**
- * 更新物料分类参数
+ * 更新物料分类参数（UpdateMaterialCategoryDto，与创建字段不同）
  */
-export type UpdateMaterialCategoryParams = Partial<CreateMaterialCategoryParams>;
+export interface UpdateMaterialCategoryParams {
+  categoryName?: string;
+  icon?: string;
+  sortOrder?: number;
+}
 
 /**
  * 移动分类参数
