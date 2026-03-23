@@ -1,0 +1,35 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# main-monorepo Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-23
+
+## Active Technologies
+
+- TypeScript ~5.3、Node.js 20+（与 `apps/server_cside` 一致） + NestJS 10、`@nestjs/microservices` + `@grpc/grpc-js`、`@grpc/proto-loader`（或等价代码生成）、`ejs`、（可选）`@nestjs/terminus` 已有则沿用 (001-runtime-page-render)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript ~5.3、Node.js 20+（与 `apps/server_cside` 一致）: Follow standard conventions
+
+## Recent Changes
+
+- 001-runtime-page-render: Added TypeScript ~5.3、Node.js 20+（与 `apps/server_cside` 一致） + NestJS 10、`@nestjs/microservices` + `@grpc/grpc-js`、`@grpc/proto-loader`（或等价代码生成）、`ejs`、（可选）`@nestjs/terminus` 已有则沿用
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

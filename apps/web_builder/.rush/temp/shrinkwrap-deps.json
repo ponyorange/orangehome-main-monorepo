@@ -1,5 +1,5 @@
 {
-  "../../apps/web_builder": "../../apps/web_builder:rh5aEeBGXd2nsah9IyFxZZeANr1nbaJ4HTZ/0HNlmco=:",
+  "../../apps/web_builder": "../../apps/web_builder:TZz8fMYaIdPuRJw/z2+8fw5EVsBVbm1q06wOaeps6vk=:",
   "/@douyinfe/semi-foundation@2.92.2": "Missing shrinkwrap entry!",
   "/@douyinfe/semi-icons@2.92.2(react@18.3.1)": "Missing shrinkwrap entry!",
   "/@douyinfe/semi-ui@2.92.2(@floating-ui/dom@1.7.6)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)": "Missing shrinkwrap entry!",
@@ -11,6 +11,7 @@
   "/@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@20.19.35)(sass@1.97.3)(terser@5.46.0))": "Missing shrinkwrap entry!",
   "/eventemitter2@6.4.9": "Missing shrinkwrap entry!",
   "/inversify@6.0.1": "Missing shrinkwrap entry!",
+  "/monaco-editor@0.55.1": "Missing shrinkwrap entry!",
   "/nanoid@5.1.7": "Missing shrinkwrap entry!",
   "/react-dom@18.3.1(react@18.3.1)": "Missing shrinkwrap entry!",
   "/react@18.3.1": "Missing shrinkwrap entry!",

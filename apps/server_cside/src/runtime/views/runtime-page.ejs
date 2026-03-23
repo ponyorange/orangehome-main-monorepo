@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="<%= typeof lang !== 'undefined' && lang ? String(lang) : 'zh-CN' %>">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="generator" content="orangehome-server-cside">
+  <title>
+    <%= typeof pageTitle !=='undefined' && pageTitle ? String(pageTitle) : 'Page' %> | <%= typeof siteName
+        !=='undefined' && siteName ? String(siteName) : 'OrangeHome' %>
+  </title>
+  <!-- 内嵌配置：合法 JSON，供引导脚本读取（勿用非 JSON 语法） -->
+  <script type="application/json" id="ORANGEHOME_DATA"><%- JSON.stringify({
+    schema: typeof pageSchema !== 'undefined' ? pageSchema : null,
+    componentsAmdMap: typeof componentsAmdMap === 'object' && componentsAmdMap !== null ? componentsAmdMap : {}
+  }) %></script>
+  <script src="http://192.168.1.91:33035/orangehome/materials/basic/react/react-18.js"></script>
+  <script src="http://192.168.1.91:33035/orangehome/materials/basic/react/react-dom-18.js"></script>
+  <script src="http://192.168.1.91:33035/orangehome/materials/basic/amd_require/require.min.js"></script>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script defer
+    src="http://192.168.1.91:33035/orangehome/materials/@orangehome/common-plugin-runtime/1.0.1/index.js"></script>
+
+  <% const map=(typeof componentsAmdMap==='object' && componentsAmdMap !==null) ? componentsAmdMap : {}; const
+    urls=Object.values(map).filter(function (u) { return typeof u==='string' && u.length> 0; });
+    const seen = new Set();
+    %>
+    <% urls.forEach(function (url) { if (seen.has(url)) return; seen.add(url); %>
+      <script defer src="<%- url %>"></script>
+      <% }); %>
+
+        <% if (typeof pageScripts==='string' && pageScripts.length) { %>
+          <%- pageScripts %>
+            <% } %>
+</body>
+
+</html>
