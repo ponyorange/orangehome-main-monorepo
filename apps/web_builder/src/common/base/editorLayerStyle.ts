@@ -1,8 +1,33 @@
+import type { ISchema } from '../../types/base';
+
 /**
- * 样式面板「图层」：固定 = relative + 外边距拖动；移动 = absolute + top/left 拖动
+ * 样式面板「图层」：堆叠 = relative + 外边距；移动 = absolute + top/left（与画布拖动一致）
  */
 export function isStyleLayerFloating(style: Record<string, unknown>): boolean {
   return style.position === 'absolute';
+}
+
+/**
+ * 从组件库拖入画布的新节点：默认图层模式为「移动」（absolute + top/left），
+ * 保留已有 style 字段，并与 StyleForm 切换到「移动」时的数值迁移规则一致。
+ */
+export function withDefaultFloatingLayerStyleForNewNode(node: ISchema): ISchema {
+  const prev = { ...(node.style ?? {}) } as Record<string, unknown>;
+  const mt = typeof prev.marginTop === 'number' ? prev.marginTop : 0;
+  const ml = typeof prev.marginLeft === 'number' ? prev.marginLeft : 0;
+  const top = typeof prev.top === 'number' ? prev.top : mt;
+  const left = typeof prev.left === 'number' ? prev.left : ml;
+  return {
+    ...node,
+    style: {
+      ...prev,
+      position: 'absolute',
+      top,
+      left,
+      marginTop: 0,
+      marginLeft: 0,
+    },
+  };
 }
 
 export function nudgeInlinePosition(

@@ -1,26 +1,14 @@
-# 依赖与构建产物（将在镜像内重新安装/构建）
-node_modules
-**/node_modules
-**/dist
-!apps/web_platform/dist
-**/build
-common/temp
-
-# Git
 .git
-.gitignore
-
-# IDE
-.idea
-.vscode
-
-# 日志与缓存
+**/node_modules
+common/temp
+.rush
+**/.rush
+docker_images
+**/*.tar
+**/dist
+**/.turbo
+**/.vite
 *.log
-.npm
-.pnpm-store
-
-# 其他
 .env
 .env.*
-*.md
-!apps/web_platform/README.md
+!.env.example

@@ -1,0 +1,35 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# server_bside Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-27
+
+## Active Technologies
+
+- TypeScript ~5.3、Node.js >= 18.12.0（monorepo README） + NestJS 10、`@grpc/grpc-js`、`@nestjs/axios`（Auth HTTP 代理）、`class-validator` (001-project-collaborator-auth)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript ~5.3、Node.js >= 18.12.0（monorepo README）: Follow standard conventions
+
+## Recent Changes
+
+- 001-project-collaborator-auth: Added TypeScript ~5.3、Node.js >= 18.12.0（monorepo README） + NestJS 10、`@grpc/grpc-js`、`@nestjs/axios`（Auth HTTP 代理）、`class-validator`
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

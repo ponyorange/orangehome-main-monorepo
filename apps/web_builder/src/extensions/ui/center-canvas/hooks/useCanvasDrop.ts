@@ -9,6 +9,7 @@ import { generateIdWithPrefix } from '../../../../utils/id';
 import type { ISchema } from '../../../../types/base';
 import { remoteComponentDebug } from '../../../../utils/remoteComponentDebug';
 import { isBuiltInLayoutContainerType } from '../../../../common/base/schemaLayout';
+import { withDefaultFloatingLayerStyleForNewNode } from '../../../../common/base/editorLayerStyle';
 
 interface CanvasDropState {
   isDragOver: boolean;
@@ -64,10 +65,10 @@ export function useCanvasDrop(
       if (data.type !== 'add-component') return;
 
       const idPrefix = data.componentType.toLowerCase().replace(/\W/g, '') || 'node';
-      const newSchema: ISchema = {
+      const newSchema: ISchema = withDefaultFloatingLayerStyleForNewNode({
         ...data.defaultSchema,
         id: generateIdWithPrefix(idPrefix),
-      };
+      });
 
       const bundleUrl = useMaterialBundleStore.getState().bundles[newSchema.type];
       remoteComponentDebug('useCanvasDrop: 拖入节点', {

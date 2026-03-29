@@ -57,6 +57,8 @@ export interface ComponentListItemDto {
 
 export interface GetComponentListResponseDto {
   businessId: string;
+  /** 官方物料库业务线 ID（与 businessId 物料合并返回） */
+  officialBusinessId: string;
   items: ComponentListItemDto[];
 }
 
@@ -70,9 +72,16 @@ function propsFromEditorInitValues(ec: ISchemaEditorConfig | undefined): Record<
   return out;
 }
 
+/** editorConfig.styleConfig.initValue → schema.style（浅拷贝） */
+function styleFromEditorStyleConfig(ec: ISchemaEditorConfig | undefined): Record<string, unknown> | undefined {
+  const iv = ec?.styleConfig?.initValue;
+  if (!iv || typeof iv !== 'object' || Array.isArray(iv)) return undefined;
+  return { ...iv };
+}
+
 /**
  * 由接口行生成画布节点：type 为 materialUid；bundle / editorConfig 不写入 schema，由组件列表 hydrate 到 store。
- * editorConfig 中的 props[].initValue 会写入节点 props，便于拖入即带默认值。
+ * editorConfig 中的 props[].initValue 会写入节点 props；styleConfig.initValue 会写入节点 style。
  */
 export function buildSchemaFromComponentListItem(item: ComponentListItemDto): ISchema | null {
   const { material, latestVersion } = item;
@@ -80,12 +89,15 @@ export function buildSchemaFromComponentListItem(item: ComponentListItemDto): IS
 
   const editorCfg = buildEditorConfigFromMaterial(parseMaterialEditorConfig(latestVersion.editorConfigJson));
 
+  const styleInit = styleFromEditorStyleConfig(editorCfg);
+
   return {
     id: '',
     name: material.materialName,
     type: material.materialUid,
     children: [],
     props: propsFromEditorInitValues(editorCfg),
+    ...(styleInit && Object.keys(styleInit).length > 0 ? { style: styleInit } : {}),
   };
 }
 

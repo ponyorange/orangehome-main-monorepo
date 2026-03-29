@@ -25,6 +25,8 @@ interface SelectionContextValue {
   handleContextMenu?: (id: string, event: React.MouseEvent) => void;
   onMoveStart?: (id: string, clientX: number, clientY: number) => void;
   onResizeStart?: (id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => void;
+  /** getBoundingClientRect 为视口像素时，乘以该系数得到画布逻辑 CSS 像素（无画布 scale 时为 1） */
+  selectionRectVisualToLogical?: number;
 }
 
 const defaultContext: SelectionContextValue = {
@@ -39,6 +41,7 @@ const defaultContext: SelectionContextValue = {
   handleContextMenu: undefined,
   onMoveStart: undefined,
   onResizeStart: undefined,
+  selectionRectVisualToLogical: 1,
 };
 
 export const SelectionContext = React.createContext<SelectionContextValue>(defaultContext);
@@ -77,7 +80,17 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
   schema,
   isRoot = false,
 }) => {
-  const { isSelected, isHovered, handleClick, handleMouseEnter, handleMouseLeave, handleContextMenu, onMoveStart, onResizeStart } = useSelectionContext();
+  const {
+    isSelected,
+    isHovered,
+    handleClick,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleContextMenu,
+    onMoveStart,
+    onResizeStart,
+    selectionRectVisualToLogical = 1,
+  } = useSelectionContext();
 
   /** 始终从 store 按 id 取当前节点，避免父链 props 与右侧面板 setSchema 后的树不同步 */
   const fromStore = useSchemaStore((s) => findById(s.schema, schema.id));
@@ -99,6 +112,7 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
         onContextMenu={handleContextMenu}
         onMoveStart={onMoveStart}
         onResizeStart={onResizeStart}
+        selectionRectVisualToLogical={selectionRectVisualToLogical}
       >
         {node.children?.map((child) => (
           <SelectableSchemaNodeRecursive key={child.id} schema={child} />
@@ -119,6 +133,7 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
       onContextMenu={handleContextMenu}
       onMoveStart={onMoveStart}
       onResizeStart={onResizeStart}
+      selectionRectVisualToLogical={selectionRectVisualToLogical}
     />
   );
 };

@@ -22,11 +22,14 @@ function getStyleNum(schema: ISchema, prop: string): number {
   return typeof val === 'number' ? val : 0;
 }
 
-export function useMove(selectedIds: string[]) {
+/** canvasLayoutScale = zoom * EDITOR_VIEWPORT_SCALE：client 像素位移 → schema 逻辑像素 */
+export function useMove(selectedIds: string[], canvasLayoutScale: number) {
   const { schema, setSchema } = useSchemaStore();
   const stateRef = useRef<MoveState | null>(null);
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
+  const scaleRef = useRef(canvasLayoutScale);
+  scaleRef.current = canvasLayoutScale;
 
   const startMove = useCallback((id: string, clientX: number, clientY: number) => {
     const node = findById(schemaRef.current, id);
@@ -53,11 +56,13 @@ export function useMove(selectedIds: string[]) {
       const state = stateRef.current;
       if (!state) return;
 
-      const dx = e.clientX - state.startX;
-      const dy = e.clientY - state.startY;
-
-      if (!state.isMoving && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+      const s = scaleRef.current || 1;
+      const dxs = e.clientX - state.startX;
+      const dys = e.clientY - state.startY;
+      if (!state.isMoving && Math.abs(dxs) < 3 && Math.abs(dys) < 3) return;
       state.isMoving = true;
+      const dx = dxs / s;
+      const dy = dys / s;
 
       const target = findById(schemaRef.current, state.targetId);
       if (!target) return;

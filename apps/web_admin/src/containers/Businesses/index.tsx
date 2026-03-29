@@ -18,6 +18,7 @@ export function Businesses() {
   const [formValues, setFormValues] = useState<Partial<CreateBusinessParams>>({
     businessName: '',
     businessCode: '',
+    businessType: '',
     description: '',
     platformIds: [],
   });
@@ -62,7 +63,7 @@ export function Businesses() {
 
   const handleAdd = useCallback(() => {
     setEditingId(null);
-    setFormValues({ businessName: '', businessCode: '', description: '', platformIds: [] });
+    setFormValues({ businessName: '', businessCode: '', businessType: '', description: '', platformIds: [] });
     setVisible(true);
   }, []);
 
@@ -71,6 +72,7 @@ export function Businesses() {
     setFormValues({
       businessName: record.businessName,
       businessCode: record.businessCode,
+      businessType: record.businessType || '',
       description: record.description,
       platformIds: record.platforms?.map(p => p.platformId) || [],
     });
@@ -99,7 +101,18 @@ export function Businesses() {
         await updateTrigger({ id: editingId, data: formValues });
         Toast.success('更新成功');
       } else {
-        await createTrigger(formValues as CreateBusinessParams);
+        const payload: CreateBusinessParams = {
+          businessCode: (formValues.businessCode || '').trim(),
+          businessName: (formValues.businessName || '').trim(),
+          businessType: (formValues.businessType || '').trim(),
+          description: formValues.description?.trim() || undefined,
+          platformIds: formValues.platformIds?.length ? formValues.platformIds : undefined,
+        };
+        if (!payload.businessType) {
+          Toast.warning('请输入业务类型');
+          return;
+        }
+        await createTrigger(payload);
         Toast.success('创建成功');
       }
       setVisible(false);
@@ -125,6 +138,11 @@ export function Businesses() {
   const columns = [
     { title: '名称', dataIndex: 'businessName' },
     { title: '编码', dataIndex: 'businessCode' },
+    {
+      title: '业务类型',
+      dataIndex: 'businessType',
+      render: (v: string) => v || '-',
+    },
     { title: '描述', dataIndex: 'description' },
     {
       title: '关联平台',
@@ -204,6 +222,14 @@ export function Businesses() {
             initValue={formValues.businessCode}
             onChange={(v) => setFormValues(p => ({ ...p, businessCode: v }))}
             rules={[{ required: true, message: '请输入编码' }]}
+          />
+          <Form.Input
+            field="businessType"
+            label="业务类型"
+            placeholder="与接口 businessType 一致，如标准业务线编码"
+            initValue={formValues.businessType}
+            onChange={(v) => setFormValues(p => ({ ...p, businessType: v }))}
+            rules={[{ required: !editingId, message: '请输入业务类型' }]}
           />
           <Form.Input
             field="description"

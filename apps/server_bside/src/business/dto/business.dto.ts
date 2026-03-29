@@ -10,6 +10,8 @@ export class BusinessResponseDto {
   id: string;
   businessCode: string;
   businessName: string;
+  /** private | public */
+  businessType?: string;
   description?: string;
   owner?: string;
   platforms: BusinessPlatformDto[];

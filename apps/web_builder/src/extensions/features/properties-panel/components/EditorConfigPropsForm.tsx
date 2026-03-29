@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
 import { Input, InputNumber, Select, Switch, TextArea } from '@douyinfe/semi-ui';
 import type { ISchema, ISchemaEditorConfigPropItem } from '../../../../types/base';
 import { ColorPicker } from './ColorPicker';
 import { ImageInput } from './ImageInput';
+import { InspectorFormGrid, InspectorFormRow } from './inspector';
 
 interface EditorConfigPropsFormProps {
   schema: ISchema;
@@ -19,6 +20,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
   items,
   onUpdateProps,
 }) => {
+  const baseId = useId();
   const patch = useCallback(
     (key: string, value: unknown) => {
       onUpdateProps({ ...schema.props, [key]: value });
@@ -26,15 +28,19 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
     [schema.props, onUpdateProps],
   );
 
+  const fid = (key: string) => `${baseId}-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
   const renderField = (item: ISchemaEditorConfigPropItem) => {
     const value = propValue(schema, item.key);
     const t = (item.type || 'input').toLowerCase();
+    const inputId = fid(item.key);
 
     switch (t) {
       case 'input':
       case 'text':
         return (
           <Input
+            id={inputId}
             size="small"
             value={(value as string) ?? ''}
             placeholder={item.placeholder}
@@ -44,6 +50,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
       case 'textarea':
         return (
           <TextArea
+            id={inputId}
             rows={3}
             value={(value as string) ?? ''}
             placeholder={item.placeholder}
@@ -53,6 +60,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
       case 'number':
         return (
           <InputNumber
+            id={inputId}
             size="small"
             value={(value as number) ?? undefined}
             min={item.min}
@@ -65,6 +73,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
       case 'select':
         return (
           <Select
+            id={inputId}
             size="small"
             value={(value as string) ?? undefined}
             style={{ width: '100%' }}
@@ -81,7 +90,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
       case 'switch':
       case 'boolean':
         return (
-          <Switch size="small" checked={!!value} onChange={(v) => patch(item.key, v)} />
+          <Switch id={inputId} size="small" checked={!!value} onChange={(v) => patch(item.key, v)} />
         );
       case 'color':
         return (
@@ -102,6 +111,7 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
       default:
         return (
           <Input
+            id={inputId}
             size="small"
             value={value != null ? String(value) : ''}
             placeholder={item.placeholder}
@@ -111,36 +121,25 @@ export const EditorConfigPropsForm: React.FC<EditorConfigPropsFormProps> = ({
     }
   };
 
+  const labelFor = (item: ISchemaEditorConfigPropItem) => {
+    const t = (item.type || 'input').toLowerCase();
+    if (t === 'switch' || t === 'boolean' || t === 'color' || t === 'imageupload' || t === 'image') {
+      return undefined;
+    }
+    return fid(item.key);
+  };
+
   return (
-    <div>
+    <InspectorFormGrid>
       {items.map((item) => {
         if (!item.key) return null;
         const label = item.label ?? item.key;
         return (
-          <div
-            key={item.key}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 8,
-              gap: 8,
-            }}
-          >
-            <label
-              style={{
-                fontSize: 12,
-                color: '#666',
-                width: 70,
-                flexShrink: 0,
-                textAlign: 'right',
-              }}
-            >
-              {label}
-            </label>
-            <div style={{ flex: 1 }}>{renderField(item)}</div>
-          </div>
+          <InspectorFormRow key={item.key} label={label} htmlFor={labelFor(item)}>
+            {renderField(item)}
+          </InspectorFormRow>
         );
       })}
-    </div>
+    </InspectorFormGrid>
   );
 };

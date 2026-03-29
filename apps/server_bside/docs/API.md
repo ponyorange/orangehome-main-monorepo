@@ -213,6 +213,12 @@ Authorization: Bearer <access_token>
 
 **所有接口需要认证**: `Authorization: Bearer <token>`
 
+**权限说明**:
+
+- **项目列表** (`GET /api/projects`) 仅返回当前登录用户作为 **所有者 (owner)** 或 **协作者 (collaborators)** 的项目；需有效 Token，否则 **401**。
+- **项目详情 / 修改 / 删除**：仅 **所有者或协作者** 可操作；非成员返回 **403**，消息体为明确无权限说明（如「无权限操作该项目」）。
+- **新建项目**：所有者固定为当前登录用户邮箱；请求体中的 `owner` 字段由服务端忽略并以 Token 用户为准。
+
 ### 1. 新建项目
 
 **接口**: `POST /api/projects`
@@ -395,6 +401,8 @@ Authorization: Bearer <access_token>
 
 **所有接口需要认证**: `Authorization: Bearer <token>`
 
+**权限说明**: 所有接口在访问前会校验当前用户是否为 **页面所属项目** 的所有者或协作者；非成员返回 **403**；未认证返回 **401**。
+
 ### 1. 新建页面
 
 **接口**: `POST /api/pages`
@@ -574,6 +582,8 @@ Authorization: Bearer <access_token>
 ## 页面版本管理 (Page Versions)
 
 **所有接口需要认证**: `Authorization: Bearer <token>`
+
+**权限说明**: 通过版本或页面 ID 解析到所属项目后，校验当前用户是否为该项目 **所有者或协作者**；非成员 **403**；未认证 **401**。gRPC 返回权限拒绝时 BFF 亦映射为 **403**。
 
 ### 1. 保存页面内容
 

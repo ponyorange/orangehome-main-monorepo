@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSelectionContext } from '../../../../common/components/SchemaRenderer/SelectableSchemaRenderer';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
 import { useSelectionStore } from '../../../../core/store/selectionStore';
@@ -10,6 +11,10 @@ import {
   addChild,
   duplicateNode,
 } from '../../../../common/base/schemaOperator';
+import {
+  resolveContextMenuPlacement,
+  fallbackContextMenuDimensions,
+} from '../../../../utils/contextMenuPlacement';
 
 interface ContextMenuProps {
   x: number;
@@ -28,9 +33,11 @@ interface MenuItem {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClose }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState<{ left: number; top: number }>(() => ({ left: x, top: y }));
   const { selectedIds, clearSelection } = useSelectionContext();
   const { schema, setSchema } = useSchemaStore();
   const { copy, paste, hasCopied } = useClipboardStore();
+  const clipboardHasContent = hasCopied();
 
   const hasSelection = selectedIds.length > 0;
 
@@ -44,7 +51,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
   }, [hasSelection, selectedIds, targetId, schema, copy, onClose]);
 
   const handlePaste = useCallback(() => {
-    if (!hasCopied()) return;
+    if (!clipboardHasContent) return;
     const newNodes = paste();
     if (newNodes.length === 0) return;
 
@@ -63,7 +70,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
       useSelectionStore.getState().setSelectedIds(pastedIds);
     }
     onClose();
-  }, [schema, selectedIds, hasSelection, setSchema, paste, hasCopied, onClose]);
+  }, [schema, selectedIds, hasSelection, setSchema, paste, clipboardHasContent, onClose]);
 
   const handleCut = useCallback(() => {
     const ids = hasSelection ? selectedIds : [targetId];
@@ -105,11 +112,34 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
 
   const menuItems: MenuItem[] = [
     { label: '复制', shortcut: 'Ctrl+C', action: handleCopy },
-    { label: '粘贴', shortcut: 'Ctrl+V', action: handlePaste, disabled: !hasCopied(), dividerAfter: true },
+    { label: '粘贴', shortcut: 'Ctrl+V', action: handlePaste, disabled: !clipboardHasContent, dividerAfter: true },
     { label: '剪切', shortcut: 'Ctrl+X', action: handleCut },
     { label: '复制一份', shortcut: 'Ctrl+D', action: handleDuplicate, dividerAfter: true },
     { label: '删除', shortcut: 'Delete', action: handleDelete },
   ];
+
+  const menuItemCount = menuItems.length;
+
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    let mw = el?.offsetWidth ?? 0;
+    let mh = el?.offsetHeight ?? 0;
+    if (mw < 1 || mh < 1) {
+      const fb = fallbackContextMenuDimensions(menuItemCount);
+      mw = fb.width;
+      mh = fb.height;
+    }
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    setPlacement(resolveContextMenuPlacement({
+      clientX: x,
+      clientY: y,
+      menuWidth: mw,
+      menuHeight: mh,
+      viewportWidth: vw,
+      viewportHeight: vh,
+    }));
+  }, [x, y, targetId, clipboardHasContent, menuItemCount]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -128,16 +158,17 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
     };
   }, [onClose]);
 
-  const adjustedX = Math.min(x, window.innerWidth - 200);
-  const adjustedY = Math.min(y, window.innerHeight - menuItems.length * 36 - 16);
-
-  return (
+  /**
+   * 挂到 document.body：画布所在 <main> 使用 backdrop-filter 时，会在部分浏览器中为 fixed
+   * 建立新的包含块，导致仍按视口 clientX/Y 计算的 left/top 与鼠标位置错位。
+   */
+  return createPortal(
     <div
       ref={menuRef}
       style={{
         position: 'fixed',
-        left: adjustedX,
-        top: adjustedY,
+        left: placement.left,
+        top: placement.top,
         zIndex: 10000,
         background: 'var(--theme-gradient-panel)',
         border: '1px solid var(--theme-border-soft)',
@@ -184,6 +215,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, targetId, onClos
           )}
         </React.Fragment>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 };

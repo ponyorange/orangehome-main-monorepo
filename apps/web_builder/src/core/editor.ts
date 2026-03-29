@@ -20,7 +20,7 @@ import { ActionsExtension } from '../extensions/features/actions';
 import { ComponentTabExtension } from '../extensions/features/component-tab';
 import { LayerTabExtension } from '../extensions/features/layer-tab';
 import { PropertiesPanelExtension } from '../extensions/features/properties-panel';
-import { ThemeSwitcherExtension } from '../extensions/features/theme-switcher';
+import { EditorHeaderChromeExtension } from '../extensions/features/editor-header-chrome';
 
 // 导入 EditorView
 import { EditorView } from './components/EditorView';
@@ -154,11 +154,11 @@ export class OrangeEditor {
     new RightPanelExtension(),
     new CenterCanvasExtension(),
 
-    // 2. Header 内容
+    // 2. Header：用户区 + Logo / Actions（含设置）
+    new EditorHeaderChromeExtension(),
     new LogoExtension(),
     new ToolbarExtension(),
     new ActionsExtension(),
-    new ThemeSwitcherExtension(),
 
     // 3. 左侧栏 Tabs（依赖 left-panel）
     new ComponentTabExtension(),

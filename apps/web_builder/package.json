@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "modern build",
+    "build:spa": "vite build --config vite.app.config.ts",
     "dev": "vite",
     "preview": "vite preview",
     "test": "vitest",

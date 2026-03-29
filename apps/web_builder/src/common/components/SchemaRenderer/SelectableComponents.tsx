@@ -18,6 +18,8 @@ export interface SelectableSchemaNodeProps {
   onContextMenu?: (id: string, event: React.MouseEvent) => void;
   onMoveStart?: (id: string, clientX: number, clientY: number) => void;
   onResizeStart?: (id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => void;
+  /** 与 CenterCanvas 的 transform scale 配套：视口测量 → 逻辑坐标 */
+  selectionRectVisualToLogical?: number;
 }
 
 /**
@@ -35,27 +37,38 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
   onContextMenu,
   onMoveStart,
   onResizeStart,
+  selectionRectVisualToLogical = 1,
 }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [boxRect, setBoxRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [localHovered, setLocalHovered] = useState(false);
 
-  // 测量真实组件位置和尺寸
+  // 测量真实组件位置和尺寸（随窗口/画布区尺寸变化更新 SelectionBox）
   useEffect(() => {
-    if (!nodeRef.current || !contentRef.current) return;
+    const wrap = nodeRef.current;
+    const content = contentRef.current;
+    if (!wrap || !content) return undefined;
 
-    const wrapperRect = nodeRef.current.getBoundingClientRect();
-    const targetEl = (contentRef.current.firstElementChild as HTMLElement | null) ?? contentRef.current;
-    const targetRect = targetEl.getBoundingClientRect();
+    const measure = () => {
+      const v2l = selectionRectVisualToLogical;
+      const wrapperRect = wrap.getBoundingClientRect();
+      const targetEl = (content.firstElementChild as HTMLElement | null) ?? content;
+      const targetRect = targetEl.getBoundingClientRect();
+      setBoxRect({
+        x: Math.round((targetRect.left - wrapperRect.left) * v2l),
+        y: Math.round((targetRect.top - wrapperRect.top) * v2l),
+        width: Math.round(targetRect.width * v2l),
+        height: Math.round(targetRect.height * v2l),
+      });
+    };
 
-    setBoxRect({
-      x: Math.round(targetRect.left - wrapperRect.left),
-      y: Math.round(targetRect.top - wrapperRect.top),
-      width: Math.round(targetRect.width),
-      height: Math.round(targetRect.height),
-    });
-  }, [isSelected, schema]);
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(wrap);
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, [isSelected, schema, selectionRectVisualToLogical]);
 
   // 处理点击
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -145,6 +158,7 @@ export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
           componentId={schema.id}
           onMoveStart={handleMoveStart}
           onResizeStart={handleResizeStart}
+          chromeVisualScale={selectionRectVisualToLogical}
         />
       )}
     </div>
@@ -166,6 +180,7 @@ export interface SelectableContainerProps {
   onMoveStart?: (id: string, clientX: number, clientY: number) => void;
   onResizeStart?: (id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => void;
   children?: React.ReactNode;
+  selectionRectVisualToLogical?: number;
 }
 
 export const SelectableContainer: React.FC<SelectableContainerProps> = ({
@@ -180,22 +195,34 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
   onMoveStart,
   onResizeStart,
   children,
+  selectionRectVisualToLogical = 1,
 }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [localHovered, setLocalHovered] = useState(false);
   const eventHandlers = useSchemaEventHandlers(schema);
 
-  // 测量节点尺寸
+  // 测量节点尺寸（含窗口/父级缩放导致的尺寸变化，否则仅 isSelected/schema 变更才量会滞后）
   useEffect(() => {
-    if (nodeRef.current) {
-      const rect = nodeRef.current.getBoundingClientRect();
+    const el = nodeRef.current;
+    if (!el) return undefined;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const v2l = selectionRectVisualToLogical;
       setDimensions({
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
+        width: Math.round(rect.width * v2l),
+        height: Math.round(rect.height * v2l),
       });
-    }
-  }, [isSelected, schema]);
+    };
+
+    measure();
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isSelected, schema, selectionRectVisualToLogical]);
 
   // 处理点击
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -274,6 +301,7 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
           componentId={schema.id}
           onMoveStart={handleMoveStart}
           onResizeStart={handleResizeStart}
+          chromeVisualScale={selectionRectVisualToLogical}
         />
       )}
     </div>

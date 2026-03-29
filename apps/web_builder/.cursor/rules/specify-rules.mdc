@@ -1,0 +1,48 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# web_builder Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-29
+
+## Active Technologies
+- TypeScript 5.x, Node >=18 (Rush) + React 18, `@douyinfe/semi-ui`（Dropdown、Dropdown.Menu、Avatar、Popover 等）, SWR（`useUserData`） (002-settings-theme-user)
+- `localStorage`（主题已由 `themeStore` 使用；本特性不新增持久化字段） (002-settings-theme-user)
+- TypeScript 5.x、React 18 + `@douyinfe/semi-ui`、Zustand、`inversify`（现有栈） (003-right-panel-inspector-ui)
+- N/A（文档状态仍在 `schemaStore` / `ISchema`） (003-right-panel-inspector-ui)
+- TypeScript 5.x、React 18 + Vite、`@douyinfe/semi-ui`（Toast/Button）、既有 `EditorPageContext` / `previewStore` (004-runtime-preview-iframe-share)
+- TypeScript 5.x、React 18 + React、`@douyinfe/semi-ui`（本菜单为自绘 div，不强制使用 Semi Dropdown） (005-context-menu-follow-pointer)
+- TypeScript 5.x、React 18 + 既有 `CenterCanvas`、`Ruler`、`useZoom`、`Grid`、`AlignmentGuides` (006-canvas-750x1334-rulers)
+- N/A（幅面为编辑器常量，非持久化 schema 字段；历史页面仍按节点坐标渲染） (006-canvas-750x1334-rulers)
+- TypeScript 5.x（Rush 包 `apps/web_builder`） + React 18、Semi Design、Zustand、Vite、既有 `CenterCanvas` / `useZoom` / 标尺与选区拖拽扩展 (007-canvas-half-display)
+- N/A（无新持久化） (007-canvas-half-display)
+
+- TypeScript 5.x, Node >=18 (Rush 约束) + React 18, Semi Design, Zustand（现有 schema/selection 不变） (001-canvas-ruler-center)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript 5.x, Node >=18 (Rush 约束): Follow standard conventions
+
+## Recent Changes
+- 007-canvas-half-display: Added TypeScript 5.x（Rush 包 `apps/web_builder`） + React 18、Semi Design、Zustand、Vite、既有 `CenterCanvas` / `useZoom` / 标尺与选区拖拽扩展
+- 006-canvas-750x1334-rulers: Added TypeScript 5.x、React 18 + 既有 `CenterCanvas`、`Ruler`、`useZoom`、`Grid`、`AlignmentGuides`
+- 005-context-menu-follow-pointer: Added TypeScript 5.x、React 18 + React、`@douyinfe/semi-ui`（本菜单为自绘 div，不强制使用 Semi Dropdown）
+
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

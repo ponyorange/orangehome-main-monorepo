@@ -91,7 +91,7 @@ export const EditorView: React.FC = () => {
         {/* Right Panel */}
         <aside
           style={{
-            width: '300px',
+            width: '350px',
             background: 'var(--theme-gradient-panel)',
             border: '1px solid var(--theme-border-soft)',
             boxShadow: 'var(--theme-shadow-md)',

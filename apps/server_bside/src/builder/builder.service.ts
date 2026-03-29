@@ -16,6 +16,9 @@ import {
 const MATERIAL_VERSION_DEV = 0;
 const MATERIAL_VERSION_PUBLISHED = 2;
 
+/** 官方组件物料库所属业务线 ID（与当前页面项目业务线物料合并返回） */
+const OFFICIAL_COMPONENT_BUSINESS_ID = '69a6f0cb7af20fb9ea8f3454';
+
 @Injectable()
 export class BuilderService {
   constructor(
@@ -23,9 +26,10 @@ export class BuilderService {
     private readonly projectService: ProjectService,
     private readonly pageVersionService: PageVersionService,
     private readonly grpcClient: GrpcClientService,
-  ) {}
+  ) { }
 
   async init(pageId: string, authHeader?: string): Promise<BuilderInitResponseDto> {
+    console.log('init', pageId, authHeader);
     const page = await this.pageService.findOne(pageId, authHeader);
 
     const [project, pageVersion] = await Promise.all([
@@ -47,10 +51,17 @@ export class BuilderService {
   ): Promise<GetComponentListResponseDto> {
     const page = await this.pageService.findOne(pageId, authHeader);
     const project = await this.projectService.findOne(page.projectId, authHeader);
-    const businessId = project.businessId;
+    const pageBusinessId = project.businessId;
     const metadata = this.grpcClient.createAuthMetadata(authHeader);
 
-    const materials = await this.listAllMaterialsByBusinessId(businessId, metadata);
+    const [officialMaterials, pageBusinessMaterials] = await Promise.all([
+      this.listAllMaterialsByBusinessId(OFFICIAL_COMPONENT_BUSINESS_ID, metadata),
+      pageBusinessId === OFFICIAL_COMPONENT_BUSINESS_ID
+        ? Promise.resolve([] as any[])
+        : this.listAllMaterialsByBusinessId(pageBusinessId, metadata),
+    ]);
+
+    const materials = this.mergeMaterialsById(officialMaterials, pageBusinessMaterials);
     const activeMaterials = materials.filter((m: any) => !(m.isDeleted ?? m.is_deleted));
 
     const items: ComponentListItemDto[] = await Promise.all(
@@ -68,7 +79,34 @@ export class BuilderService {
       }),
     );
 
-    return { businessId, items };
+    return {
+      businessId: pageBusinessId,
+      officialBusinessId: OFFICIAL_COMPONENT_BUSINESS_ID,
+      items,
+    };
+  }
+
+  /** 先官方业务线，再当前页业务线；同 id 只保留先出现的条目 */
+  private mergeMaterialsById(official: any[], pageBusiness: any[]): any[] {
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const m of official) {
+      const id = m?.id;
+      if (!id || seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      out.push(m);
+    }
+    for (const m of pageBusiness) {
+      const id = m?.id;
+      if (!id || seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      out.push(m);
+    }
+    return out;
   }
 
   private async listAllMaterialsByBusinessId(businessId: string, metadata: any): Promise<any[]> {
@@ -76,7 +114,7 @@ export class BuilderService {
     let grpcPage = 1;
     const limit = 100;
     try {
-      for (;;) {
+      for (; ;) {
         const result = await firstValueFrom(
           this.grpcClient.material.listMaterials(
             {
@@ -133,7 +171,7 @@ export class BuilderService {
     const acc: any[] = [];
     let grpcPage = 1;
     const limit = 100;
-    for (;;) {
+    for (; ;) {
       const result = await firstValueFrom(
         this.grpcClient.materialVersion.listMaterialVersions(
           {

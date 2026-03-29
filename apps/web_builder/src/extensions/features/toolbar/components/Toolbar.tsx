@@ -7,6 +7,7 @@ import { exportService } from '../../../../core/services/ExportService';
 import { importService } from '../../../../core/services/ImportService';
 import { saveBuilderPageVersion, useBuilderData, useUserData } from '../../../../data/modules';
 import { useEditorPageId } from '../../../../core/context/EditorPageContext';
+import { copyRuntimePreviewLink } from '../../../../utils/runtimePreviewUrl';
 
 export const Toolbar: React.FC = () => {
   const primaryColor = 'var(--theme-primary)';
@@ -33,13 +34,16 @@ export const Toolbar: React.FC = () => {
   };
 
   const handleShareLink = async () => {
-    try {
-      const link = exportService.generateShareLink(schema);
-      await navigator.clipboard.writeText(link);
-      Toast.success('分享链接已复制到剪贴板');
-    } catch {
-      Toast.error('复制分享链接失败');
+    const result = await copyRuntimePreviewLink(pageId);
+    if (result === 'no_url') {
+      Toast.warning('无法生成预览链接：请确认已打开页面且已配置 VITE_RUNTIME_PREVIEW_URL_TEMPLATE');
+      return;
     }
+    if (result === 'clipboard_error') {
+      Toast.error('复制失败，请检查浏览器权限或使用 HTTPS');
+      return;
+    }
+    Toast.success('预览链接已复制到剪贴板');
   };
 
   const handleImportClick = () => {

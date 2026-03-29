@@ -107,7 +107,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
         <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
           <FeatureCard title="可视化搭建" description="拖拽、对齐、图层与属性面板联动。" />
           <FeatureCard title="移动端优先" description="默认就是 H5 风格和手机预览尺寸。" />
-          <FeatureCard title="版本即内容" description="登录后自动加载最新 pageSchema。" />
+          <FeatureCard title="一键发布" description="一键发布到线上环境。" />
         </div>
       </div>
 
@@ -192,24 +192,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ loading = false, message, 
           >
             登录并进入编辑器
           </Button>
-
-          <div
-            style={{
-              marginTop: 22,
-              padding: 16,
-              borderRadius: 20,
-              background: 'rgba(255,255,255,0.44)',
-              border: '1px solid var(--theme-border-soft)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.72)',
-            }}
-          >
-            <Typography.Text style={{ display: 'block', fontWeight: 700, color: 'var(--theme-text-primary)' }}>
-              登录后会自动完成
-            </Typography.Text>
-            <Typography.Paragraph style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.8, color: 'var(--theme-text-secondary)' }}>
-              获取当前用户信息、拉取 `builder/init`、读取 `project/page/pageVersion`，并将最新 `pageSchema` 自动注入编辑器。
-            </Typography.Paragraph>
-          </div>
         </div>
       </div>
     </div>

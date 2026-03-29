@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import useSWRMutation from 'swr/mutation';
 import { Toast } from '@douyinfe/semi-ui';
-import { authApi, authStorage } from '@/services/auth';
+import { authApi, authStorage, hasAdminIdentity } from '@/services/auth';
 import type {
   LoginParams,
   RegisterParams,
@@ -23,6 +23,10 @@ export function useLogin() {
       try {
         const res = await trigger(params);
         if (res?.accessToken && res?.user) {
+          if (!hasAdminIdentity(res.user)) {
+            Toast.error('当前账号无管理员权限，无法登录管理后台');
+            return false;
+          }
           authStorage.setToken(res.accessToken);
           authStorage.setUser(res.user);
           Toast.success('登录成功');

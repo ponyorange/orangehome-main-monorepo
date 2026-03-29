@@ -1,10 +1,15 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
 import { Input, InputNumber, Select, Switch, Slider } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
 import { getResolvedInlineStyle } from '../../../../common/base/schemaOperator';
 import type { FieldConfig, ComponentConfig } from '../configs/types';
 import { ColorPicker } from './ColorPicker';
 import { ImageInput } from './ImageInput';
+import {
+  InspectorFormGrid,
+  InspectorFormRow,
+} from './inspector';
+import styles from './inspector/inspector.module.css';
 
 interface PropertyFormProps {
   schema: ISchema;
@@ -39,6 +44,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   onUpdateProps,
   onUpdateStyle,
 }) => {
+  const baseId = useId();
   const handleChange = useCallback((field: FieldConfig, value: unknown) => {
     if (field.key.startsWith('style.')) {
       const sk = field.key.slice('style.'.length);
@@ -51,7 +57,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     onUpdateProps(newProps);
   }, [schema, onUpdateProps, onUpdateStyle]);
 
+  const fieldDomId = (field: FieldConfig) =>
+    `${baseId}-${field.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
   const renderField = (field: FieldConfig) => {
+    const fid = fieldDomId(field);
     const value = field.key.startsWith('style.')
       ? getResolvedInlineStyle(schema)[field.key.slice('style.'.length)]
       : getNestedValue(schema.props, field.key);
@@ -60,6 +70,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       case 'text':
         return (
           <Input
+            id={fid}
             size="small"
             value={(value as string) ?? ''}
             placeholder={field.placeholder}
@@ -69,6 +80,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       case 'number':
         return (
           <InputNumber
+            id={fid}
             size="small"
             value={(value as number) ?? field.defaultValue ?? 0}
             min={field.min}
@@ -81,6 +93,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       case 'select':
         return (
           <Select
+            id={fid}
             size="small"
             value={(value as string) ?? field.defaultValue}
             style={{ width: '100%' }}
@@ -94,6 +107,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
       case 'switch':
         return (
           <Switch
+            id={fid}
             size="small"
             checked={!!value}
             onChange={(v) => handleChange(field, v)}
@@ -101,13 +115,15 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         );
       case 'slider':
         return (
-          <Slider
-            value={(value as number) ?? field.defaultValue ?? 0}
-            min={field.min ?? 0}
-            max={field.max ?? 100}
-            step={field.step ?? 1}
-            onChange={(v) => handleChange(field, v)}
-          />
+          <div id={fid}>
+            <Slider
+              value={(value as number) ?? field.defaultValue ?? 0}
+              min={field.min ?? 0}
+              max={field.max ?? 100}
+              step={field.step ?? 1}
+              onChange={(v) => handleChange(field, v)}
+            />
+          </div>
         );
       case 'color':
         return (
@@ -133,37 +149,22 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     <div>
       {config.groups.map((group) => (
         <div key={group.title} style={{ marginBottom: 16 }}>
-          <div style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#666',
-            marginBottom: 8,
-            paddingBottom: 4,
-            borderBottom: '1px solid #f0f0f0',
-          }}>
-            {group.title}
-          </div>
-          {group.fields.map((field) => (
-            <div key={field.key} style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 8,
-              gap: 8,
-            }}>
-              <label style={{
-                fontSize: 12,
-                color: '#666',
-                width: 70,
-                flexShrink: 0,
-                textAlign: 'right',
-              }}>
-                {field.label}
-              </label>
-              <div style={{ flex: 1 }}>
-                {renderField(field)}
-              </div>
-            </div>
-          ))}
+          <div className={styles.subsectionTitle}>{group.title}</div>
+          <InspectorFormGrid>
+            {group.fields.map((field) => {
+              const labelFor =
+                field.type === 'switch' || field.type === 'slider' || field.type === 'color' || field.type === 'image'
+                  ? undefined
+                  : fieldDomId(field);
+              return (
+                <React.Fragment key={field.key}>
+                  <InspectorFormRow label={field.label} htmlFor={labelFor}>
+                    {renderField(field)}
+                  </InspectorFormRow>
+                </React.Fragment>
+              );
+            })}
+          </InspectorFormGrid>
         </div>
       ))}
     </div>

@@ -19,8 +19,11 @@ export const RightPanel: React.FC = () => {
       {/* 主内容区 */}
       <div style={{
         flex: 1,
-        overflow: 'auto',
+        minHeight: 0,
+        overflow: 'hidden',
         padding: '12px',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         <SlotRenderer slotName="right-panel:content" direction="vertical" />
       </div>

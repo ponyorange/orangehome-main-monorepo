@@ -27,7 +27,11 @@ export interface IApiInSchema {
   interval?: number;  // 轮询间隔（毫秒）
 }
 
-export type { ISchemaEditorConfig, ISchemaEditorConfigPropItem } from './editorConfig';
+export type {
+  ISchemaEditorConfig,
+  ISchemaEditorConfigPropItem,
+  ISchemaEditorConfigStyleConfig,
+} from './editorConfig';
 
 /**
  * Schema 节点结构

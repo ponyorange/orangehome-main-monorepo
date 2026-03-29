@@ -2,7 +2,7 @@
  * API 配置
  */
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  BASE_URL: import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:50053/api',
   TIMEOUT: 15000,
 };
 

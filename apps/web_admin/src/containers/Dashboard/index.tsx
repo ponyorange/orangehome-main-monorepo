@@ -1,6 +1,8 @@
-import { Card, Row, Col, Typography } from '@douyinfe/semi-ui';
+import { Card, Row, Col, Typography, Spin } from '@douyinfe/semi-ui';
 import { IconUser, IconSetting, IconActivity } from '@douyinfe/semi-icons';
+import useSWR from 'swr';
 import { authStorage } from '@/services/auth';
+import { userApi } from '@/services/user';
 import './Dashboard.scss';
 
 const { Title, Text } = Typography;
@@ -8,8 +10,22 @@ const { Title, Text } = Typography;
 export function Dashboard() {
   const user = authStorage.getUser();
 
+  const { data: userListRes, isLoading: userTotalLoading, error: userTotalError } = useSWR(
+    ['dashboard', 'user-total'],
+    () => userApi.getList({ page: 1, pageSize: 1 }),
+    { revalidateOnFocus: false }
+  );
+
+  const userTotalDisplay = userTotalError ? (
+    '—'
+  ) : userTotalLoading ? (
+    <Spin size="small" />
+  ) : (
+    String(userListRes?.total ?? 0)
+  );
+
   const cards = [
-    { title: '用户总数', value: '0', icon: <IconUser size="large" /> },
+    { title: '用户总数', value: userTotalDisplay, icon: <IconUser size="large" /> },
     { title: '今日访问', value: '0', icon: <IconActivity size="large" /> },
     { title: '系统状态', value: '正常', icon: <IconSetting size="large" /> },
   ];

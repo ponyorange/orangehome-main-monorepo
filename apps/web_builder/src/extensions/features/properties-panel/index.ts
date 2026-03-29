@@ -11,6 +11,7 @@ export class PropertiesPanelExtension implements IExtension {
       id: 'properties-panel',
       component: PropertiesPanel,
       order: 10,
+      config: { flex: 1 },
     });
   }
 }
