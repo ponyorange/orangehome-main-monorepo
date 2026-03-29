@@ -39,7 +39,7 @@ export const EditorBootstrap: React.FC<EditorBootstrapProps> = ({ children }) =>
     if (!data?.pageVersion.pageSchema) return;
     if (appliedVersionId === data.pageVersion.id) return;
 
-    setSchema(data.pageVersion.pageSchema, { record: false });
+    setSchema(data.pageVersion.pageSchema, { record: false, syncSource: 'persistence' });
     setAppliedVersionId(data.pageVersion.id);
   }, [appliedVersionId, data?.pageVersion.id, data?.pageVersion.pageSchema, setSchema]);
 

@@ -25,10 +25,10 @@ export async function uploadAdminFile(file: File): Promise<UploadFileResult> {
 
   const data = (await res.json().catch(() => ({}))) as {
     message?: string | string[];
-    url?: string;
     objectKey?: string;
     size?: number;
     contentType?: string;
+    url?: string;
   };
 
   if (!res.ok) {

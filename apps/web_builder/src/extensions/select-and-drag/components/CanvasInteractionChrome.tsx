@@ -88,11 +88,11 @@ export const CanvasInteractionChrome: React.FC = () => {
           key={`hover-${id}`}
           style={{
             position: 'absolute',
-            left: box.x - 1,
-            top: box.y - 1,
-            width: box.width + 2,
-            height: box.height + 2,
-            border: '1px dashed var(--theme-primary)',
+            left: box.x - 2,
+            top: box.y - 2,
+            width: box.width + 4,
+            height: box.height + 4,
+            border: '2px dashed var(--theme-text-secondary)',
             pointerEvents: 'none',
             zIndex: 950,
             boxSizing: 'border-box',

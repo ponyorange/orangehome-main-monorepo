@@ -330,8 +330,13 @@ export function Materials() {
   const handleIconUpload = useCallback(async ({ fileInstance, onSuccess, onError }: customRequestArgs) => {
     try {
       const r = await uploadAdminFile(fileInstance);
-      setFormValues((p) => ({ ...p, icon: r.url }));
-      onSuccess({ url: r.url });
+      let url = r.url;
+      let fileKey = r.objectKey;
+      if (fileKey?.trim()) {
+        url = `http://8.148.251.221:6011/orangehome/${fileKey}`;
+      }
+      setFormValues((p) => ({ ...p, icon: url }));
+      onSuccess({ url: url });
     } catch (e) {
       Toast.error(e instanceof Error ? e.message : '上传失败');
       onError({ status: 500 });
@@ -627,13 +632,13 @@ export function Materials() {
               defaultFileList={
                 (formValues.icon
                   ? [
-                      {
-                        uid: 'existing-icon',
-                        name: 'icon.png',
-                        status: 'success' as const,
-                        url: formValues.icon,
-                      },
-                    ]
+                    {
+                      uid: 'existing-icon',
+                      name: 'icon.png',
+                      status: 'success' as const,
+                      url: formValues.icon,
+                    },
+                  ]
                   : []) as FileItem[]
               }
               customRequest={handleIconUpload}

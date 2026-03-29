@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Button, Toast } from '@douyinfe/semi-ui';
 import { IconEyeOpened, IconDownload, IconUpload, IconCopy, IconLink, IconSave } from '@douyinfe/semi-icons';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
+import { useDocumentSyncStore } from '../../../../core/store/documentSyncStore';
 import { usePreviewStore } from '../../../../core/store/previewStore';
 import { exportService } from '../../../../core/services/ExportService';
 import { importService } from '../../../../core/services/ImportService';
@@ -12,9 +13,11 @@ import { copyRuntimePreviewLink } from '../../../../utils/runtimePreviewUrl';
 export const Toolbar: React.FC = () => {
   const primaryColor = 'var(--theme-primary)';
   const { schema, setSchema } = useSchemaStore();
+  const isDirty = useDocumentSyncStore((s) => s.isDirty);
   const openPreview = usePreviewStore((state) => state.openPreview);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [previewPreparing, setPreviewPreparing] = useState(false);
   const pageId = useEditorPageId();
   const { user } = useUserData();
   const { mutate: mutateBuilder } = useBuilderData(pageId, Boolean(pageId));
@@ -65,21 +68,22 @@ export const Toolbar: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+  const performSave = async (): Promise<boolean> => {
     if (!pageId) {
       Toast.warning('当前没有 pageId，无法保存');
-      return;
+      return false;
     }
     if (!user?.id) {
       Toast.warning('当前用户未登录，无法保存');
-      return;
+      return false;
     }
 
-    setSaving(true);
+    const pageSchema = useSchemaStore.getState().schema;
+
     try {
       const savedVersion = await saveBuilderPageVersion({
         pageId,
-        pageSchema: schema,
+        pageSchema,
         userId: user.id,
       });
 
@@ -88,11 +92,39 @@ export const Toolbar: React.FC = () => {
         pageVersion: savedVersion,
       } : current, false);
 
+      useDocumentSyncStore.getState().markClean();
       Toast.success(`保存成功，已生成第 ${savedVersion.versionNumber} 个版本`);
+      return true;
     } catch (error) {
       Toast.error(error instanceof Error ? error.message : '保存失败');
+      return false;
+    }
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await performSave();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    if (previewPreparing || saving) return;
+
+    if (!isDirty) {
+      openPreview();
+      return;
+    }
+
+    setPreviewPreparing(true);
+    try {
+      const ok = await performSave();
+      if (ok) openPreview();
+    } finally {
+      setPreviewPreparing(false);
     }
   };
 
@@ -108,7 +140,9 @@ export const Toolbar: React.FC = () => {
         icon={<IconEyeOpened />}
         type="primary"
         size="small"
-        onClick={openPreview}
+        loading={previewPreparing}
+        disabled={previewPreparing || saving}
+        onClick={() => void handlePreview()}
         style={{
           background: 'var(--theme-gradient-accent)',
           border: 'none',

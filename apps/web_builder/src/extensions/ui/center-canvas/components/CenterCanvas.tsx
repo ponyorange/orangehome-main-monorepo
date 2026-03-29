@@ -26,7 +26,7 @@ import {
   EDITOR_CANVAS_HEIGHT,
   EDITOR_VIEWPORT_SCALE,
 } from '../../../../constants/editorCanvasArtboard';
-import { findById } from '../../../../common/base/schemaOperator';
+import { resolveHitSchemaTarget } from '../utils/resolveHitSchemaTarget';
 const RULER_SIZE = 24;
 const CANVAS_MARGIN = 200;
 const VERTICAL_OFFSET = 50;
@@ -70,6 +70,44 @@ export const CenterCanvas: React.FC = () => {
   const selectionRef = useRef(selectionState);
   selectionRef.current = selectionState;
 
+  /** 与 document mousemove 节流共用，避免重复 handleMouseEnter */
+  const lastPointerHoverIdRef = useRef<string | null>(null);
+
+  /**
+   * 画布区 hover 虚线：捕获阶段 mousemove + rAF，命中规则与 mousedown 一致（resolveHitSchemaTarget）。
+   * 不依赖物料是否转发 onMouseEnter。
+   */
+  useEffect(() => {
+    let rafId: number | null = null;
+    let pending: MouseEvent | null = null;
+
+    const flush = () => {
+      rafId = null;
+      const e = pending;
+      pending = null;
+      if (!e) return;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      const nextId = hit.kind === 'node' ? hit.id : null;
+      if (nextId === lastPointerHoverIdRef.current) return;
+      lastPointerHoverIdRef.current = nextId;
+      if (nextId) selectionRef.current.handleMouseEnter(nextId);
+      else selectionRef.current.handleMouseLeave();
+    };
+
+    const onMove = (e: MouseEvent) => {
+      pending = e;
+      if (rafId == null) {
+        rafId = requestAnimationFrame(flush);
+      }
+    };
+
+    document.addEventListener('mousemove', onMove, true);
+    return () => {
+      document.removeEventListener('mousemove', onMove, true);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   /**
    * 画布区选中：document 捕获阶段根据「从内到外」第一个落在 schema 树上的 DOM id 触发选择。
    * 与拖动分发一致，不依赖物料是否把 onClick 转发到根 DOM（Button 会转发，Image/容器类常不会）。
@@ -78,25 +116,16 @@ export const CenterCanvas: React.FC = () => {
   useEffect(() => {
     const onDocMouseDownSelect = (e: MouseEvent) => {
       if (e.button !== 0) return;
-      const t = e.target as HTMLElement | null;
-      if (!t) return;
-      if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
-      const canvas = t.closest('[data-canvas-area="true"]') as HTMLElement | null;
-      if (!canvas) return;
-      if (t.closest('[data-resize-dir]')) return;
-
-      let el: HTMLElement | null = t;
-      while (el && canvas.contains(el)) {
-        const id = el.id;
-        if (id && findById(schemaRef.current, id)) {
-          if (id === schemaRef.current.id) {
-            selectionRef.current.clearSelection();
-            return;
-          }
-          selectionRef.current.handleClick(id, e as unknown as React.MouseEvent<Element, MouseEvent>);
-          return;
-        }
-        el = el.parentElement;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      if (hit.kind === 'root') {
+        selectionRef.current.clearSelection();
+        return;
+      }
+      if (hit.kind === 'node') {
+        selectionRef.current.handleClick(
+          hit.id,
+          e as unknown as React.MouseEvent<Element, MouseEvent>,
+        );
       }
     };
     document.addEventListener('mousedown', onDocMouseDownSelect, true);
@@ -107,22 +136,10 @@ export const CenterCanvas: React.FC = () => {
   useEffect(() => {
     const onDocMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
-      const t = e.target as HTMLElement | null;
-      if (!t) return;
-      if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
-      const canvas = t.closest('[data-canvas-area="true"]') as HTMLElement | null;
-      if (!canvas) return;
-      if (t.closest('[data-resize-dir]')) return;
-      let el: HTMLElement | null = t;
-      while (el && canvas.contains(el)) {
-        const id = el.id;
-        if (id && findById(schemaRef.current, id)) {
-          if (selectionRef.current.isSelected(id)) {
-            startMove(id, e.clientX, e.clientY);
-          }
-          return;
-        }
-        el = el.parentElement;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      if (hit.kind !== 'node') return;
+      if (selectionRef.current.isSelected(hit.id)) {
+        startMove(hit.id, e.clientX, e.clientY);
       }
     };
     document.addEventListener('mousedown', onDocMouseDown, true);
