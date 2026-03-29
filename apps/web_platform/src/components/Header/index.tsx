@@ -70,10 +70,10 @@ const Header: React.FC = () => {
           >
             <div className="user-info">
               <Avatar size="small" src={user.avatar}>
-                {user.nickname?.[0] || user.email[0]}
+                {user.nickname?.trim()?.[0] || user.email?.trim()?.[0] || '?'}
               </Avatar>
               <Text className="user-name">
-                {user.nickname || user.email}
+                {user.nickname?.trim() || user.email?.trim() || '用户'}
               </Text>
             </div>
           </Dropdown>

@@ -62,6 +62,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
  * 应用主组件
  */
 function App() {
+  const rawBase = import.meta.env.BASE_URL ?? '/';
+  const routerBasename =
+    rawBase === '/' ? undefined : rawBase.replace(/\/$/, '') || undefined;
+
   const { theme } = useTheme();
   const { language, loadSemiLocale } = useLanguage();
   const [semiLocale, setSemiLocale] = useState<Locale | null>(null);
@@ -86,7 +90,7 @@ function App() {
   return (
     <ConfigProvider locale={semiLocale}>
       <div className={`app ${theme}`}>
-        <Router>
+        <Router basename={routerBasename}>
           <Routes>
             {/* 公开路由 - 未登录可访问 */}
             <Route

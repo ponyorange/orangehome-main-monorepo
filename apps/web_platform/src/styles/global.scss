@@ -1,3 +1,5 @@
+@import './platform-theme.scss';
+
 // 全局样式
 * {
   margin: 0;
@@ -15,15 +17,21 @@ body,
   -moz-osx-font-smoothing: grayscale;
 }
 
-// 链接样式
-a {
-  color: #667eea;
-  text-decoration: none;
-  transition: color 0.2s;
+// 登录后主壳内链色与 Semi 主色 — research R2（认证页仍由各页 auth-theme 覆盖）
+.main-layout {
+  --semi-color-primary: var(--oh-primary);
+  --semi-color-primary-hover: var(--oh-primary-hover);
+  --semi-color-primary-active: var(--oh-primary-hover);
 
-  &:hover {
-    color: #5568d3;
-    text-decoration: underline;
+  a {
+    color: var(--oh-link);
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--oh-link-hover);
+      text-decoration: underline;
+    }
   }
 }
 

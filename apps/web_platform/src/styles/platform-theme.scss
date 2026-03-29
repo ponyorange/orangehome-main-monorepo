@@ -1,0 +1,17 @@
+// Platform shell tokens — warm orange aligned with auth-theme (002-premium-orange-ui / research R1)
+@import './auth-theme.scss';
+
+:root {
+  --oh-primary: var(--auth-primary);
+  --oh-primary-hover: var(--auth-primary-hover);
+  --oh-surface: #fffaf5;
+  --oh-surface-elevated: #ffffff;
+  --oh-border-subtle: var(--auth-card-border);
+  --oh-text: var(--auth-text);
+  --oh-text-muted: var(--auth-text-muted);
+  --oh-link: var(--auth-link);
+  --oh-link-hover: var(--auth-link-hover);
+  --oh-radius-card: var(--auth-radius-md);
+  --oh-radius-control: 8px;
+  --oh-shadow-soft: 0 4px 24px rgba(160, 82, 30, 0.06);
+}

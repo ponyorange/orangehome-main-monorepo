@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_BFF_API_URL || 'http://192.168.1.91:50054/api';
 const PUBLIC_AUTH_PATHS = new Set([
   '/auth/login',
   '/auth/register',
@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
       clearClientAuth();
 
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('authExpiredMessage', '登录已过期，请重新登录');
+        sessionStorage.setItem('authExpired', '1');
         if (window.location.pathname !== '/login') {
           window.location.replace('/login');
         }

@@ -1,0 +1,19 @@
+// Shared auth surfaces — warm orange palette (001-premium-login-page / research R4)
+// Use CSS variables so Register/ResetPassword can align without duplicating hex values.
+
+:root {
+  --auth-gradient-start: #fff7ed;
+  --auth-gradient-mid: #ffead1;
+  --auth-gradient-end: #ffc98a;
+  --auth-primary: #e07b2f;
+  --auth-primary-hover: #c96a26;
+  --auth-text: #3d2914;
+  --auth-text-muted: #7a6048;
+  --auth-card-bg: #ffffff;
+  --auth-card-border: rgba(224, 123, 47, 0.12);
+  --auth-link: #c45f18;
+  --auth-link-hover: #a34d12;
+  --auth-shadow: 0 24px 56px rgba(160, 82, 30, 0.18);
+  --auth-radius-lg: 20px;
+  --auth-radius-md: 12px;
+}

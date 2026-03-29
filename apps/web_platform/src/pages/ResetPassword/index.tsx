@@ -9,6 +9,7 @@ const { Title, Text } = Typography;
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
+  const [formApi, setFormApi] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -73,7 +74,7 @@ const ResetPassword: React.FC = () => {
           <Text type="tertiary">验证邮箱后重置您的密码</Text>
         </div>
 
-        <Form className="auth-form" onSubmit={handleSubmit}>
+        <Form className="auth-form" onSubmit={handleSubmit} getFormApi={setFormApi}>
           <Form.Input
             field="email"
             label="邮箱"
@@ -96,10 +97,10 @@ const ResetPassword: React.FC = () => {
                 type="tertiary"
                 loading={sendingCode}
                 disabled={countdown > 0}
-                onClick={(e: any) => {
-                  const email = (e.target as HTMLElement)
-                    .closest('.semi-form')?.querySelector('input[name="email"]') as HTMLInputElement;
-                  handleSendCode(email?.value);
+                onClick={() => {
+                  const raw = formApi?.getValue?.('email');
+                  const email = typeof raw === 'string' ? raw.trim() : '';
+                  handleSendCode(email);
                 }}
               >
                 {countdown > 0 ? `${countdown}s` : '获取验证码'}
@@ -128,7 +129,7 @@ const ResetPassword: React.FC = () => {
             rules={[{ required: true, message: '请确认密码' }]}
           />
 
-          <Button type="primary" htmlType="submit" loading={loading} block size="large">
+          <Button type="primary" theme="solid" htmlType="submit" loading={loading} block size="large">
             重置密码
           </Button>
         </Form>
