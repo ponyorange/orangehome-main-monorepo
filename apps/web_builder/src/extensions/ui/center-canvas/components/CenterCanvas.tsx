@@ -2,6 +2,8 @@ import React, { useRef, useState, useCallback, useEffect, useLayoutEffect, useMe
 import { Button } from '@douyinfe/semi-ui';
 import { IconMinus, IconPlus, IconRefresh } from '@douyinfe/semi-icons';
 import { SelectableSchemaRenderer, SelectionContext } from '../../../../common/components/SchemaRenderer';
+import { EditorChromeOverlayMount } from '../../../../common/components/SchemaRenderer/EditorChromeOverlayContext';
+import { CanvasInteractionChrome } from '../../../../extensions/select-and-drag/components/CanvasInteractionChrome';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
 import { useZoom, formatZoomPercent } from '../../../../extensions/canvas/hooks/useZoom';
 import { Grid } from '../../../../extensions/canvas/components/Grid';
@@ -24,12 +26,15 @@ import {
   EDITOR_CANVAS_HEIGHT,
   EDITOR_VIEWPORT_SCALE,
 } from '../../../../constants/editorCanvasArtboard';
+import { findById } from '../../../../common/base/schemaOperator';
 const RULER_SIZE = 24;
 const CANVAS_MARGIN = 200;
 const VERTICAL_OFFSET = 50;
 
 export const CenterCanvas: React.FC = () => {
   const { schema } = useSchemaStore();
+  const schemaRef = useRef(schema);
+  schemaRef.current = schema;
   const { zoom, zoomIn, zoomOut, resetZoom } = useZoom();
 
   const selectionState = useSimpleSelection();
@@ -62,6 +67,68 @@ export const CenterCanvas: React.FC = () => {
     startMove(id, clientX, clientY);
   }, [startMove]);
 
+  const selectionRef = useRef(selectionState);
+  selectionRef.current = selectionState;
+
+  /**
+   * 画布区选中：document 捕获阶段根据「从内到外」第一个落在 schema 树上的 DOM id 触发选择。
+   * 与拖动分发一致，不依赖物料是否把 onClick 转发到根 DOM（Button 会转发，Image/容器类常不会）。
+   * 须注册在拖动监听之前，以便未选中时先由本逻辑写入 store，拖动侧仍读上一帧 selectionRef 从而不误开拖。
+   */
+  useEffect(() => {
+    const onDocMouseDownSelect = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const canvas = t.closest('[data-canvas-area="true"]') as HTMLElement | null;
+      if (!canvas) return;
+      if (t.closest('[data-resize-dir]')) return;
+
+      let el: HTMLElement | null = t;
+      while (el && canvas.contains(el)) {
+        const id = el.id;
+        if (id && findById(schemaRef.current, id)) {
+          if (id === schemaRef.current.id) {
+            selectionRef.current.clearSelection();
+            return;
+          }
+          selectionRef.current.handleClick(id, e as unknown as React.MouseEvent<Element, MouseEvent>);
+          return;
+        }
+        el = el.parentElement;
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDownSelect, true);
+    return () => document.removeEventListener('mousedown', onDocMouseDownSelect, true);
+  }, []);
+
+  /** 画布区组件拖动：document 捕获阶段分发，不依赖物料根是否接收 onMouseDown */
+  useEffect(() => {
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const canvas = t.closest('[data-canvas-area="true"]') as HTMLElement | null;
+      if (!canvas) return;
+      if (t.closest('[data-resize-dir]')) return;
+      let el: HTMLElement | null = t;
+      while (el && canvas.contains(el)) {
+        const id = el.id;
+        if (id && findById(schemaRef.current, id)) {
+          if (selectionRef.current.isSelected(id)) {
+            startMove(id, e.clientX, e.clientY);
+          }
+          return;
+        }
+        el = el.parentElement;
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown, true);
+    return () => document.removeEventListener('mousedown', onDocMouseDown, true);
+  }, [startMove]);
+
   const handleResizeStart = useCallback((id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => {
     startResize(id, direction, clientX, clientY, width, height);
   }, [startResize]);
@@ -91,7 +158,14 @@ export const CenterCanvas: React.FC = () => {
       return;
     }
     document.querySelectorAll('[data-drop-target]').forEach((el) => el.removeAttribute('data-drop-target'));
-    const target = document.querySelector(`[data-schema-id="${dropTargetId}"]`);
+    const root = canvasWrapperRef.current;
+    if (!root) return;
+    let target: Element | null = null;
+    try {
+      target = root.querySelector(`[id="${CSS.escape(dropTargetId)}"]`);
+    } catch {
+      target = null;
+    }
     if (target) target.setAttribute('data-drop-target', 'true');
   }, [dropTargetId]);
 
@@ -418,10 +492,11 @@ export const CenterCanvas: React.FC = () => {
                         <Grid width={layoutLogicalW} height={layoutLogicalH} gridSize={20} zoom={1} />
                       </div>
 
-                      {/* Schema 内容层 */}
-                      <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
+                      {/* Schema 内容层 + 编辑器装饰 Portal 挂载层 */}
+                      <EditorChromeOverlayMount>
                         <SelectableSchemaRenderer schema={schema} />
-                      </div>
+                        <CanvasInteractionChrome />
+                      </EditorChromeOverlayMount>
 
                       {/* 对齐辅助线 */}
                       <AlignmentGuides

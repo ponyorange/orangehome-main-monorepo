@@ -43,7 +43,12 @@ function getComponentRect(
   canvasContainer: HTMLElement,
   visualToLogical: number,
 ): Rect | null {
-  const el = canvasContainer.querySelector(`[data-schema-id="${id}"]`) as HTMLElement | null;
+  let el: HTMLElement | null = null;
+  try {
+    el = canvasContainer.querySelector(`[id="${CSS.escape(id)}"]`) as HTMLElement | null;
+  } catch {
+    el = null;
+  }
   if (!el) return null;
 
   const canvasRect = canvasContainer.getBoundingClientRect();

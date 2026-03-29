@@ -19,6 +19,10 @@ Auto-generated from all feature plans. Last updated: 2026-03-29
 - N/A（幅面为编辑器常量，非持久化 schema 字段；历史页面仍按节点坐标渲染） (006-canvas-750x1334-rulers)
 - TypeScript 5.x（Rush 包 `apps/web_builder`） + React 18、Semi Design、Zustand、Vite、既有 `CenterCanvas` / `useZoom` / 标尺与选区拖拽扩展 (007-canvas-half-display)
 - N/A（无新持久化） (007-canvas-half-display)
+- TypeScript 5.x、React 18（Rush monorepo 包 `@orangehome/web_builder`） + React DOM（`createPortal`）、Semi Design、Zustand、Inversify、Vite (008-schema-selection-portal)
+- N/A（编辑器运行时 DOM / schema store） (008-schema-selection-portal)
+- TypeScript 5.x, React 18 + Vite, Semi UI, Zustand（选择/hover 状态）, 既有 `CanvasInteractionChrome` / `EditorChromeOverlayContext` / `CanvasSchemaHostRegistry` (009-canvas-hover-outline)
+- N/A（瞬时 UI 状态） (009-canvas-hover-outline)
 
 - TypeScript 5.x, Node >=18 (Rush 约束) + React 18, Semi Design, Zustand（现有 schema/selection 不变） (001-canvas-ruler-center)
 
@@ -39,9 +43,9 @@ npm test && npm run lint
 TypeScript 5.x, Node >=18 (Rush 约束): Follow standard conventions
 
 ## Recent Changes
-- 007-canvas-half-display: Added TypeScript 5.x（Rush 包 `apps/web_builder`） + React 18、Semi Design、Zustand、Vite、既有 `CenterCanvas` / `useZoom` / 标尺与选区拖拽扩展
-- 006-canvas-750x1334-rulers: Added TypeScript 5.x、React 18 + 既有 `CenterCanvas`、`Ruler`、`useZoom`、`Grid`、`AlignmentGuides`
-- 005-context-menu-follow-pointer: Added TypeScript 5.x、React 18 + React、`@douyinfe/semi-ui`（本菜单为自绘 div，不强制使用 Semi Dropdown）
+- 009-canvas-hover-outline: Added TypeScript 5.x, React 18 + Vite, Semi UI, Zustand（选择/hover 状态）, 既有 `CanvasInteractionChrome` / `EditorChromeOverlayContext` / `CanvasSchemaHostRegistry`
+- 009-canvas-hover-outline: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+- 008-schema-selection-portal: Added TypeScript 5.x、React 18（Rush monorepo 包 `@orangehome/web_builder`） + React DOM（`createPortal`）、Semi Design、Zustand、Inversify、Vite
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -2,7 +2,7 @@ import React, { useCallback, useId } from 'react';
 import { InputNumber, Radio, Select } from '@douyinfe/semi-ui';
 import type { ISchema } from '../../../../types/base';
 import { getResolvedInlineStyle } from '../../../../common/base/schemaOperator';
-import { isStyleLayerFloating } from '../../../../common/base/editorLayerStyle';
+import { isStyleLayerFloating, withMoveLayerPosition } from '../../../../common/base/editorLayerStyle';
 import { ColorPicker } from './ColorPicker';
 import {
   InspectorFormGrid,
@@ -45,9 +45,13 @@ export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) =
   const floating = isStyleLayerFloating(style);
   const layerMode: 'relative' | 'absolute' = floating ? 'absolute' : 'relative';
 
-  const updateStyle = useCallback((key: string, value: unknown) => {
-    onUpdateStyle({ ...style, [key]: value });
-  }, [style, onUpdateStyle]);
+  const updateStyle = useCallback(
+    (key: string, value: unknown) => {
+      const next = { ...style, [key]: value };
+      onUpdateStyle(floating ? withMoveLayerPosition(next) : next);
+    },
+    [style, onUpdateStyle, floating],
+  );
 
   const setLayerMode = useCallback(
     (pos: 'relative' | 'absolute') => {
@@ -57,14 +61,15 @@ export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) =
         const ml = typeof s.marginLeft === 'number' ? s.marginLeft : 0;
         const top = typeof s.top === 'number' ? s.top : mt;
         const left = typeof s.left === 'number' ? s.left : ml;
-        onUpdateStyle({
-          ...s,
-          position: 'absolute',
-          top,
-          left,
-          marginTop: 0,
-          marginLeft: 0,
-        });
+        onUpdateStyle(
+          withMoveLayerPosition({
+            ...s,
+            top,
+            left,
+            marginTop: 0,
+            marginLeft: 0,
+          }),
+        );
       } else {
         const top = typeof s.top === 'number' ? s.top : 0;
         const left = typeof s.left === 'number' ? s.left : 0;
@@ -256,7 +261,7 @@ export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) =
             if (v == null || v === '') {
               const next = { ...style };
               delete next.fontSize;
-              onUpdateStyle(next);
+              onUpdateStyle(floating ? withMoveLayerPosition(next) : next);
               return;
             }
             updateStyle('fontSize', v);
@@ -279,7 +284,7 @@ export const StyleForm: React.FC<StyleFormProps> = ({ schema, onUpdateStyle }) =
             if (v == null || v === 'normal') {
               const next = { ...style };
               delete next.fontWeight;
-              onUpdateStyle(next);
+              onUpdateStyle(floating ? withMoveLayerPosition(next) : next);
               return;
             }
             updateStyle('fontWeight', v);

@@ -33,3 +33,4 @@ export {
   type SelectableSchemaNodeProps,
   type SelectableContainerProps,
 } from './SelectableComponents';
+export { EditorChromeOverlayMount, useEditorChromeOverlay } from './EditorChromeOverlayContext';

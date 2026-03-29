@@ -48,7 +48,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
   const handleChange = useCallback((field: FieldConfig, value: unknown) => {
     if (field.key.startsWith('style.')) {
       const sk = field.key.slice('style.'.length);
-      onUpdateStyle({ ...getResolvedInlineStyle(schema), [sk]: value });
+      const base = { ...getResolvedInlineStyle(schema), [sk]: value };
+      if (sk === 'top' || sk === 'left') {
+        base.position = 'absolute';
+      }
+      onUpdateStyle(base);
       return;
     }
     const base = { ...schema.props } as Record<string, unknown>;

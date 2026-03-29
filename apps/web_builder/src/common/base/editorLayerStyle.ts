@@ -4,7 +4,15 @@ import type { ISchema } from '../../types/base';
  * 样式面板「图层」：堆叠 = relative + 外边距；移动 = absolute + top/left（与画布拖动一致）
  */
 export function isStyleLayerFloating(style: Record<string, unknown>): boolean {
-  return style.position === 'absolute';
+  const p = style.position;
+  if (p === 'absolute') return true;
+  if (typeof p === 'string' && p.trim().toLowerCase() === 'absolute') return true;
+  return false;
+}
+
+/** 与「移动」图层一致：写入 style 时保证 position 为 absolute（供属性面板与其它入口复用） */
+export function withMoveLayerPosition<T extends Record<string, unknown>>(style: T): T & { position: 'absolute' } {
+  return { ...style, position: 'absolute' };
 }
 
 /**

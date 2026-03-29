@@ -1,11 +1,21 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useLayoutEffect, useState, useCallback, useMemo } from 'react';
 import type { ISchema } from '../../../types/base';
 import { getResolvedInlineStyle } from '../../base/schemaOperator';
 import { useMaterialBundleStore } from '../../../core/store/materialBundleStore';
 import { mergeRemoteDefinition, RemoteSchemaNode } from './BaseComponents';
-import { SelectionBox } from '../../../extensions/select-and-drag/components/SelectionBox';
-import type { ResizeDirection } from '../../../extensions/select-and-drag/hooks/useResize';
 import { useSchemaEventHandlers } from './utils/eventActions';
+import { canvasSchemaHostRegistry } from './CanvasSchemaHostRegistry';
+
+function queryHostInCanvas(schemaId: string): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.querySelector('[data-canvas-area="true"]');
+  if (!canvas) return null;
+  try {
+    return canvas.querySelector(`[id="${CSS.escape(schemaId)}"]`) as HTMLElement | null;
+  } catch {
+    return null;
+  }
+}
 
 export interface SelectableSchemaNodeProps {
   schema: ISchema;
@@ -16,158 +26,141 @@ export interface SelectableSchemaNodeProps {
   onMouseEnter?: (id: string) => void;
   onMouseLeave?: () => void;
   onContextMenu?: (id: string, event: React.MouseEvent) => void;
-  onMoveStart?: (id: string, clientX: number, clientY: number) => void;
-  onResizeStart?: (id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => void;
-  /** 与 CenterCanvas 的 transform scale 配套：视口测量 → 逻辑坐标 */
-  selectionRectVisualToLogical?: number;
 }
 
 /**
- * 可选择的 Schema 节点
- * 支持点击选中、悬停高亮
+ * 可选择的 Schema 叶节点：仅渲染物料宿主并登记真实 DOM；选中框 / hover 由 CanvasInteractionChrome + HostRegistry 负责。
  */
 export const SelectableSchemaNode: React.FC<SelectableSchemaNodeProps> = ({
   schema,
   selectable = true,
   isSelected = false,
-  isHovered = false,
+  isHovered: _isHovered,
   onClick,
   onMouseEnter,
   onMouseLeave,
   onContextMenu,
-  onMoveStart,
-  onResizeStart,
-  selectionRectVisualToLogical = 1,
 }) => {
-  const nodeRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [boxRect, setBoxRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
-  const [localHovered, setLocalHovered] = useState(false);
+  const [hostEl, setHostEl] = useState<HTMLElement | null>(null);
+  const setHostRef = useCallback((node: HTMLElement | null) => {
+    setHostEl(node);
+  }, []);
 
-  // 测量真实组件位置和尺寸（随窗口/画布区尺寸变化更新 SelectionBox）
-  useEffect(() => {
-    const wrap = nodeRef.current;
-    const content = contentRef.current;
-    if (!wrap || !content) return undefined;
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      onClick?.(schema.id, e);
+    },
+    [schema.id, onClick, selectable],
+  );
 
-    const measure = () => {
-      const v2l = selectionRectVisualToLogical;
-      const wrapperRect = wrap.getBoundingClientRect();
-      const targetEl = (content.firstElementChild as HTMLElement | null) ?? content;
-      const targetRect = targetEl.getBoundingClientRect();
-      setBoxRect({
-        x: Math.round((targetRect.left - wrapperRect.left) * v2l),
-        y: Math.round((targetRect.top - wrapperRect.top) * v2l),
-        width: Math.round(targetRect.width * v2l),
-        height: Math.round(targetRect.height * v2l),
-      });
-    };
+  const handleMouseEnter = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      onMouseEnter?.(schema.id);
+    },
+    [schema.id, onMouseEnter, selectable],
+  );
 
-    measure();
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(wrap);
-    ro.observe(content);
-    return () => ro.disconnect();
-  }, [isSelected, schema, selectionRectVisualToLogical]);
+  const handleMouseLeave = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      onMouseLeave?.();
+    },
+    [onMouseLeave, selectable],
+  );
 
-  // 处理点击
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    onClick?.(schema.id, e);
-  }, [schema.id, onClick, selectable]);
-
-  // 处理悬停 - 使用本地状态和父状态结合
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    setLocalHovered(true);
-    onMouseEnter?.(schema.id);
-  }, [schema.id, onMouseEnter, selectable]);
-
-  const handleMouseLeave = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    setLocalHovered(false);
-    onMouseLeave?.();
-  }, [onMouseLeave, selectable]);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.preventDefault();
-    e.stopPropagation();
-    onContextMenu?.(schema.id, e);
-  }, [schema.id, onContextMenu, selectable]);
-
-  const handleMoveStart = useCallback((e: React.MouseEvent) => {
-    if (!selectable || !isSelected) return;
-    e.stopPropagation();
-    onMoveStart?.(schema.id, e.clientX, e.clientY);
-  }, [schema.id, isSelected, onMoveStart, selectable]);
-
-  const handleResizeStart = useCallback((direction: ResizeDirection, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onResizeStart?.(schema.id, direction, e.clientX, e.clientY, boxRect.width, boxRect.height);
-  }, [schema.id, boxRect, onResizeStart]);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      onContextMenu?.(schema.id, e);
+    },
+    [schema.id, onContextMenu, selectable],
+  );
 
   const bundleUrl = useMaterialBundleStore((s) => s.bundles[schema.type]);
   const remoteDefinition = useMemo(() => mergeRemoteDefinition(schema, bundleUrl), [schema, bundleUrl]);
 
-  const showHover = selectable && (isHovered || localHovered);
+  useLayoutEffect(() => {
+    let cancelled = false;
+    let rafAttempts = 0;
+    const maxRafAttempts = 12;
 
-  const baseStyle: React.CSSProperties = {
-    position: 'relative',
-    cursor: selectable ? (isSelected ? 'move' : onClick ? 'pointer' : 'default') : 'default',
-    display: 'inline-block',
-    verticalAlign: 'top',
-  };
+    const sync = () => {
+      if (cancelled) return;
+      const el = (hostEl?.isConnected ? hostEl : null) ?? queryHostInCanvas(schema.id);
+      if (el) {
+        canvasSchemaHostRegistry.register(schema.id, el);
+        return;
+      }
+      canvasSchemaHostRegistry.unregister(schema.id);
+      if (rafAttempts < maxRafAttempts) {
+        rafAttempts += 1;
+        requestAnimationFrame(sync);
+      }
+    };
 
-  const borderStyle: React.CSSProperties = {
-    outline: showHover
-      ? '1px dashed var(--theme-primary)'
-      : 'none',
-    outlineOffset: '-1px',
-  };
+    sync();
+    return () => {
+      cancelled = true;
+      canvasSchemaHostRegistry.unregister(schema.id);
+    };
+  }, [hostEl, schema.id, bundleUrl, remoteDefinition]);
+
+  /** 不写 position：避免在 RemoteSchemaNode 的 mergedStyle 里盖住 schema 的 absolute/relative */
+  const hostStyle: React.CSSProperties = useMemo(
+    () => ({
+      display: 'inline-block',
+      verticalAlign: 'top',
+      cursor: selectable ? (isSelected ? 'move' : onClick ? 'pointer' : 'default') : 'default',
+    }),
+    [selectable, isSelected, onClick],
+  );
+
+  const hostInteractiveProps = useMemo(
+    () => ({
+      onClick: handleClick,
+      onMouseEnter: handleMouseEnter,
+      onMouseLeave: handleMouseLeave,
+      onContextMenu: handleContextMenu,
+    }),
+    [handleClick, handleMouseEnter, handleMouseLeave, handleContextMenu],
+  );
+
+  if (!remoteDefinition) {
+    return (
+      <div
+        ref={setHostRef as React.Ref<HTMLDivElement>}
+        key={schema.id}
+        id={schema.id}
+        style={{
+          ...(getResolvedInlineStyle(schema) as React.CSSProperties),
+          ...hostStyle,
+          color: '#999',
+          fontSize: 12,
+        }}
+        {...hostInteractiveProps}
+      >
+        [未知组件: {schema.type}]
+      </div>
+    );
+  }
 
   return (
-    <div
-      ref={nodeRef}
-      key={schema.id}
-      data-schema-id={schema.id}
-      style={{ ...baseStyle, ...borderStyle }}
-      onClick={handleClick}
-      onMouseDown={handleMoveStart}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onContextMenu={handleContextMenu}
-    >
-      <div ref={contentRef} style={{ position: 'relative', display: 'inline-block', verticalAlign: 'top' }}>
-        {remoteDefinition ? (
-          <RemoteSchemaNode schema={schema} />
-        ) : (
-          <div style={{ color: '#999', fontSize: 12 }}>[未知组件: {schema.type}]</div>
-        )}
-      </div>
-
-      {selectable && isSelected && (
-        <SelectionBox
-          x={boxRect.x}
-          y={boxRect.y}
-          width={boxRect.width || 100}
-          height={boxRect.height || 50}
-          componentId={schema.id}
-          onMoveStart={handleMoveStart}
-          onResizeStart={handleResizeStart}
-          chromeVisualScale={selectionRectVisualToLogical}
-        />
-      )}
-    </div>
+    <RemoteSchemaNode
+      schema={schema}
+      hostRef={setHostRef}
+      hostStyle={hostStyle}
+      hostInteractiveProps={hostInteractiveProps}
+    />
   );
 };
 
-/**
- * 可选择的容器组件
- */
 export interface SelectableContainerProps {
   schema: ISchema;
   selectable?: boolean;
@@ -177,133 +170,91 @@ export interface SelectableContainerProps {
   onMouseEnter?: (id: string) => void;
   onMouseLeave?: () => void;
   onContextMenu?: (id: string, event: React.MouseEvent) => void;
-  onMoveStart?: (id: string, clientX: number, clientY: number) => void;
-  onResizeStart?: (id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => void;
   children?: React.ReactNode;
-  selectionRectVisualToLogical?: number;
 }
 
 export const SelectableContainer: React.FC<SelectableContainerProps> = ({
   schema,
   selectable = true,
   isSelected,
-  isHovered,
+  isHovered: _isHovered,
   onClick,
   onMouseEnter,
   onMouseLeave,
   onContextMenu,
-  onMoveStart,
-  onResizeStart,
   children,
-  selectionRectVisualToLogical = 1,
 }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [localHovered, setLocalHovered] = useState(false);
   const eventHandlers = useSchemaEventHandlers(schema);
 
-  // 测量节点尺寸（含窗口/父级缩放导致的尺寸变化，否则仅 isSelected/schema 变更才量会滞后）
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return undefined;
+    canvasSchemaHostRegistry.register(schema.id, el);
+    return () => canvasSchemaHostRegistry.unregister(schema.id);
+  }, [schema.id]);
 
-    const measure = () => {
-      const rect = el.getBoundingClientRect();
-      const v2l = selectionRectVisualToLogical;
-      setDimensions({
-        width: Math.round(rect.width * v2l),
-        height: Math.round(rect.height * v2l),
-      });
-    };
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      const eventClick = eventHandlers.onClick as ((event: React.MouseEvent<HTMLElement>) => void) | undefined;
+      eventClick?.(e as React.MouseEvent<HTMLElement>);
+      onClick?.(schema.id, e);
+    },
+    [eventHandlers, schema.id, onClick, selectable],
+  );
 
-    measure();
-    const ro = new ResizeObserver(() => {
-      measure();
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isSelected, schema, selectionRectVisualToLogical]);
+  const handleMouseEnter = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      onMouseEnter?.(schema.id);
+    },
+    [schema.id, onMouseEnter, selectable],
+  );
 
-  // 处理点击
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    const eventClick = eventHandlers.onClick as ((event: React.MouseEvent<HTMLElement>) => void) | undefined;
-    eventClick?.(e as React.MouseEvent<HTMLElement>);
-    onClick?.(schema.id, e);
-  }, [eventHandlers, schema.id, onClick, selectable]);
+  const handleMouseLeave = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.stopPropagation();
+      onMouseLeave?.();
+    },
+    [onMouseLeave, selectable],
+  );
 
-  // 处理悬停
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    setLocalHovered(true);
-    onMouseEnter?.(schema.id);
-  }, [schema.id, onMouseEnter, selectable]);
-
-  const handleMouseLeave = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.stopPropagation();
-    setLocalHovered(false);
-    onMouseLeave?.();
-  }, [onMouseLeave, selectable]);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (!selectable) return;
-    e.preventDefault();
-    e.stopPropagation();
-    onContextMenu?.(schema.id, e);
-  }, [schema.id, onContextMenu, selectable]);
-
-  const handleMoveStart = useCallback((e: React.MouseEvent) => {
-    if (!selectable || !isSelected) return;
-    e.stopPropagation();
-    onMoveStart?.(schema.id, e.clientX, e.clientY);
-  }, [schema.id, isSelected, onMoveStart, selectable]);
-
-  const handleResizeStart = useCallback((direction: ResizeDirection, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onResizeStart?.(schema.id, direction, e.clientX, e.clientY, dimensions.width, dimensions.height);
-  }, [schema.id, dimensions, onResizeStart]);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!selectable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      onContextMenu?.(schema.id, e);
+    },
+    [schema.id, onContextMenu, selectable],
+  );
 
   const style = getResolvedInlineStyle(schema) as React.CSSProperties;
-
-  const showHover = selectable && (isHovered || localHovered);
-
-  const borderStyle: React.CSSProperties = {
-    outline: selectable && isSelected
-      ? '2px solid var(--theme-primary)'
-      : showHover
-        ? '1px dashed var(--theme-primary)'
-        : 'none',
-    outlineOffset: selectable && isSelected ? '-2px' : '-1px',
-  };
+  const rawPos = style.position;
+  const position: React.CSSProperties['position'] =
+    rawPos !== undefined && rawPos !== null && !(typeof rawPos === 'string' && rawPos.trim() === '')
+      ? rawPos
+      : 'relative';
 
   return (
     <div
       ref={nodeRef}
-      style={{ ...style, position: 'relative', cursor: selectable ? (isSelected ? 'move' : onClick ? 'pointer' : 'default') : 'default', ...borderStyle }}
-      data-schema-id={schema.id}
+      style={{
+        ...style,
+        position,
+        cursor: selectable ? (isSelected ? 'move' : onClick ? 'pointer' : 'default') : 'default',
+      }}
+      id={schema.id}
       onClick={handleClick}
-      onMouseDown={handleMoveStart}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
     >
       {children}
-
-      {selectable && isSelected && (
-        <SelectionBox
-          x={0}
-          y={0}
-          width={dimensions.width || 100}
-          height={dimensions.height || 50}
-          componentId={schema.id}
-          onMoveStart={handleMoveStart}
-          onResizeStart={handleResizeStart}
-          chromeVisualScale={selectionRectVisualToLogical}
-        />
-      )}
     </div>
   );
 };

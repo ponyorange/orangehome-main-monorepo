@@ -87,9 +87,6 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
     handleMouseEnter,
     handleMouseLeave,
     handleContextMenu,
-    onMoveStart,
-    onResizeStart,
-    selectionRectVisualToLogical = 1,
   } = useSelectionContext();
 
   /** 始终从 store 按 id 取当前节点，避免父链 props 与右侧面板 setSchema 后的树不同步 */
@@ -110,9 +107,6 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onContextMenu={handleContextMenu}
-        onMoveStart={onMoveStart}
-        onResizeStart={onResizeStart}
-        selectionRectVisualToLogical={selectionRectVisualToLogical}
       >
         {node.children?.map((child) => (
           <SelectableSchemaNodeRecursive key={child.id} schema={child} />
@@ -131,9 +125,6 @@ const SelectableSchemaNodeRecursive: React.FC<SelectableSchemaNodeRecursiveProps
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
-      onMoveStart={onMoveStart}
-      onResizeStart={onResizeStart}
-      selectionRectVisualToLogical={selectionRectVisualToLogical}
     />
   );
 };
