@@ -6,6 +6,11 @@ import type {
   SendCodeParams,
   User,
 } from '@/types/auth';
+
+/** 后台仅允许 identities 含 admin 的账号 */
+export function hasAdminIdentity(user: User | null | undefined): boolean {
+  return Array.isArray(user?.identities) && user.identities.includes('admin');
+}
 import { API_ENDPOINTS, STORAGE_KEYS } from './config';
 import { request } from '@/lib/fetch';
 
@@ -98,6 +103,6 @@ export const authStorage = {
     localStorage.removeItem(STORAGE_KEYS.USER);
   },
   isAuthenticated() {
-    return !!this.getToken();
+    return !!this.getToken() && hasAdminIdentity(this.getUser());
   },
 };

@@ -131,6 +131,9 @@ export class GetComponentListResponseDto {
   @ApiProperty({ description: '页面所属项目业务线 ID' })
   businessId: string;
 
+  @ApiProperty({ description: '官方物料库业务线 ID（与 businessId 的物料合并返回）' })
+  officialBusinessId: string;
+
   @ApiProperty({ type: [ComponentListItemDto] })
   items: ComponentListItemDto[];
 }

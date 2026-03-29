@@ -1,0 +1,62 @@
+// Shared create-flow Modal + Form shell (.oh-form-modal) — contracts/platform-form-shell.md
+@import './platform-theme.scss';
+
+.oh-form-modal {
+  .semi-modal-header {
+    margin-bottom: 4px;
+
+    .semi-modal-header-title,
+    .semi-modal-title {
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      color: var(--oh-text);
+    }
+  }
+
+  .semi-modal-body {
+    padding-top: 4px;
+    padding-bottom: 28px;
+  }
+
+  .semi-form-vertical {
+    .semi-form-field {
+      margin-bottom: 20px;
+    }
+
+    .semi-form-field:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+
+  .semi-form-field-error-message {
+    margin-top: 6px;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 4px;
+  }
+
+  .semi-input-wrapper,
+  .semi-select,
+  .semi-input-textarea-wrapper {
+    border-radius: var(--oh-radius-control);
+  }
+
+  .semi-button-primary.semi-button-solid {
+    background-color: var(--oh-primary) !important;
+    border-color: var(--oh-primary) !important;
+    color: #fff !important;
+
+    &:hover {
+      background-color: var(--oh-primary-hover) !important;
+      border-color: var(--oh-primary-hover) !important;
+    }
+  }
+}

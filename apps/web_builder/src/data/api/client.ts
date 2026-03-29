@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_BFF_API_URL || 'http://192.168.1.91:50054/api';
 
 export interface RequestOptions extends RequestInit {
   skipAuth?: boolean;

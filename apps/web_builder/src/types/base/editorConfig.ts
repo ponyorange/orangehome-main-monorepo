@@ -14,9 +14,15 @@ export interface ISchemaEditorConfigPropItem {
   initValue?: unknown;
 }
 
+/** 物料侧样式默认值（拖入画布时写入 schema.style） */
+export interface ISchemaEditorConfigStyleConfig {
+  initValue?: Record<string, unknown>;
+}
+
 export interface ISchemaEditorConfig {
   uid?: string;
   dependencies?: unknown[];
   props?: ISchemaEditorConfigPropItem[];
   editorCapabilities?: { isContainer?: boolean; hideInComponentList?: boolean };
+  styleConfig?: ISchemaEditorConfigStyleConfig;
 }

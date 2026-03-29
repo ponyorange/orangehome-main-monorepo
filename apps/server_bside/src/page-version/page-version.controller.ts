@@ -1,13 +1,17 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Headers, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { PageVersionService } from './page-version.service';
+import { AuthService } from '../auth/auth.service';
 import { SavePageContentDto, PageVersionResponseDto, ListPageVersionsQueryDto } from './dto/page-version.dto';
+import { PageVersionService } from './page-version.service';
 
 @ApiTags('page-versions')
 @ApiBearerAuth()
 @Controller('page-versions')
 export class PageVersionController {
-  constructor(private readonly pageVersionService: PageVersionService) {}
+  constructor(
+    private readonly pageVersionService: PageVersionService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('save')
   @ApiOperation({ summary: '保存页面内容' })
@@ -29,10 +33,12 @@ export class PageVersionController {
   @ApiParam({ name: 'id', description: '版本ID' })
   @ApiResponse({ status: 200, description: '回滚成功', type: PageVersionResponseDto })
   async rollback(@Param('id') id: string, @Headers('authorization') authHeader: string) {
-    // 从 token 中解析 userId，这里简化处理，实际应该从 token 中获取
-    // 暂时使用一个默认值
-    const userId = 'default-user';
-    return this.pageVersionService.rollback(id, userId, authHeader);
+    const accessToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
+    if (!accessToken) {
+      throw new UnauthorizedException('请提供有效的 Bearer Token');
+    }
+    const currentUser = await this.authService.getCurrentUser(accessToken);
+    return this.pageVersionService.rollback(id, currentUser.id, authHeader);
   }
 
   @Delete(':id')

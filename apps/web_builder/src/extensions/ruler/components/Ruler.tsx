@@ -169,7 +169,7 @@ export const Ruler: React.FC<RulerProps> = ({
       drawTick(ctx, value, pos, containerWidth, containerHeight, isHorizontal, tickInterval);
     }
     
-    // 强制绘制画布末尾刻度（375 或 667）
+    // 强制绘制画布逻辑幅面末端刻度（maxValue，与 canvasWidth/canvasHeight 一致）
     const endPos = (maxValue * zoom) - scrollOffset;
     if (endPos >= 0 && endPos <= containerMax && !drawnValues.has(maxValue)) {
       drawTick(ctx, maxValue, endPos, containerWidth, containerHeight, isHorizontal, tickInterval, true);

@@ -45,8 +45,20 @@ export function mergeRemoteDefinition(schema: ISchema, bundleUrl: string | undef
   return url ? { amdUrl: url } : null;
 }
 
-const UnknownComponent: React.FC<{ schema: ISchema; message?: string }> = ({ schema, message }) => (
-  <div key={schema.id} data-schema-id={schema.id} style={{ color: '#999', fontSize: 12 }}>
+const UnknownComponent: React.FC<{
+  schema: ISchema;
+  message?: string;
+  hostRef?: React.RefCallback<HTMLElement | null>;
+  hostStyle?: React.CSSProperties;
+  hostInteractiveProps?: RemoteSchemaHostInteractiveProps;
+}> = ({ schema, message, hostRef, hostStyle, hostInteractiveProps }) => (
+  <div
+    key={schema.id}
+    ref={hostRef as React.Ref<HTMLDivElement>}
+    id={schema.id}
+    style={{ color: '#999', fontSize: 12, ...hostStyle }}
+    {...hostInteractiveProps}
+  >
     {message ?? `[未知组件: ${schema.type}]`}
   </div>
 );
@@ -65,8 +77,29 @@ function schemaVisualSignature(s: ISchema): string {
   }
 }
 
+export type RemoteSchemaHostInteractiveProps = Pick<
+  React.HTMLAttributes<HTMLElement>,
+  'onClick' | 'onMouseDown' | 'onMouseEnter' | 'onMouseLeave' | 'onContextMenu'
+>;
+
+export interface RemoteSchemaNodeProps {
+  schema: ISchema;
+  children?: React.ReactNode;
+  /** 编辑器：远程根 DOM ref（需物料 forwardRef 方可命中真实根） */
+  hostRef?: React.RefCallback<HTMLElement | null>;
+  /** 合并进 RemoteComponent 的 style（画布选中层传入 display/cursor 等） */
+  hostStyle?: React.CSSProperties;
+  hostInteractiveProps?: RemoteSchemaHostInteractiveProps;
+}
+
 /** 不用 React.memo：schema 常被原地改 props，引用不变会导致整节点不渲染、RemoteComponent 拿不到新平铺 props */
-export const RemoteSchemaNode: React.FC<{ schema: ISchema; children?: React.ReactNode }> = ({ schema, children }) => {
+export const RemoteSchemaNode: React.FC<RemoteSchemaNodeProps> = ({
+  schema,
+  children,
+  hostRef,
+  hostStyle,
+  hostInteractiveProps,
+}) => {
   const bundleUrl = useMaterialBundleStore((s) => s.bundles[schema.type]);
   const editorConfigFingerprint = useMaterialBundleStore((s) => {
     const c = s.editorConfigs[schema.type];
@@ -162,15 +195,32 @@ export const RemoteSchemaNode: React.FC<{ schema: ISchema; children?: React.Reac
     };
   }, [schema.type, remoteDefinition, cachedRenderer]);
 
+  const mergedStyle = hostStyle
+    ? ({ ...schema.style, ...hostStyle } as React.CSSProperties)
+    : schema.style;
+
   if (error) {
     remoteComponentDebug('RemoteSchemaNode: 渲染错误态', { type: schema.type, error });
     console.error(REMOTE_COMPONENT_DEBUG_TAG, error);
-    return <UnknownComponent schema={schema} message={error} />;
+    return (
+      <UnknownComponent
+        schema={schema}
+        message={error}
+        hostRef={hostRef}
+        hostStyle={mergedStyle}
+        hostInteractiveProps={hostInteractiveProps}
+      />
+    );
   }
 
   if (!RemoteComponent) {
     return (
-      <div data-schema-id={schema.id} style={{ color: '#999', fontSize: 12 }}>
+      <div
+        ref={hostRef as React.Ref<HTMLDivElement>}
+        id={schema.id}
+        style={{ color: '#999', fontSize: 12, ...hostStyle }}
+        {...hostInteractiveProps}
+      >
         正在加载远程组件...
       </div>
     );
@@ -179,9 +229,11 @@ export const RemoteSchemaNode: React.FC<{ schema: ISchema; children?: React.Reac
     <RemoteComponent
       key={remoteRenderKey}
       {...schema.props}
+      {...hostInteractiveProps}
       id={schema.id}
-      style={schema.style}
+      style={mergedStyle}
       eventHandlers={eventHandlers}
+      ref={hostRef as React.Ref<unknown>}
     >
       {children}
     </RemoteComponent>

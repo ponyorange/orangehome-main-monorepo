@@ -10,7 +10,7 @@ export class BusinessController {
   constructor(private readonly businessService: BusinessService) {}
 
   @Get()
-  @ApiOperation({ summary: '业务线列表' })
+  @ApiOperation({ summary: '业务线列表（仅 public 类型）' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false })

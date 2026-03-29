@@ -1,14 +1,26 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { GrpcClientService } from '../config/grpc-client.service';
+import { ProjectMembershipService } from '../project/project-membership.service';
 import { SavePageContentDto, PageVersionResponseDto } from './dto/page-version.dto';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PageVersionService {
-  constructor(private readonly grpcClient: GrpcClientService) {}
+  constructor(
+    private readonly grpcClient: GrpcClientService,
+    private readonly membership: ProjectMembershipService,
+  ) {}
 
   async saveContent(dto: SavePageContentDto, authHeader?: string): Promise<PageVersionResponseDto> {
     try {
+      await this.assertMemberForPageId(dto.pageId, authHeader);
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       const result = await firstValueFrom(
         this.grpcClient.pageVersion.savePageContent({
@@ -25,6 +37,7 @@ export class PageVersionService {
 
   async publish(versionId: string, authHeader?: string): Promise<PageVersionResponseDto> {
     try {
+      await this.assertMemberForVersionId(versionId, authHeader);
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       const result = await firstValueFrom(this.grpcClient.pageVersion.publishPageVersion({ id: versionId }, metadata));
       return this.mapToDto(result.data);
@@ -35,6 +48,7 @@ export class PageVersionService {
 
   async delete(versionId: string, authHeader?: string): Promise<void> {
     try {
+      await this.assertMemberForVersionId(versionId, authHeader);
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       await firstValueFrom(this.grpcClient.pageVersion.deletePageVersion({ id: versionId }, metadata));
     } catch (error) {
@@ -44,6 +58,7 @@ export class PageVersionService {
 
   async findOne(versionId: string, authHeader?: string): Promise<PageVersionResponseDto> {
     try {
+      await this.assertMemberForVersionId(versionId, authHeader);
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       const result = await firstValueFrom(this.grpcClient.pageVersion.getPageVersion({ id: versionId }, metadata));
       return this.mapToDto(result.data);
@@ -59,6 +74,7 @@ export class PageVersionService {
     limit: number;
   }> {
     try {
+      await this.assertMemberForPageId(pageId, authHeader);
       const page = query.page || 1;
       const limit = query.limit || 10;
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
@@ -102,6 +118,7 @@ export class PageVersionService {
 
   async rollback(versionId: string, userId: string, authHeader?: string): Promise<PageVersionResponseDto> {
     try {
+      await this.assertMemberForVersionId(versionId, authHeader);
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       const result = await firstValueFrom(
         this.grpcClient.pageVersion.rollbackPageVersion({
@@ -113,6 +130,30 @@ export class PageVersionService {
     } catch (error) {
       this.handleGrpcError(error);
     }
+  }
+
+  private async assertMemberForPageId(pageId: string, authHeader?: string): Promise<void> {
+    const metadata = this.grpcClient.createAuthMetadata(authHeader);
+    const pageRes = await firstValueFrom(this.grpcClient.page.getPage({ id: pageId }, metadata));
+    const projectId = pageRes.data?.projectId;
+    if (!projectId) {
+      throw new NotFoundException('资源不存在');
+    }
+    const projectRes = await firstValueFrom(this.grpcClient.project.getProject({ id: projectId }, metadata));
+    await this.membership.requireProjectMember(authHeader, {
+      owner: projectRes.data?.owner,
+      collaborators: projectRes.data?.collaborators,
+    });
+  }
+
+  private async assertMemberForVersionId(versionId: string, authHeader?: string): Promise<void> {
+    const metadata = this.grpcClient.createAuthMetadata(authHeader);
+    const verRes = await firstValueFrom(this.grpcClient.pageVersion.getPageVersion({ id: versionId }, metadata));
+    const pageId = verRes.data?.pageId;
+    if (!pageId) {
+      throw new NotFoundException('资源不存在');
+    }
+    await this.assertMemberForPageId(pageId, authHeader);
   }
 
   private mapToDto(data: any): PageVersionResponseDto {
@@ -132,8 +173,14 @@ export class PageVersionService {
   }
 
   private handleGrpcError(error: any): never {
+    if (error instanceof HttpException) {
+      throw error;
+    }
     if (error.code === 5) {
       throw new NotFoundException('资源不存在');
+    }
+    if (error.code === 7) {
+      throw new ForbiddenException(error.details || error.message || '无权限操作该项目');
     }
     if (error.code === 16) {
       throw new UnauthorizedException(error.details || error.message || '请提供有效的 Bearer Token');

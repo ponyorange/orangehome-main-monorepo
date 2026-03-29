@@ -1,7 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Table, Button, Input, Popconfirm, Modal, Form, Toast } from '@douyinfe/semi-ui';
-import { IconPlus, IconSearch, IconEdit, IconDelete } from '@douyinfe/semi-icons';
+import {
+  IconPlus,
+  IconSearch,
+  IconEdit,
+  IconDelete,
+  IconFolder,
+} from '@douyinfe/semi-icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import MainLayout from '../../components/Layout';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,6 +18,7 @@ import { isValidEmail } from '../../utils/validators';
 import './index.scss';
 
 const { Column } = Table;
+const DEFAULT_PROJECT_CODE = 'orangehome';
 const normalizeCollaborators = (value?: string[]) =>
   Array.from(new Set((value || []).map((item) => item.trim()).filter(Boolean)));
 const formatDateTime = (value?: string | number | Date) => {
@@ -20,6 +28,7 @@ const formatDateTime = (value?: string | number | Date) => {
 };
 
 const Projects: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
@@ -53,7 +62,6 @@ const Projects: React.FC = () => {
   const handleOpenCreate = () => {
     setCreateVisible(true);
     formApi?.setValues({
-      projectCode: '',
       projectName: '',
       businessId: '',
       owner: ownerEmail,
@@ -70,15 +78,14 @@ const Projects: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteProject(id);
-      Toast.success('删除成功');
+      Toast.success(t('projects.deleteSuccess'));
       mutate();
     } catch (err: any) {
-      Toast.error(err.message || '删除失败');
+      Toast.error(err.message || t('projects.deleteFailed'));
     }
   };
 
   const handleCreate = async (values: {
-    projectCode: string;
     projectName: string;
     businessId: string;
     owner?: string;
@@ -88,40 +95,45 @@ const Projects: React.FC = () => {
     const collaborators = normalizeCollaborators(values.collaborators).filter((email) => email !== ownerEmail);
 
     if (!ownerEmail) {
-      Toast.error('未获取到当前登录用户邮箱，无法创建项目');
+      Toast.error(t('projects.noOwnerEmail'));
       return;
     }
 
     if (!isValidEmail(ownerEmail)) {
-      Toast.error('当前登录用户邮箱格式不正确');
+      Toast.error(t('projects.ownerEmailInvalid'));
       return;
     }
 
     const invalidCollaborator = collaborators.find((email) => !isValidEmail(email));
     if (invalidCollaborator) {
-      Toast.error(`协作者邮箱格式不正确：${invalidCollaborator}`);
+      Toast.error(t('projects.validation.collaboratorItemInvalid', { email: invalidCollaborator }));
       return;
     }
 
     setCreating(true);
     try {
       await createProject({
-        projectCode: values.projectCode.trim(),
+        projectCode: DEFAULT_PROJECT_CODE,
         projectName: values.projectName.trim(),
         businessId: values.businessId.trim(),
         owner: ownerEmail,
         collaborators,
         description: values.description?.trim() || undefined,
       });
-      Toast.success('创建成功');
+      Toast.success(t('projects.createSuccess'));
       handleCloseCreate();
       mutate();
     } catch (err: any) {
-      Toast.error(err.message || '创建失败');
+      Toast.error(err.message || t('projects.createFailed'));
     } finally {
       setCreating(false);
     }
   };
+
+  const isTrulyEmpty =
+    !isLoading && data !== undefined && (data.total ?? 0) === 0;
+  const showOnboarding = isTrulyEmpty && !search.trim();
+  const showSearchEmpty = isTrulyEmpty && !!search.trim();
 
   const renderActions = (record: Project) => (
     <div className="action-buttons">
@@ -130,15 +142,15 @@ const Projects: React.FC = () => {
         theme="borderless"
         onClick={() => navigate(`/projects/${record.id}`)}
       >
-        详情
+        {t('projects.detail')}
       </Button>
       <Popconfirm
-        title="确认删除"
-        content={`确定要删除项目 "${record.projectName}" 吗？`}
+        title={t('projects.confirmDelete')}
+        content={t('projects.confirmDeleteContent', { name: record.projectName })}
         onConfirm={() => handleDelete(record.id)}
       >
         <Button icon={<IconDelete />} theme="borderless" type="danger">
-          删除
+          {t('common.delete')}
         </Button>
       </Popconfirm>
     </div>
@@ -148,140 +160,166 @@ const Projects: React.FC = () => {
     <MainLayout>
       <div className="projects-page">
         <div className="page-header">
-          <h1>项目管理</h1>
-          <Button icon={<IconPlus />} type="primary" onClick={handleOpenCreate}>
-            新建项目
+          <h1>{t('projects.pageTitle')}</h1>
+          <Button icon={<IconPlus />} type="primary" theme="solid" onClick={handleOpenCreate}>
+            {t('projects.newProject')}
           </Button>
         </div>
 
-        <div className="search-bar">
-          <Input
-            prefix={<IconSearch />}
-            placeholder="搜索项目名称或编码"
-            value={search}
-            onChange={setSearch}
-            onEnterPress={() => setPage(1)}
-            showClear
-          />
-        </div>
+        {showOnboarding ? (
+          <div className="projects-empty-hero">
+            <div className="projects-empty-hero__orb" aria-hidden />
+            <div className="projects-empty-hero__icon-wrap">
+              <IconFolder />
+            </div>
+            <h2 className="projects-empty-hero__title">{t('projects.emptyHeroTitle')}</h2>
+            <p className="projects-empty-hero__lead">{t('projects.emptyHeroLead')}</p>
+            <ul className="projects-empty-hero__tips">
+              <li>{t('projects.emptyHeroTip1')}</li>
+              <li>{t('projects.emptyHeroTip2')}</li>
+              <li>{t('projects.emptyHeroTip3')}</li>
+            </ul>
+            <Button
+              type="primary"
+              theme="solid"
+              size="large"
+              icon={<IconPlus />}
+              className="projects-empty-hero__cta"
+              onClick={handleOpenCreate}
+            >
+              {t('projects.emptyHeroCta')}
+            </Button>
+            <p className="projects-empty-hero__footnote">{t('projects.emptyHeroFootnote')}</p>
+          </div>
+        ) : (
+          <>
+            <div className="search-bar">
+              <Input
+                prefix={<IconSearch />}
+                placeholder={t('projects.searchPlaceholder')}
+                value={search}
+                onChange={setSearch}
+                onEnterPress={() => setPage(1)}
+                showClear
+              />
+            </div>
 
-        <Table
-          dataSource={data?.data || []}
-          loading={isLoading}
-          pagination={{
-            currentPage: page,
-            pageSize: limit,
-            total: data?.total || 0,
-            onChange: setPage,
-          }}
-          rowKey="id"
-        >
-          <Column title="项目编码" dataIndex="projectCode" />
-          <Column title="项目名称" dataIndex="projectName" />
-          <Column title="业务线" dataIndex="businessName" />
-          <Column
-            title="描述"
-            dataIndex="description"
-            render={(desc) => desc || '-'}
-          />
-          <Column
-            title="创建时间"
-            dataIndex="createdAt"
-            render={(time) => formatDateTime(time)}
-          />
-          <Column title="操作" render={renderActions} />
-        </Table>
+            {showSearchEmpty ? (
+              <div className="projects-search-empty">
+                <p>{t('projects.searchNoMatch', { q: search })}</p>
+                <Button type="tertiary" onClick={() => { setSearch(''); setPage(1); }}>
+                  {t('projects.clearSearch')}
+                </Button>
+              </div>
+            ) : (
+              <Table
+                dataSource={data?.data || []}
+                loading={isLoading}
+                pagination={{
+                  currentPage: page,
+                  pageSize: limit,
+                  total: data?.total || 0,
+                  onChange: setPage,
+                }}
+                rowKey="id"
+              >
+                <Column title={t('projects.colId')} dataIndex="id" />
+                <Column title={t('projects.colName')} dataIndex="projectName" />
+                <Column title={t('projects.colBusiness')} dataIndex="businessName" />
+                <Column
+                  title={t('projects.colOwner')}
+                  dataIndex="owner"
+                  render={(owner: string | undefined) => owner?.trim() || '-'}
+                />
+                <Column
+                  title={t('projects.colCreatedAt')}
+                  dataIndex="createdAt"
+                  render={(time) => formatDateTime(time)}
+                />
+                <Column title={t('projects.colActions')} render={renderActions} />
+              </Table>
+            )}
+          </>
+        )}
 
-        {/* 创建项目弹窗 */}
         <Modal
-          title="新建项目"
+          title={t('projects.createModalTitle')}
           visible={createVisible}
           onCancel={handleCloseCreate}
           footer={null}
-          className="create-project-modal"
+          className="oh-form-modal"
         >
           <Form
             onSubmit={handleCreate}
             layout="vertical"
             getFormApi={setFormApi}
-            className="create-project-form"
           >
             <Form.Input
-              field="projectCode"
-              label="项目编码"
-              placeholder="请输入项目编码，例如：my-project"
-              validate={(value) => {
-                if (!value?.trim()) return '请输入项目编码';
-                return '';
-              }}
-              rules={[{ required: true, message: '请输入项目编码' }]}
-            />
-            <Form.Input
               field="projectName"
-              label="项目名称"
-              placeholder="请输入项目名称"
+              label={t('projects.fieldProjectName')}
+              placeholder={t('projects.fieldProjectNamePh')}
               validate={(value) => {
-                if (!value?.trim()) return '请输入项目名称';
+                if (!value?.trim()) return t('projects.validation.projectNameRequired');
                 return '';
               }}
-              rules={[{ required: true, message: '请输入项目名称' }]}
+              rules={[{ required: true, message: t('projects.validation.projectNameRequired') }]}
             />
             <Form.Select
               field="businessId"
-              label="所属业务线"
+              label={t('projects.fieldBusiness')}
               placeholder={
                 businessLoading
-                  ? '业务线加载中...'
+                  ? t('projects.businessLoading')
                   : businessError
-                    ? '业务线加载失败，请稍后重试'
-                    : '请选择业务线'
+                    ? t('projects.businessError')
+                    : t('projects.businessPlaceholder')
               }
               optionList={businessOptions}
               disabled={businessLoading || !!businessError}
               validate={(value) => {
-                if (businessError) return '业务线加载失败，请稍后重试';
-                if (!value?.trim()) return '请选择业务线';
+                if (businessError) return t('projects.validation.businessLoadFailed');
+                if (!value?.trim()) return t('projects.validation.businessRequired');
                 return '';
               }}
-              rules={[{ required: true, message: '请选择业务线' }]}
+              rules={[{ required: true, message: t('projects.validation.businessRequired') }]}
             />
             <Form.Input
               field="owner"
-              label="负责人邮箱"
+              label={t('projects.fieldOwnerEmail')}
               initValue={ownerEmail}
               disabled
               validate={(value) => {
-                if (!value?.trim()) return '未获取到当前登录用户邮箱';
-                if (!isValidEmail(value.trim())) return '负责人邮箱格式不正确';
+                if (!value?.trim()) return t('projects.validation.ownerMissing');
+                if (!isValidEmail(value.trim())) return t('projects.validation.ownerInvalid');
                 return '';
               }}
             />
             <Form.TagInput
               field="collaborators"
-              label="协作者邮箱"
-              placeholder="输入邮箱后回车添加"
+              label={t('projects.fieldCollaborators')}
+              placeholder={t('projects.collaboratorsPh')}
               separator={[',', '，', ';', '；']}
               addOnBlur
               allowDuplicates={false}
               validate={(value) => {
                 const emails = normalizeCollaborators(value).filter((email) => email !== ownerEmail);
                 const invalidEmail = emails.find((email) => !isValidEmail(email));
-                if (invalidEmail) return `协作者邮箱格式不正确：${invalidEmail}`;
+                if (invalidEmail) return t('projects.validation.collaboratorItemInvalid', { email: invalidEmail });
                 return '';
               }}
             />
             <Form.TextArea
               field="description"
-              label="项目描述"
-              placeholder="请输入项目描述（可选）"
+              label={t('projects.fieldDescription')}
+              placeholder={t('projects.descriptionPh')}
               rows={3}
             />
             <div className="form-actions">
               <Button type="tertiary" onClick={handleCloseCreate}>
-                取消
+                {t('common.cancel')}
               </Button>
-              <Button type="primary" htmlType="submit" loading={creating}>
-                创建
+              <Button type="primary" theme="solid" htmlType="submit" loading={creating}>
+                {t('common.create')}
               </Button>
             </div>
           </Form>

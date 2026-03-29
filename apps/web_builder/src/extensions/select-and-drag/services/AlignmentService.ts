@@ -37,17 +37,27 @@ interface Rect {
   centerY: number;
 }
 
-function getComponentRect(id: string, canvasContainer: HTMLElement): Rect | null {
-  const el = canvasContainer.querySelector(`[data-schema-id="${id}"]`) as HTMLElement | null;
+/** 视口像素差 → 画布逻辑 CSS 像素（无 transform 时为 1；画布有 scale(s) 时为 1/s） */
+function getComponentRect(
+  id: string,
+  canvasContainer: HTMLElement,
+  visualToLogical: number,
+): Rect | null {
+  let el: HTMLElement | null = null;
+  try {
+    el = canvasContainer.querySelector(`[id="${CSS.escape(id)}"]`) as HTMLElement | null;
+  } catch {
+    el = null;
+  }
   if (!el) return null;
 
   const canvasRect = canvasContainer.getBoundingClientRect();
   const elRect = el.getBoundingClientRect();
 
-  const top = elRect.top - canvasRect.top;
-  const left = elRect.left - canvasRect.left;
-  const width = elRect.width;
-  const height = elRect.height;
+  const top = (elRect.top - canvasRect.top) * visualToLogical;
+  const left = (elRect.left - canvasRect.left) * visualToLogical;
+  const width = elRect.width * visualToLogical;
+  const height = elRect.height * visualToLogical;
 
   return {
     id,
@@ -66,15 +76,17 @@ export function computeAlignLines(
   movingId: string,
   schema: ISchema,
   canvasContainer: HTMLElement,
+  /** 1 = 视口差即逻辑坐标；画布整体 scale(s) 时传 1/s */
+  visualToLogical = 1,
 ): AlignLine[] {
   const allNodes = flatten(schema).filter((n) => n.id !== movingId && n.id !== schema.id);
-  const movingRect = getComponentRect(movingId, canvasContainer);
+  const movingRect = getComponentRect(movingId, canvasContainer, visualToLogical);
   if (!movingRect) return [];
 
   const lines: AlignLine[] = [];
 
   for (const node of allNodes) {
-    const rect = getComponentRect(node.id, canvasContainer);
+    const rect = getComponentRect(node.id, canvasContainer, visualToLogical);
     if (!rect) continue;
 
     const edges = [
@@ -98,8 +110,8 @@ export function computeAlignLines(
   }
 
   const canvasRect = canvasContainer.getBoundingClientRect();
-  const canvasW = canvasRect.width;
-  const canvasH = canvasRect.height;
+  const canvasW = canvasRect.width * visualToLogical;
+  const canvasH = canvasRect.height * visualToLogical;
   const canvasCenterX = canvasW / 2;
   const canvasCenterY = canvasH / 2;
 

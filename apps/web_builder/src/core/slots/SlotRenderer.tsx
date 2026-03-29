@@ -48,16 +48,31 @@ export const SlotRenderer: React.FC<SlotRendererProps> = ({
   const elements = contents.map(content => {
     const Component = content.component;
     // 从 config 中提取 key，避免传递给子组件
-    const { key: _configKey, ...configWithoutKey } = content.config || {};
+    const { key: _configKey, flex: _flex, ...configWithoutKey } = content.config || {};
     const componentProps = {
       ...safeChildProps,
       ...configWithoutKey,
     };
+    // 横向布局下 flex: 0 在浏览器中等价于 basis 0%，会把插槽压成 0 宽导致无法点击；需用 0 0 auto 保留内容宽度
+    const horizontalFlex =
+      content.config?.flex === undefined || content.config?.flex === null
+        ? 1
+        : content.config.flex === 0
+          ? '0 0 auto'
+          : content.config.flex;
+    // 竖向插槽默认按内容高度；显式 config.flex === 1 时占满剩余高度（如右侧面板 Inspector）
+    const verticalFlex =
+      content.config?.flex === 1
+        ? 1
+        : content.config?.flex === 0
+          ? '0 0 auto'
+          : '0 0 auto';
     return (
       <div
         key={content.id}
         style={{
-          flex: isVertical ? '0 0 auto' : (content.config?.flex ?? 1),
+          flex: isVertical ? verticalFlex : horizontalFlex,
+          minHeight: isVertical && content.config?.flex === 1 ? 0 : undefined,
         }}
         data-slot-content={content.id}
       >

@@ -1,7 +1,9 @@
-import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { Button } from '@douyinfe/semi-ui';
 import { IconMinus, IconPlus, IconRefresh } from '@douyinfe/semi-icons';
 import { SelectableSchemaRenderer, SelectionContext } from '../../../../common/components/SchemaRenderer';
+import { EditorChromeOverlayMount } from '../../../../common/components/SchemaRenderer/EditorChromeOverlayContext';
+import { CanvasInteractionChrome } from '../../../../extensions/select-and-drag/components/CanvasInteractionChrome';
 import { useSchemaStore } from '../../../../core/store/schemaStore';
 import { useZoom, formatZoomPercent } from '../../../../extensions/canvas/hooks/useZoom';
 import { Grid } from '../../../../extensions/canvas/components/Grid';
@@ -19,22 +21,33 @@ import {
 } from '../../../../extensions/select-and-drag/services/AlignmentService';
 import { KeyboardShortcuts } from '../../../../extensions/editing/keyboard-shortcuts';
 import { ContextMenu } from '../../../../extensions/editing/context-menu';
-
-const CANVAS_WIDTH = 375;
-const CANVAS_HEIGHT = 667;
+import {
+  EDITOR_CANVAS_WIDTH,
+  EDITOR_CANVAS_HEIGHT,
+  EDITOR_VIEWPORT_SCALE,
+} from '../../../../constants/editorCanvasArtboard';
+import { resolveHitSchemaTarget } from '../utils/resolveHitSchemaTarget';
 const RULER_SIZE = 24;
 const CANVAS_MARGIN = 200;
 const VERTICAL_OFFSET = 50;
 
 export const CenterCanvas: React.FC = () => {
   const { schema } = useSchemaStore();
+  const schemaRef = useRef(schema);
+  schemaRef.current = schema;
   const { zoom, zoomIn, zoomOut, resetZoom } = useZoom();
 
   const selectionState = useSimpleSelection();
   const { clearSelection } = selectionState;
 
-  const { startMove } = useMove(selectionState.selectedIds);
-  const { startResize } = useResize();
+  const layoutLogicalW = EDITOR_CANVAS_WIDTH * zoom;
+  const layoutLogicalH = EDITOR_CANVAS_HEIGHT * zoom;
+  const layoutVisualW = layoutLogicalW * EDITOR_VIEWPORT_SCALE;
+  const layoutVisualH = layoutLogicalH * EDITOR_VIEWPORT_SCALE;
+  const canvasLayoutScale = zoom * EDITOR_VIEWPORT_SCALE;
+
+  const { startMove } = useMove(selectionState.selectedIds, canvasLayoutScale);
+  const { startResize } = useResize(canvasLayoutScale);
   const [alignLines, setAlignLines] = useState<AlignLine[]>([]);
 
   const [contextMenuState, setContextMenuState] = useState<{ x: number; y: number; targetId: string } | null>(null);
@@ -54,18 +67,104 @@ export const CenterCanvas: React.FC = () => {
     startMove(id, clientX, clientY);
   }, [startMove]);
 
+  const selectionRef = useRef(selectionState);
+  selectionRef.current = selectionState;
+
+  /** 与 document mousemove 节流共用，避免重复 handleMouseEnter */
+  const lastPointerHoverIdRef = useRef<string | null>(null);
+
+  /**
+   * 画布区 hover 虚线：捕获阶段 mousemove + rAF，命中规则与 mousedown 一致（resolveHitSchemaTarget）。
+   * 不依赖物料是否转发 onMouseEnter。
+   */
+  useEffect(() => {
+    let rafId: number | null = null;
+    let pending: MouseEvent | null = null;
+
+    const flush = () => {
+      rafId = null;
+      const e = pending;
+      pending = null;
+      if (!e) return;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      const nextId = hit.kind === 'node' ? hit.id : null;
+      if (nextId === lastPointerHoverIdRef.current) return;
+      lastPointerHoverIdRef.current = nextId;
+      if (nextId) selectionRef.current.handleMouseEnter(nextId);
+      else selectionRef.current.handleMouseLeave();
+    };
+
+    const onMove = (e: MouseEvent) => {
+      pending = e;
+      if (rafId == null) {
+        rafId = requestAnimationFrame(flush);
+      }
+    };
+
+    document.addEventListener('mousemove', onMove, true);
+    return () => {
+      document.removeEventListener('mousemove', onMove, true);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  /**
+   * 画布区选中：document 捕获阶段根据「从内到外」第一个落在 schema 树上的 DOM id 触发选择。
+   * 与拖动分发一致，不依赖物料是否把 onClick 转发到根 DOM（Button 会转发，Image/容器类常不会）。
+   * 须注册在拖动监听之前，以便未选中时先由本逻辑写入 store，拖动侧仍读上一帧 selectionRef 从而不误开拖。
+   */
+  useEffect(() => {
+    const onDocMouseDownSelect = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      if (hit.kind === 'root') {
+        selectionRef.current.clearSelection();
+        return;
+      }
+      if (hit.kind === 'node') {
+        selectionRef.current.handleClick(
+          hit.id,
+          e as unknown as React.MouseEvent<Element, MouseEvent>,
+        );
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDownSelect, true);
+    return () => document.removeEventListener('mousedown', onDocMouseDownSelect, true);
+  }, []);
+
+  /** 画布区组件拖动：document 捕获阶段分发，不依赖物料根是否接收 onMouseDown */
+  useEffect(() => {
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const hit = resolveHitSchemaTarget(e.target, schemaRef.current);
+      if (hit.kind !== 'node') return;
+      if (selectionRef.current.isSelected(hit.id)) {
+        startMove(hit.id, e.clientX, e.clientY);
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown, true);
+    return () => document.removeEventListener('mousedown', onDocMouseDown, true);
+  }, [startMove]);
+
   const handleResizeStart = useCallback((id: string, direction: ResizeDirection, clientX: number, clientY: number, width: number, height: number) => {
     startResize(id, direction, clientX, clientY, width, height);
   }, [startResize]);
 
-  const selectionContextValue = useMemo(() => ({
-    ...selectionState,
-    handleContextMenu,
-    onMoveStart: handleMoveStart,
-    onResizeStart: handleResizeStart,
-  }), [selectionState, handleContextMenu, handleMoveStart, handleResizeStart]);
+  const selectionContextValue = useMemo(
+    () => ({
+      ...selectionState,
+      handleContextMenu,
+      onMoveStart: handleMoveStart,
+      onResizeStart: handleResizeStart,
+      /** 与画布内层 transform: scale(EDITOR_VIEWPORT_SCALE) 配套，选中框用逻辑像素 */
+      selectionRectVisualToLogical: 1 / EDITOR_VIEWPORT_SCALE,
+    }),
+    [selectionState, handleContextMenu, handleMoveStart, handleResizeStart],
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** 滚动区内 flex 行：用脚本写入 minWidth，避免 max(100%, px) 在嵌套 flex 下百分比基线异常 */
+  const scrollContentRef = useRef<HTMLDivElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   const { isDragOver, dropTargetId } = useCanvasDrop(canvasWrapperRef, zoom);
@@ -76,7 +175,14 @@ export const CenterCanvas: React.FC = () => {
       return;
     }
     document.querySelectorAll('[data-drop-target]').forEach((el) => el.removeAttribute('data-drop-target'));
-    const target = document.querySelector(`[data-schema-id="${dropTargetId}"]`);
+    const root = canvasWrapperRef.current;
+    if (!root) return;
+    let target: Element | null = null;
+    try {
+      target = root.querySelector(`[id="${CSS.escape(dropTargetId)}"]`);
+    } catch {
+      target = null;
+    }
     if (target) target.setAttribute('data-drop-target', 'true');
   }, [dropTargetId]);
 
@@ -87,8 +193,13 @@ export const CenterCanvas: React.FC = () => {
       rafId = requestAnimationFrame(() => {
         rafId = null;
         if (selectionState.selectedIds.length === 1 && canvasWrapperRef.current) {
-          const container = canvasWrapperRef.current.querySelector('[data-canvas-area="true"]')?.parentElement ?? canvasWrapperRef.current;
-          const lines = computeAlignLines(selectionState.selectedIds[0], schema, container);
+          const container = canvasWrapperRef.current;
+          const lines = computeAlignLines(
+            selectionState.selectedIds[0],
+            schema,
+            container,
+            1 / EDITOR_VIEWPORT_SCALE,
+          );
           setAlignLines((prev) => (alignLinesEqual(prev, lines) ? prev : lines));
         }
       });
@@ -105,7 +216,8 @@ export const CenterCanvas: React.FC = () => {
 
   const [scrollX, setScrollX] = useState(0);
   const [scrollY, setScrollY] = useState(0);
-  const [canvasLeftOffset, setCanvasLeftOffset] = useState(CANVAS_MARGIN);
+  /** 画布左缘在滚动内容中的像素位置，供横向标尺与 scrollLeft 对齐；由布局测量得到 */
+  const [canvasLeftOffset, setCanvasLeftOffset] = useState(0);
 
   const handleScroll = useCallback(() => {
     if (scrollRef.current) {
@@ -114,23 +226,52 @@ export const CenterCanvas: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const calculateOffset = () => {
-      if (scrollRef.current) {
-        const containerWidth = scrollRef.current.clientWidth;
-        const scaledWidth = CANVAS_WIDTH * zoom;
-        const offset = Math.max(CANVAS_MARGIN, (containerWidth - scaledWidth) / 2);
-        setCanvasLeftOffset(offset);
-      }
+  // flex + justifyContent:center 居中；内容区宽度显式设为 max(视口宽, 画布宽)，不依赖 CSS max(100%,px) 的百分比解析。
+  // canvasLeftOffset：画布相对滚动容器的 offsetLeft，供 RulerX。
+  useLayoutEffect(() => {
+    const scrollEl = scrollRef.current;
+    const contentEl = scrollContentRef.current;
+    if (!scrollEl || !contentEl) return undefined;
+
+    const apply = () => {
+      const cw = scrollEl.clientWidth;
+      contentEl.style.minWidth = `${Math.max(cw, layoutVisualW)}px`;
+      const canvas = canvasWrapperRef.current;
+      if (!canvas) return;
+      const left = canvas.offsetLeft;
+      setCanvasLeftOffset(left);
+      // 重排后画布在文档中的水平位置会变，若保留旧的 scrollLeft，视口会切到错误片段，
+      // 表现为 SelectableContainer/手机框偏在一侧；刷新后 scrollLeft=0 故看起来「只有刷新才居中」。
+      const targetSl = left + layoutVisualW / 2 - cw / 2;
+      const maxSl = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
+      scrollEl.scrollLeft = Math.min(maxSl, Math.max(0, targetSl));
+      setScrollX(scrollEl.scrollLeft);
     };
 
-    calculateOffset();
-    window.addEventListener('resize', calculateOffset);
-    return () => window.removeEventListener('resize', calculateOffset);
-  }, [zoom]);
+    let rafId: number | null = null;
+    const schedule = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        apply();
+      });
+    };
 
-  const scaledWidth = CANVAS_WIDTH * zoom;
-  const scaledHeight = CANVAS_HEIGHT * zoom;
+    apply();
+
+    const ro = new ResizeObserver(() => {
+      schedule();
+    });
+    ro.observe(scrollEl);
+    window.addEventListener('resize', schedule);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', schedule);
+      if (rafId != null) cancelAnimationFrame(rafId);
+      contentEl.style.minWidth = '';
+    };
+  }, [zoom, layoutVisualW, layoutVisualH]);
 
   // 使用CSS变量获取主题色
   const primaryColor = 'var(--theme-primary)';
@@ -183,7 +324,7 @@ export const CenterCanvas: React.FC = () => {
           flexShrink: 0,
         }}>
           <span style={{ fontSize: 12, color: 'var(--theme-text-secondary)', fontWeight: 600, letterSpacing: 0.2 }}>
-            画布: {CANVAS_WIDTH}x{CANVAS_HEIGHT}
+            画布: {EDITOR_CANVAS_WIDTH}x{EDITOR_CANVAS_HEIGHT}
           </span>
 
           <div
@@ -263,10 +404,13 @@ export const CenterCanvas: React.FC = () => {
               borderRight: '1px solid var(--theme-border)',
               borderBottom: '1px solid var(--theme-border)',
               flexShrink: 0,
-              borderTopLeftRadius: 14,
             }} />
             <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-              <RulerY canvasHeight={CANVAS_HEIGHT} zoom={zoom} scrollY={scrollY - VERTICAL_OFFSET} />
+              <RulerY
+                canvasHeight={EDITOR_CANVAS_HEIGHT}
+                zoom={zoom * EDITOR_VIEWPORT_SCALE}
+                scrollY={scrollY - VERTICAL_OFFSET}
+              />
             </div>
           </aside>
 
@@ -282,7 +426,11 @@ export const CenterCanvas: React.FC = () => {
           }}>
             {/* 标尺 */}
             <div style={{ flexShrink: 0, height: RULER_SIZE, overflow: 'hidden', borderTopRightRadius: 14 }}>
-              <RulerX canvasWidth={CANVAS_WIDTH} zoom={zoom} scrollX={scrollX - canvasLeftOffset} />
+              <RulerX
+                canvasWidth={EDITOR_CANVAS_WIDTH}
+                zoom={zoom * EDITOR_VIEWPORT_SCALE}
+                scrollX={scrollX - canvasLeftOffset}
+              />
             </div>
 
             {/* 画布滚动区域 - 灰色背景 */}
@@ -299,62 +447,81 @@ export const CenterCanvas: React.FC = () => {
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
               }}
             >
-              <div style={{
-                position: 'relative',
-                minWidth: `${canvasLeftOffset + scaledWidth + CANVAS_MARGIN}px`,
-                minHeight: `${VERTICAL_OFFSET + scaledHeight + CANVAS_MARGIN}px`,
-              }}>
-                {/* 画布区域 - 标记为画布 */}
+              <div
+                ref={scrollContentRef}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  boxSizing: 'border-box',
+                  paddingTop: VERTICAL_OFFSET,
+                  paddingBottom: CANVAS_MARGIN,
+                  minHeight: VERTICAL_OFFSET + layoutVisualH + CANVAS_MARGIN,
+                }}
+              >
+                {/* 画布区域：外层占位为视觉尺寸，内层逻辑尺寸 + scale 保持 schema 按 750 幅面排版 */}
                 <div
                   ref={canvasWrapperRef}
                   data-canvas-area="true"
                   style={{
-                    position: 'absolute',
-                    left: canvasLeftOffset,
-                    top: VERTICAL_OFFSET,
-                    width: scaledWidth,
-                    height: scaledHeight,
+                    position: 'relative',
+                    width: layoutVisualW,
+                    height: layoutVisualH,
+                    flexShrink: 0,
                     filter: isDragOver ? 'drop-shadow(0 0 18px var(--theme-primary-light))' : 'none',
                   }}
                 >
-                  {/* 画布容器 */}
                   <div
                     style={{
-                      width: scaledWidth,
-                      height: scaledHeight,
-                      background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 100%)',
-                      border: '1px solid var(--theme-border-soft)',
-                      boxShadow: isDragOver
-                        ? '0 0 0 3px var(--theme-primary-light), 0 18px 60px rgba(76, 91, 132, 0.20), inset 0 0 0 1px var(--theme-primary)'
-                        : '0 22px 70px rgba(58, 72, 109, 0.16), inset 0 1px 0 rgba(255,255,255,0.82)',
-                      borderRadius: 28,
-                      position: 'relative',
-                      overflow: 'visible',
-                      transition: 'box-shadow 0.2s, filter 0.2s',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: layoutLogicalW,
+                      height: layoutLogicalH,
+                      transform: `scale(${EDITOR_VIEWPORT_SCALE})`,
+                      transformOrigin: 'top left',
                     }}
                   >
-                    {/* 网格层 */}
                     <div
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                        opacity: 0.42,
-                        mixBlendMode: 'screen',
-                        borderRadius: 28,
+                        width: layoutLogicalW,
+                        height: layoutLogicalH,
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 100%)',
+                        boxShadow: isDragOver
+                          ? '0 0 0 3px var(--theme-primary-light), 0 18px 60px rgba(76, 91, 132, 0.20), inset 0 0 0 1px var(--theme-primary)'
+                          : '0 22px 70px rgba(58, 72, 109, 0.16), inset 0 1px 0 rgba(255,255,255,0.82)',
+                        position: 'relative',
+                        overflow: 'visible',
+                        transition: 'box-shadow 0.2s, filter 0.2s',
                       }}
                     >
-                      <Grid width={scaledWidth} height={scaledHeight} gridSize={20} zoom={1} />
-                    </div>
+                      {/* 网格层 */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          zIndex: 0,
+                          pointerEvents: 'none',
+                          opacity: 0.42,
+                          mixBlendMode: 'screen',
+                        }}
+                      >
+                        <Grid width={layoutLogicalW} height={layoutLogicalH} gridSize={20} zoom={1} />
+                      </div>
 
-                    {/* Schema 内容层 */}
-                    <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
-                      <SelectableSchemaRenderer schema={schema} />
-                    </div>
+                      {/* Schema 内容层 + 编辑器装饰 Portal 挂载层 */}
+                      <EditorChromeOverlayMount>
+                        <SelectableSchemaRenderer schema={schema} />
+                        <CanvasInteractionChrome />
+                      </EditorChromeOverlayMount>
 
-                    {/* 对齐辅助线 */}
-                    <AlignmentGuides lines={alignLines} canvasWidth={scaledWidth} canvasHeight={scaledHeight} />
+                      {/* 对齐辅助线 */}
+                      <AlignmentGuides
+                        lines={alignLines}
+                        canvasWidth={layoutLogicalW}
+                        canvasHeight={layoutLogicalH}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

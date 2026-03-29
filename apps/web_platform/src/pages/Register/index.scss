@@ -1,17 +1,30 @@
+@use '../../styles/auth-theme.scss';
+
 .register-page {
+  /* 覆盖 Semi 主题蓝，统一为暖橙链色 */
+  --semi-color-link: var(--auth-link);
+  --semi-color-link-hover: var(--auth-link-hover);
+  --semi-color-link-active: var(--auth-link-hover);
+
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(
+    135deg,
+    var(--auth-gradient-start) 0%,
+    var(--auth-gradient-mid) 50%,
+    var(--auth-gradient-end) 100%
+  );
 
   .auth-container {
     width: 100%;
     max-width: 420px;
     padding: 48px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    background: var(--auth-card-bg);
+    border-radius: var(--auth-radius-md);
+    box-shadow: var(--auth-shadow);
+    border: 1px solid var(--auth-card-border);
   }
 
   .auth-header {
@@ -20,6 +33,7 @@
 
     h3 {
       margin-bottom: 8px;
+      color: var(--auth-text);
     }
   }
 
@@ -35,8 +49,34 @@
       }
     }
 
-    .semi-button-primary {
+    /* 主提交按钮：白底 + 橙边/橙字（含 solid / light 两种主题类名） */
+    button.semi-button.semi-button-primary {
       margin-top: 12px;
+      background: #ffffff !important;
+      background-color: #ffffff !important;
+      border: 1.5px solid var(--auth-primary) !important;
+      color: var(--auth-primary) !important;
+      box-shadow: none !important;
+
+      .semi-button-content {
+        color: var(--auth-primary) !important;
+      }
+
+      &:hover {
+        background: #fffaf3 !important;
+        background-color: #fffaf3 !important;
+        border-color: var(--auth-primary-hover) !important;
+        color: var(--auth-primary-hover) !important;
+
+        .semi-button-content {
+          color: var(--auth-primary-hover) !important;
+        }
+      }
+
+      &:active {
+        background: #fff5e6 !important;
+        background-color: #fff5e6 !important;
+      }
     }
   }
 
@@ -45,12 +85,29 @@
     text-align: center;
 
     a {
-      color: #f5576c;
+      color: var(--auth-link);
       text-decoration: none;
 
       &:hover {
+        color: var(--auth-link-hover);
         text-decoration: underline;
       }
     }
+  }
+
+  /* 去掉 Semi 默认蓝色：验证码等 tertiary 按钮、文字链接 */
+  .semi-button.semi-button-tertiary {
+    color: var(--auth-link) !important;
+
+    &:not(.semi-button-disabled):hover {
+      color: var(--auth-link-hover) !important;
+      background-color: rgba(196, 95, 24, 0.08) !important;
+    }
+  }
+
+  .semi-typography a,
+  a.semi-typography-link,
+  .semi-form-field a {
+    color: var(--auth-link) !important;
   }
 }

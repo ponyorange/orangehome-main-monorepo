@@ -3,6 +3,9 @@ import type { ISchema } from '../../types/base';
 import { generateIdWithPrefix } from '../../utils/id';
 import { ROOT_CONTAINER_MATERIAL_UID } from '../../common/base/schemaLayout';
 import { historyService } from '../../extensions/undo-redo/services/HistoryService';
+import { useDocumentSyncStore } from './documentSyncStore';
+
+export type SchemaSyncSource = 'persistence' | 'user';
 
 const createText = (name: string, text: string, style: Record<string, unknown> = {}): ISchema => ({
   id: generateIdWithPrefix('text'),
@@ -424,7 +427,7 @@ interface SchemaState {
   schema: ISchema;
   canUndo: boolean;
   canRedo: boolean;
-  setSchema: (schema: ISchema, options?: { record?: boolean }) => void;
+  setSchema: (schema: ISchema, options?: { record?: boolean; syncSource?: SchemaSyncSource }) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -446,6 +449,13 @@ export const useSchemaStore = create<SchemaState>((set) => ({
       canUndo: historyService.canUndo(),
       canRedo: historyService.canRedo(),
     });
+
+    const sync = useDocumentSyncStore.getState();
+    if (options?.syncSource === 'persistence') {
+      sync.markClean();
+    } else {
+      sync.markDirty();
+    }
   },
   undo: () => {
     const previous = historyService.undo();
@@ -456,6 +466,7 @@ export const useSchemaStore = create<SchemaState>((set) => ({
       canUndo: historyService.canUndo(),
       canRedo: historyService.canRedo(),
     });
+    useDocumentSyncStore.getState().markDirty();
   },
   redo: () => {
     const next = historyService.redo();
@@ -466,5 +477,6 @@ export const useSchemaStore = create<SchemaState>((set) => ({
       canUndo: historyService.canUndo(),
       canRedo: historyService.canRedo(),
     });
+    useDocumentSyncStore.getState().markDirty();
   },
 }));

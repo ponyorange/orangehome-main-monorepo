@@ -4,6 +4,8 @@ declare const __VERSION__: string;
 
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
+  /** 运行时预览 URL 模板，须含 `{pageId}`，如 `https://host/orangehome/runtime/preview/{pageId}` */
+  readonly VITE_RUNTIME_PREVIEW_URL_TEMPLATE?: string;
   /** JSON：RuntimeAmdConfig，如 {"paths":{"react":"https://..."},"map":{"*":{"react":"react"}}} */
   readonly VITE_AMD_RUNTIME_CONFIG?: string;
 }

@@ -25,11 +25,13 @@ function getStyleNum(schema: ISchema, prop: string): number {
   return typeof val === 'number' ? val : 0;
 }
 
-export function useResize() {
+export function useResize(canvasLayoutScale: number) {
   const { schema, setSchema } = useSchemaStore();
   const stateRef = useRef<ResizeState | null>(null);
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
+  const scaleRef = useRef(canvasLayoutScale);
+  scaleRef.current = canvasLayoutScale;
 
   const startResize = useCallback((
     id: string,
@@ -65,8 +67,9 @@ export function useResize() {
       state.isResizing = true;
       state.shiftKey = e.shiftKey;
 
-      const dx = e.clientX - state.startX;
-      const dy = e.clientY - state.startY;
+      const s = scaleRef.current || 1;
+      const dx = (e.clientX - state.startX) / s;
+      const dy = (e.clientY - state.startY) / s;
       const dir = state.direction;
 
       let newWidth = state.originalWidth;

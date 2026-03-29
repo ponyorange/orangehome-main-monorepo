@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { GrpcClientService } from '../config/grpc-client.service';
+import { ProjectMembershipService } from '../project/project-membership.service';
 import { PageVersionService } from '../page-version/page-version.service';
 import { CreatePageDto, UpdatePageDto, PageResponseDto } from './dto/page.dto';
 import { firstValueFrom } from 'rxjs';
@@ -11,6 +19,7 @@ export class PageService {
   constructor(
     private readonly grpcClient: GrpcClientService,
     private readonly authService: AuthService,
+    private readonly membership: ProjectMembershipService,
     private readonly pageVersionService: PageVersionService,
   ) {}
 
@@ -41,6 +50,13 @@ export class PageService {
     let createdPage: PageResponseDto | null = null;
     try {
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      const projectRes = await firstValueFrom(
+        this.grpcClient.project.getProject({ id: dto.projectId }, metadata),
+      );
+      await this.membership.requireProjectMember(authHeader, {
+        owner: projectRes.data?.owner,
+        collaborators: projectRes.data?.collaborators,
+      });
       const result = await firstValueFrom(
         this.grpcClient.page.createPage({
           projectId: dto.projectId,
@@ -83,6 +99,7 @@ export class PageService {
   async update(id: string, dto: UpdatePageDto, authHeader?: string): Promise<PageResponseDto> {
     try {
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      await this.assertProjectMemberForPageId(id, authHeader);
       const result = await firstValueFrom(
         this.grpcClient.page.updatePage({
           id,
@@ -100,6 +117,7 @@ export class PageService {
   async delete(id: string, permanent: boolean = false, authHeader?: string): Promise<void> {
     try {
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      await this.assertProjectMemberForPageId(id, authHeader);
       await firstValueFrom(this.grpcClient.page.deletePage({ id, permanent }, metadata));
     } catch (error) {
       this.handleGrpcError(error);
@@ -110,6 +128,15 @@ export class PageService {
     try {
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
       const result = await firstValueFrom(this.grpcClient.page.getPage({ id }, metadata));
+      const projectId = result.data?.projectId;
+      if (!projectId) {
+        throw new NotFoundException('资源不存在');
+      }
+      const projectRes = await firstValueFrom(this.grpcClient.project.getProject({ id: projectId }, metadata));
+      await this.membership.requireProjectMember(authHeader, {
+        owner: projectRes.data?.owner,
+        collaborators: projectRes.data?.collaborators,
+      });
       return this.mapToDto(result.data);
     } catch (error) {
       this.handleGrpcError(error);
@@ -126,6 +153,11 @@ export class PageService {
       const page = query.page || 1;
       const limit = query.limit || 10;
       const metadata = this.grpcClient.createAuthMetadata(authHeader);
+      const projectRes = await firstValueFrom(this.grpcClient.project.getProject({ id: projectId }, metadata));
+      await this.membership.requireProjectMember(authHeader, {
+        owner: projectRes.data?.owner,
+        collaborators: projectRes.data?.collaborators,
+      });
 
       const result = await firstValueFrom(
         this.grpcClient.page.listPages({
@@ -145,6 +177,20 @@ export class PageService {
     } catch (error) {
       this.handleGrpcError(error);
     }
+  }
+
+  private async assertProjectMemberForPageId(pageId: string, authHeader?: string): Promise<void> {
+    const metadata = this.grpcClient.createAuthMetadata(authHeader);
+    const pageRes = await firstValueFrom(this.grpcClient.page.getPage({ id: pageId }, metadata));
+    const projectId = pageRes.data?.projectId;
+    if (!projectId) {
+      throw new NotFoundException('资源不存在');
+    }
+    const projectRes = await firstValueFrom(this.grpcClient.project.getProject({ id: projectId }, metadata));
+    await this.membership.requireProjectMember(authHeader, {
+      owner: projectRes.data?.owner,
+      collaborators: projectRes.data?.collaborators,
+    });
   }
 
   private mapToDto(data: any): PageResponseDto {
@@ -167,6 +213,9 @@ export class PageService {
     }
     if (error.code === 5) {
       throw new NotFoundException('资源不存在');
+    }
+    if (error.code === 7) {
+      throw new ForbiddenException(error.details || error.message || '无权限操作该项目');
     }
     if (error.code === 16) {
       throw new UnauthorizedException(error.details || error.message || '请提供有效的 Bearer Token');

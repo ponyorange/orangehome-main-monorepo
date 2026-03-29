@@ -264,7 +264,11 @@ export class RuntimeService {
           `No material version for ${uid} (allowed versionStatus=[${statusHint}])`,
         );
       }
-      const url = unwrapString(row.latestVersion.fileUrl);
+      const fileKey = unwrapString(row.latestVersion.fileObjectKey);
+      let url = unwrapString(row.latestVersion.fileUrl);
+      if (!url?.trim()) {
+        url = `http://8.148.251.221:6011/orangehome/${fileKey}`;
+      }
       if (!url?.trim()) {
         throw new BadGatewayException(`Empty material URL for ${uid}`);
       }

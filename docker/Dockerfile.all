@@ -1,0 +1,46 @@
+# 单镜像：Rush monorepo — 依赖与构建走 Rush / pnpm，不用 npm 装包或跑脚本
+# 端口：50054 bside | 50055 cside | 60061 admin | 60062 platform(/platform/) + builder(/builder/)
+#
+# 默认拉 Docker Hub；国内可：--build-arg BASE_IMAGE=你的镜像/node:22-bookworm-slim
+
+ARG BASE_IMAGE=node:22-bookworm-slim
+FROM ${BASE_IMAGE}
+
+RUN apt-get update -y && apt-get install -y openssl supervisor \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /repo
+
+# rush.json 中的 pnpmVersion；全局静态服务用 pnpm 安装 serve（避免 npm install -g）
+RUN corepack enable && corepack prepare pnpm@9.14.2 --activate \
+  && mkdir -p /usr/local/bin \
+  && pnpm config set global-bin-dir /usr/local/bin \
+  && pnpm add -g serve@14.2.4
+
+COPY rush.json ./
+COPY common/config ./common/config
+COPY common/scripts ./common/scripts
+COPY apps ./apps
+
+RUN node common/scripts/install-run-rush.js install --ignore-hooks
+
+# Vite/Sass 等把告警打到 stderr，Rush 默认整体 exit 1；见 https://rushjs.io/pages/configs/environment_vars/
+ENV RUSH_ALLOW_WARNINGS_IN_SUCCESSFUL_BUILD=1
+
+# platform / builder 需带子路径 base，单独构建；其余 Rush 批量重建
+RUN node common/scripts/install-run-rush.js rebuild --ignore-hooks \
+  -t @orangehome/server_bside \
+  -t @orangehome/server_cside \
+  -t @orangehome/web_admin
+
+RUN cd apps/web_platform && ORANGEHOME_VITE_BASE=/platform/ node ../../common/scripts/install-run-rushx.js build
+RUN cd apps/web_builder && ORANGEHOME_VITE_BASE=/builder/ node ../../common/scripts/install-run-rushx.js build:spa
+
+COPY docker/supervisord.conf /etc/supervisor/conf.d/orangehome.conf
+COPY docker/combined-static.mjs /repo/docker/combined-static.mjs
+
+ENV NODE_ENV=production
+
+EXPOSE 50054 50055 60061 60062
+
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

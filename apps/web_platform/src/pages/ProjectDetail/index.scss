@@ -1,22 +1,65 @@
+@import '../../styles/form-modal.scss';
+
 .project-detail-page {
   .page-header {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 
     .header-info {
       h4 {
         margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--oh-text);
       }
     }
+  }
+
+  .semi-tabs {
+    .semi-tabs-bar {
+      margin-bottom: 4px;
+    }
+
+    .semi-tabs-tab {
+      font-weight: 500;
+    }
+
+    .semi-tabs-tab-active {
+      color: var(--oh-primary);
+      font-weight: 600;
+    }
+  }
+
+  .semi-card {
+    border-radius: var(--oh-radius-card);
+    border: 1px solid var(--oh-border-subtle);
+    box-shadow: var(--oh-shadow-soft);
+  }
+
+  .semi-card-header {
+    font-weight: 600;
+    color: var(--oh-text);
   }
 
   .pages-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+  }
+
+  .semi-table {
+    border-radius: var(--oh-radius-card);
+    overflow: hidden;
+    border: 1px solid var(--oh-border-subtle);
+  }
+
+  .semi-table-thead .semi-table-row .semi-table-row-head {
+    font-weight: 600;
+    color: var(--oh-text);
+    background: rgba(255, 250, 243, 0.92) !important;
   }
 
   .action-buttons {

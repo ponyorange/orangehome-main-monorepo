@@ -1,4 +1,8 @@
-import type { ISchemaEditorConfig, ISchemaEditorConfigPropItem } from '../../types/base';
+import type {
+  ISchemaEditorConfig,
+  ISchemaEditorConfigPropItem,
+  ISchemaEditorConfigStyleConfig,
+} from '../../types/base';
 
 /** 物料 editorConfigJson 结构（与后台存储一致，非页面 ISchema） */
 export interface MaterialEditorConfigJson {
@@ -6,6 +10,7 @@ export interface MaterialEditorConfigJson {
   dependencies?: unknown[];
   props?: unknown;
   editorCapabilities?: { isContainer?: boolean; hideInComponentList?: boolean };
+  styleConfig?: unknown;
 }
 
 function normalizeEditorConfigProps(raw: unknown): ISchemaEditorConfigPropItem[] | undefined {
@@ -47,21 +52,32 @@ function normalizeEditorConfigProps(raw: unknown): ISchemaEditorConfigPropItem[]
   return out.length > 0 ? out : undefined;
 }
 
+function normalizeStyleConfig(raw: unknown): ISchemaEditorConfigStyleConfig | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const o = raw as Record<string, unknown>;
+  const iv = o.initValue;
+  if (!iv || typeof iv !== 'object' || Array.isArray(iv)) return undefined;
+  return { initValue: { ...(iv as Record<string, unknown>) } };
+}
+
 export function buildEditorConfigFromMaterial(cfg: MaterialEditorConfigJson): ISchemaEditorConfig | undefined {
   const props = normalizeEditorConfigProps(cfg.props);
+  const styleConfig = normalizeStyleConfig(cfg.styleConfig);
   const deps = cfg.dependencies;
   const hasDeps = Array.isArray(deps) && deps.length > 0;
   const has =
     (typeof cfg.uid === 'string' && cfg.uid.trim() !== '') ||
     hasDeps ||
     (props && props.length > 0) ||
-    cfg.editorCapabilities != null;
+    cfg.editorCapabilities != null ||
+    styleConfig != null;
   if (!has) return undefined;
   return {
     uid: typeof cfg.uid === 'string' ? cfg.uid : undefined,
     dependencies: Array.isArray(cfg.dependencies) ? cfg.dependencies : undefined,
     props,
     editorCapabilities: cfg.editorCapabilities,
+    ...(styleConfig ? { styleConfig } : {}),
   };
 }
 

@@ -13,6 +13,6 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new GrpcExceptionFilter());
-  await app.listen(4001);
+  await app.listen(50055);
 }
 bootstrap();

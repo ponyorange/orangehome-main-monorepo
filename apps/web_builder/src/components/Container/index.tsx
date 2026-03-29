@@ -8,7 +8,7 @@ export const ContainerComponent: React.FC<SchemaComponentProps> = React.memo(({ 
   return (
     <div
       style={style}
-      data-schema-id={schema.id}
+      id={schema.id}
       {...(eventHandlers as React.HTMLAttributes<HTMLDivElement> | undefined)}
     >
       {children}

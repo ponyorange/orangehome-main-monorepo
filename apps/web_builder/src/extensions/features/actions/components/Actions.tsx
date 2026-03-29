@@ -1,7 +1,6 @@
 import React from 'react';
-import { Button } from '@douyinfe/semi-ui';
-import { IconSetting } from '@douyinfe/semi-icons';
 import { UndoRedoButtons } from '../../../undo-redo/components/UndoRedoButtons';
+import { EditorSettingsMenu } from '../../editor-header-chrome/components/EditorSettingsMenu';
 
 export const Actions: React.FC = () => {
   return (
@@ -20,19 +19,7 @@ export const Actions: React.FC = () => {
     >
       <UndoRedoButtons />
       <div style={{ width: 1, height: 16, background: 'var(--theme-divider)', margin: '0 6px' }} />
-      <Button
-        icon={<IconSetting />}
-        type="tertiary"
-        size="small"
-        style={{
-          borderRadius: 999,
-          background: 'rgba(255,255,255,0.62)',
-          border: '1px solid var(--theme-border-soft)',
-          color: 'var(--theme-text-secondary)',
-        }}
-      >
-        设置
-      </Button>
+      <EditorSettingsMenu />
     </div>
   );
 };

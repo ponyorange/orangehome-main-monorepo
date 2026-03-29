@@ -1,0 +1,13 @@
+.orange-mascot {
+  width: 132px;
+  height: 148px;
+  flex-shrink: 0;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 10px 20px rgba(180, 90, 30, 0.25));
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

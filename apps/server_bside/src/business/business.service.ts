@@ -41,6 +41,7 @@ export class BusinessService {
           limit,
           search: query.search ? this.grpcClient.wrapStringValue(query.search) : undefined,
           platformId: query.platformId ? this.grpcClient.wrapStringValue(query.platformId) : undefined,
+          businessType: this.grpcClient.wrapStringValue('public'),
         }, metadata),
       );
 
@@ -77,6 +78,7 @@ export class BusinessService {
       id: this.getField(data, 'id') || '',
       businessCode: this.getField(data, 'businessCode', 'business_code') || '',
       businessName: this.getField(data, 'businessName', 'business_name') || '',
+      businessType: this.getField(data, 'businessType', 'business_type') || undefined,
       description: this.getField(data, 'description') || undefined,
       owner: this.getField(data, 'owner') || undefined,
       platforms: platforms.map((item: any) => this.mapPlatformToDto(item)),

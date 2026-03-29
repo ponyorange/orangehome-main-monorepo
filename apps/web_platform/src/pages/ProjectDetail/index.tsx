@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Tabs, Table, Button, Input, Popconfirm, Modal, Form, Toast, Typography } from '@douyinfe/semi-ui';
 import { IconPlus, IconSearch, IconEdit, IconDelete, IconArrowLeft } from '@douyinfe/semi-icons';
+import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import MainLayout from '../../components/Layout';
 import { getProject } from '../../api/projects';
@@ -17,6 +18,7 @@ const formatDateTime = (value?: string | number | Date) => {
 };
 
 const ProjectDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pages');
@@ -40,33 +42,40 @@ const ProjectDetail: React.FC = () => {
   const handleDeletePage = async (pageId: string) => {
     try {
       await deletePage(pageId);
-      Toast.success('删除成功');
+      Toast.success(t('projectDetail.deleteSuccess'));
       mutatePages();
     } catch (err: any) {
-      Toast.error(err.message || '删除失败');
+      Toast.error(err.message || t('projectDetail.deleteFailed'));
     }
   };
 
-  const handleCreatePage = async (values: { path: string; title: string; description?: string }) => {
+  const handleCreatePage = async (values: { title: string; description?: string }) => {
     if (!id) return;
     setCreatingPage(true);
     try {
       await createPage({
-        ...values,
         projectId: id,
+        path: 'orangehome',
+        title: values.title,
+        description: values.description,
       });
-      Toast.success('创建成功');
+      Toast.success(t('projectDetail.createPageSuccess'));
       setCreatePageVisible(false);
       mutatePages();
     } catch (err: any) {
-      Toast.error(err.message || '创建失败');
+      Toast.error(err.message || t('projectDetail.createPageFailed'));
     } finally {
       setCreatingPage(false);
     }
   };
 
   const handleEditPage = (pageId: string) => {
-    window.open(`http://localhost:5173/?pageId=${encodeURIComponent(pageId)}`, '_blank', 'noopener,noreferrer');
+    const q = `pageId=${encodeURIComponent(pageId)}`;
+    const custom = import.meta.env.VITE_BUILDER_URL?.replace(/\/$/, '');
+    const href = custom
+      ? `${custom}/?${q}`
+      : new URL(`/builder/?${q}`, window.location.origin).href;
+    window.open(href, '_blank', 'noopener,noreferrer');
   };
 
   const renderPageActions = (record: Page) => (
@@ -76,48 +85,54 @@ const ProjectDetail: React.FC = () => {
         theme="borderless"
         onClick={() => handleEditPage(record.id)}
       >
-        编辑
+        {t('projectDetail.edit')}
       </Button>
       <Popconfirm
-        title="确认删除"
-        content={`确定要删除页面 "${record.title}" 吗？`}
+        title={t('projectDetail.confirmDeletePage')}
+        content={t('projectDetail.confirmDeletePageContent', { title: record.title })}
         onConfirm={() => handleDeletePage(record.id)}
       >
         <Button icon={<IconDelete />} theme="borderless" type="danger">
-          删除
+          {t('common.delete')}
         </Button>
       </Popconfirm>
     </div>
   );
+
+  const projectTitle = projectLoading && !project?.projectName
+    ? t('projectDetail.loadingName')
+    : project?.projectName || t('projectDetail.loadingName');
 
   return (
     <MainLayout>
       <div className="project-detail-page">
         <div className="page-header">
           <Button icon={<IconArrowLeft />} theme="borderless" onClick={() => navigate('/projects')}>
-            返回
+            {t('projectDetail.back')}
           </Button>
           <div className="header-info">
-            <Title heading={4}>{project?.projectName || '加载中...'}</Title>
-            <Text type="tertiary">编码: {project?.projectCode}</Text>
+            <Title heading={4}>{projectTitle}</Title>
+            <Text type="tertiary">
+              {t('projectDetail.codeLabel')}: {project?.projectCode ?? '—'}
+            </Text>
           </div>
         </div>
 
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <Tabs.TabPane tab="页面管理" itemKey="pages">
+          <Tabs.TabPane tab={t('projectDetail.tabPages')} itemKey="pages">
             <Card>
               <div className="pages-toolbar">
                 <Input
                   prefix={<IconSearch />}
-                  placeholder="搜索页面"
+                  placeholder={t('projectDetail.searchPagesPh')}
                   value={pageSearch}
                   onChange={setPageSearch}
                   onEnterPress={() => setPagePage(1)}
                   showClear
                   style={{ width: 300 }}
                 />
-                <Button icon={<IconPlus />} type="primary" onClick={() => setCreatePageVisible(true)}>
-                  新建页面
+                <Button icon={<IconPlus />} type="primary" theme="solid" onClick={() => setCreatePageVisible(true)}>
+                  {t('projectDetail.newPage')}
                 </Button>
               </div>
 
@@ -132,86 +147,80 @@ const ProjectDetail: React.FC = () => {
                 }}
                 rowKey="id"
               >
-                <Column title="页面路径" dataIndex="path" />
-                <Column title="页面标题" dataIndex="title" />
+                <Column title={t('projectDetail.colPageId')} dataIndex="id" />
+                <Column title={t('projectDetail.colTitle')} dataIndex="title" />
                 <Column
-                  title="描述"
+                  title={t('projectDetail.colDescription')}
                   dataIndex="description"
                   render={(desc) => desc || '-'}
                 />
                 <Column
-                  title="发布状态"
+                  title={t('projectDetail.colPublish')}
                   dataIndex="publishedVersionId"
-                  render={(published) => (published ? '已发布' : '未发布')}
+                  render={(published) => (published ? t('projectDetail.published') : t('projectDetail.unpublished'))}
                 />
                 <Column
-                  title="创建时间"
+                  title={t('projectDetail.colCreatedAt')}
                   dataIndex="createdAt"
                   render={(time) => formatDateTime(time)}
                 />
-                <Column title="操作" render={renderPageActions} />
+                <Column title={t('projectDetail.colActions')} render={renderPageActions} />
               </Table>
             </Card>
           </Tabs.TabPane>
 
-          <Tabs.TabPane tab="项目设置" itemKey="settings">
-            <Card title="基本信息">
+          <Tabs.TabPane tab={t('projectDetail.tabSettings')} itemKey="settings">
+            <Card title={t('projectDetail.cardBasicInfo')}>
               <div className="info-item">
-                <Text type="secondary">项目编码:</Text>
+                <Text type="secondary">{t('projectDetail.labelProjectCode')}:</Text>
                 <Text>{project?.projectCode}</Text>
               </div>
               <div className="info-item">
-                <Text type="secondary">项目名称:</Text>
+                <Text type="secondary">{t('projectDetail.labelProjectName')}:</Text>
                 <Text>{project?.projectName}</Text>
               </div>
               <div className="info-item">
-                <Text type="secondary">业务线:</Text>
+                <Text type="secondary">{t('projectDetail.labelBusiness')}:</Text>
                 <Text>{project?.businessName}</Text>
               </div>
               <div className="info-item">
-                <Text type="secondary">描述:</Text>
+                <Text type="secondary">{t('projectDetail.labelDescription')}:</Text>
                 <Text>{project?.description || '-'}</Text>
               </div>
               <div className="info-item">
-                <Text type="secondary">创建时间:</Text>
+                <Text type="secondary">{t('projectDetail.labelCreatedAt')}:</Text>
                 <Text>{formatDateTime(project?.createdAt)}</Text>
               </div>
             </Card>
           </Tabs.TabPane>
         </Tabs>
 
-        {/* 创建页面弹窗 */}
         <Modal
-          title="新建页面"
+          title={t('projectDetail.createPageModalTitle')}
           visible={createPageVisible}
           onCancel={() => setCreatePageVisible(false)}
           footer={null}
+          className="oh-form-modal"
         >
-          <Form onSubmit={handleCreatePage}>
-            <Form.Input
-              field="path"
-              label="页面路径"
-              placeholder="如: /home"
-              rules={[{ required: true, message: '请输入页面路径' }]}
-            />
+          <Form onSubmit={handleCreatePage} layout="vertical">
             <Form.Input
               field="title"
-              label="页面标题"
-              placeholder="请输入页面标题"
-              rules={[{ required: true, message: '请输入页面标题' }]}
+              label={t('projectDetail.fieldPageTitle')}
+              placeholder={t('projectDetail.fieldPageTitlePh')}
+              rules={[{ required: true, message: t('projectDetail.validation.titleRequired') }]}
             />
             <Form.TextArea
               field="description"
-              label="页面描述"
-              placeholder="请输入页面描述（可选）"
+              label={t('projectDetail.fieldPageDesc')}
+              placeholder={t('projectDetail.fieldPageDescPh')}
               rows={3}
             />
             <div className="form-actions">
               <Button type="tertiary" onClick={() => setCreatePageVisible(false)}>
-                取消
+                {t('common.cancel')}
               </Button>
-              <Button type="primary" htmlType="submit" loading={creatingPage}>
-                创建
+              <Button type="primary" theme="solid" htmlType="submit" loading={creatingPage}>
+                {t('common.create')}
               </Button>
             </div>
           </Form>

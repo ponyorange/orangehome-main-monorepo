@@ -5,6 +5,8 @@ export interface Business {
   id: string;
   businessCode: string;
   businessName: string;
+  /** 业务类型（与 CreateBusinessDto.businessType 一致） */
+  businessType?: string;
   description?: string;
   platforms?: Array<{
     platformId: string;
@@ -22,6 +24,7 @@ export interface Business {
 export interface CreateBusinessParams {
   businessCode: string;
   businessName: string;
+  businessType: string;
   description?: string;
   platformIds?: string[];
 }

@@ -4,12 +4,15 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--oh-surface-elevated);
+  border-bottom: 1px solid var(--oh-border-subtle);
+  box-shadow: var(--oh-shadow-soft);
 
   .header-logo {
     font-size: 20px;
-    font-weight: bold;
-    color: #ff7a45;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--oh-primary);
   }
 
   .user-info {
@@ -39,12 +42,13 @@
     gap: 16px;
 
     a {
-      color: #333;
+      color: var(--oh-text);
       text-decoration: none;
       font-size: 14px;
+      font-weight: 500;
 
       &:hover {
-        color: #ff7a45;
+        color: var(--oh-primary);
       }
     }
   }
