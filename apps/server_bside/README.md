@@ -16,13 +16,24 @@ OrangeHome B端服务 (BFF)，负责对接前端和 core-service。
 # 复制环境变量模板
 cp .env.example .env
 
-# 编辑 .env 文件，配置 core-service 地址
+# 编辑 .env：配置 CORE_SERVICE_HTTP_URL、登录加密密钥等（见 .env.example 注释）
 ```
 
-## 安装依赖
+登录密码传输加密（RSA-OAEP + AES-GCM）相关：
+
+| 变量 | 说明 |
+|------|------|
+| `LOGIN_RSA_PRIVATE_KEY_PEM` | RSA 私钥 PEM（勿提交仓库） |
+| `LOGIN_RSA_KEY_ID` | 与私钥对应的标识，须与前端拉取的 `keyId` 一致 |
+| `ALLOW_PLAIN_PASSWORD_LOGIN` | 设为 `true` 时允许明文 `{ email, password }` 登录（仅本地调试；生产须为 `false`） |
+
+## 安装与测试
+
+本仓库使用 Rush monorepo，请在**仓库根目录**执行 `rush update`。在 `apps/server_bside` 目录：
 
 ```bash
-pnpm install
+npm test    # Jest（含密码传输解密单测）
+npm run build
 ```
 
 ## 启动服务
@@ -49,7 +60,8 @@ pnpm start:prod
 |------|------|------|------|
 | POST | `/api/auth/send-email-code` | 发送邮箱验证码 | 否 |
 | POST | `/api/auth/register` | 注册 | 否 |
-| POST | `/api/auth/login` | 登录 | 否 |
+| GET | `/api/auth/login-crypto-params` | 获取登录加密参数（RSA 公钥等） | 否 |
+| POST | `/api/auth/login` | 登录（支持加密负载；开发环境可明文，见 `ALLOW_PLAIN_PASSWORD_LOGIN`） | 否 |
 | POST | `/api/auth/reset-password` | 重置密码 | 否 |
 | POST | `/api/auth/logout` | 登出 | 是 |
 | GET | `/api/auth/me` | 获取当前用户 | 是 |

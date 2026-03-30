@@ -28,6 +28,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
+    "@orangehome/password-transport": "workspace:*",
     "@douyinfe/semi-foundation": "^2.40.0",
     "@douyinfe/semi-icons": "^2.40.0",
     "@douyinfe/semi-ui": "^2.40.0",

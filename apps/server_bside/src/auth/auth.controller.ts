@@ -1,12 +1,31 @@
-import { Controller, Post, Get, Body, Headers, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiHeader, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Headers } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { SendEmailCodeDto, RegisterDto, LoginDto, ResetPasswordDto, UserResponseDto } from './dto/auth.dto';
+import { PasswordTransportCryptoService } from './password-transport-crypto.service';
+import {
+  SendEmailCodeDto,
+  RegisterDto,
+  LoginRequestDto,
+  ResetPasswordDto,
+  UserResponseDto,
+  LoginCryptoParamsResponseDto,
+} from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordCrypto: PasswordTransportCryptoService,
+  ) {}
+
+  @Get('login-crypto-params')
+  @ApiOperation({ summary: '获取登录密码加密参数（RSA 公钥等）' })
+  @ApiResponse({ status: 200, description: '成功', type: LoginCryptoParamsResponseDto })
+  @ApiResponse({ status: 503, description: '密钥未配置' })
+  getLoginCryptoParams(): LoginCryptoParamsResponseDto {
+    return this.passwordCrypto.getLoginCryptoParams();
+  }
 
   @Post('send-email-code')
   @ApiOperation({ summary: '发送邮箱验证码' })
@@ -23,9 +42,9 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: '用户登录' })
+  @ApiOperation({ summary: '用户登录（支持加密负载或开发环境明文）' })
   @ApiResponse({ status: 200, description: '登录成功', type: Object })
-  async login(@Body() dto: LoginDto) {
+  async login(@Body() dto: LoginRequestDto) {
     return this.authService.login(dto);
   }
 

@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import type { SWRResponse } from 'swr';
 import { deserialize } from '../../common/base/schemaOperator';
 import type { ISchema } from '../../types/base';
 import { get, post } from '../api/client';
@@ -81,7 +82,10 @@ async function fetchBuilderInit(pageId: string): Promise<BuilderInitResponse> {
   };
 }
 
-export function useBuilderData(pageId?: string | null, enabled = true) {
+export function useBuilderData(
+  pageId?: string | null,
+  enabled = true,
+): SWRResponse<BuilderInitResponse, Error> {
   return useSWR<BuilderInitResponse>(
     pageId && enabled ? ['/builder/init', pageId] : null,
     () => fetchBuilderInit(pageId!),

@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import type { SWRResponse } from 'swr';
 import type { ISchema } from '../../types/base';
 import type { ComponentCatalogItem } from '../../extensions/features/component-tab/catalog';
 import { generateIdWithPrefix } from '../../utils/id';
@@ -152,7 +153,7 @@ export function useComponentList(
   pageId: string | null | undefined,
   type: BuilderComponentListType,
   enabled = true,
-) {
+): SWRResponse<GetComponentListResponseDto, Error> {
   return useSWR<GetComponentListResponseDto>(
     pageId && enabled ? ['/builder/component-list', pageId, type] : null,
     () => fetchComponentList(pageId!, type),

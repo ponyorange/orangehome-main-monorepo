@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@orangehome/password-transport": "workspace:*",
     "@douyinfe/semi-ui": "^2.91.0",
     "axios": "^1.13.6",
     "i18next": "^25.8.13",
