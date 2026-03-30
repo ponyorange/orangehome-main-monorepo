@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
+import type { KeyedMutator } from 'swr';
+import { encryptLoginPassword, normalizeLoginCryptoParams } from '@orangehome/password-transport';
 import { ApiError, clearAuthTokens, get, getAccessToken, post, storeAuthTokens } from '../api/client';
 
 export interface UserInfo {
@@ -23,7 +25,18 @@ export interface LoginResult {
 
 const CURRENT_USER_KEY = '/auth/me';
 
-export function useUserData() {
+export interface UseUserDataResult {
+  user: UserInfo | null;
+  error: unknown;
+  isLoading: boolean;
+  hasToken: boolean;
+  isAuthenticated: boolean;
+  login: (params: LoginParams) => Promise<LoginResult>;
+  logout: () => Promise<void>;
+  refreshUser: KeyedMutator<UserInfo | null>;
+}
+
+export function useUserData(): UseUserDataResult {
   const [token, setToken] = useState<string | null>(() => getAccessToken());
   const { data, error, isLoading, mutate } = useSWR<UserInfo | null>(
     token ? CURRENT_USER_KEY : null,
@@ -54,7 +67,33 @@ export function useUserData() {
   }, [mutate]);
 
   const login = async (params: LoginParams) => {
-    const result = await post<LoginResult>('/auth/login', params, { skipAuth: true });
+    const allowPlain = import.meta.env.VITE_ALLOW_PLAIN_PASSWORD_LOGIN === 'true';
+    let body: Record<string, unknown>;
+
+    try {
+      const cryptoRaw = await get<unknown>('/auth/login-crypto-params', { skipAuth: true });
+      const cryptoParams = normalizeLoginCryptoParams(cryptoRaw);
+      const enc = await encryptLoginPassword(params.password, cryptoParams);
+      body = {
+        email: params.email,
+        version: enc.version,
+        keyId: enc.keyId,
+        ciphertext: enc.ciphertext,
+        iv: enc.iv,
+        wrappedKey: enc.wrappedKey,
+        authTag: enc.authTag,
+      };
+    } catch (e) {
+      if (allowPlain) {
+        body = { email: params.email, password: params.password };
+      } else if (e instanceof Error && e.message) {
+        throw e;
+      } else {
+        throw new Error('无法建立安全登录通道，请稍后重试或联系管理员');
+      }
+    }
+
+    const result = await post<LoginResult>('/auth/login', body, { skipAuth: true });
     storeAuthTokens(result.accessToken, result.refreshToken);
     setToken(result.accessToken);
     await mutate(result.user, false);

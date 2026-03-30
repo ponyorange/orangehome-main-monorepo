@@ -1,12 +1,27 @@
 import axios from 'axios';
+import {
+  encryptLoginPassword,
+  normalizeLoginCryptoParams,
+} from '@orangehome/password-transport';
 
 const API_BASE = import.meta.env.VITE_BFF_API_URL || 'http://192.168.1.91:50054/api';
 const PUBLIC_AUTH_PATHS = new Set([
   '/auth/login',
+  '/auth/login-crypto-params',
   '/auth/register',
   '/auth/reset-password',
   '/auth/send-email-code',
 ]);
+
+/** Axios 在部分环境下 config.url 为完整 URL 或带 query，需与公开路径稳定匹配，避免误带 Token */
+function matchesPublicAuthPath(url: string | undefined): boolean {
+  if (!url) return false;
+  const path = url.split('?')[0] ?? url;
+  for (const p of PUBLIC_AUTH_PATHS) {
+    if (path === p || path.endsWith(p)) return true;
+  }
+  return false;
+}
 
 const clearClientAuth = () => {
   localStorage.removeItem('accessToken');
@@ -24,7 +39,7 @@ const apiClient = axios.create({
 
 // 请求拦截器 - 自动添加 token
 apiClient.interceptors.request.use((config) => {
-  if (config.url && PUBLIC_AUTH_PATHS.has(config.url)) {
+  if (matchesPublicAuthPath(config.url)) {
     return config;
   }
 
@@ -42,7 +57,7 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || '网络错误';
 
-    if (status === 401 && !PUBLIC_AUTH_PATHS.has(error.config?.url || '')) {
+    if (status === 401 && !matchesPublicAuthPath(error.config?.url)) {
       clearClientAuth();
 
       if (typeof window !== 'undefined') {
@@ -99,9 +114,36 @@ export const register = async (data: {
   return apiClient.post('/auth/register', data);
 };
 
-// 用户登录
+// 用户登录（RSA+AES；HTTP 下无原生 subtle 时按需加载 node-forge 降级，见 packages/password-transport）
 export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
-  const response = await apiClient.post('/auth/login', data);
+  const allowPlain = import.meta.env.VITE_ALLOW_PLAIN_PASSWORD_LOGIN === 'true';
+  let payload: Record<string, unknown>;
+
+  try {
+    const cryptoRaw = await apiClient.get<unknown>('/auth/login-crypto-params');
+    const cryptoParams = normalizeLoginCryptoParams(cryptoRaw);
+    const enc = await encryptLoginPassword(data.password, cryptoParams);
+    payload = {
+      email: data.email,
+      version: enc.version,
+      keyId: enc.keyId,
+      ciphertext: enc.ciphertext,
+      iv: enc.iv,
+      wrappedKey: enc.wrappedKey,
+      authTag: enc.authTag,
+    };
+  } catch (e) {
+    if (allowPlain) {
+      payload = { email: data.email, password: data.password };
+    } else if (e instanceof Error && e.message) {
+      throw e;
+    } else {
+      throw new Error('无法建立安全登录通道，请稍后重试或联系管理员');
+    }
+  }
+
+  // 响应拦截器已解包为 response.data，与 axios 默认泛型不一致，此处断言为业务体
+  const response = (await apiClient.post<LoginResponse>('/auth/login', payload)) as unknown as LoginResponse;
   // 登录成功后保存 token
   localStorage.setItem('accessToken', response.accessToken);
   localStorage.setItem('refreshToken', response.refreshToken);

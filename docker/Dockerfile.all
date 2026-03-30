@@ -21,14 +21,17 @@ COPY rush.json ./
 COPY common/config ./common/config
 COPY common/scripts ./common/scripts
 COPY apps ./apps
+# Rush 子工程（如 @orangehome/password-transport）；与 rush.json 中 projectFolder 一致
+COPY packages ./packages
 
 RUN node common/scripts/install-run-rush.js install --ignore-hooks
 
 # Vite/Sass 等把告警打到 stderr，Rush 默认整体 exit 1；见 https://rushjs.io/pages/configs/environment_vars/
 ENV RUSH_ALLOW_WARNINGS_IN_SUCCESSFUL_BUILD=1
 
-# platform / builder 需带子路径 base，单独构建；其余 Rush 批量重建
+# platform / builder 依赖 workspace 包；先重建共享库再编 BFF/静态站
 RUN node common/scripts/install-run-rush.js rebuild --ignore-hooks \
+  -t @orangehome/password-transport \
   -t @orangehome/server_bside \
   -t @orangehome/server_cside \
   -t @orangehome/web_admin

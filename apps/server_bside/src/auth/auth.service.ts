@@ -2,7 +2,15 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { SendEmailCodeDto, RegisterDto, LoginDto, ResetPasswordDto, LoginResponseDto, UserResponseDto } from './dto/auth.dto';
+import {
+  SendEmailCodeDto,
+  RegisterDto,
+  LoginRequestDto,
+  ResetPasswordDto,
+  LoginResponseDto,
+  UserResponseDto,
+} from './dto/auth.dto';
+import { PasswordTransportCryptoService } from './password-transport-crypto.service';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +19,7 @@ export class AuthService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly passwordCrypto: PasswordTransportCryptoService,
   ) {
     this.coreServiceUrl = this.configService.get<string>('CORE_SERVICE_HTTP_URL') || 'http://localhost:3000';
   }
@@ -45,8 +54,20 @@ export class AuthService {
     return this.proxyRequest('POST', '/api/auth/register', dto);
   }
 
-  async login(dto: LoginDto): Promise<LoginResponseDto> {
-    return this.proxyRequest('POST', '/api/auth/login', dto);
+  async login(dto: LoginRequestDto): Promise<LoginResponseDto> {
+    if (this.passwordCrypto.isProtectedLogin(dto)) {
+      const password = this.passwordCrypto.decryptPasswordFromProtectedLogin(dto);
+      return this.proxyRequest('POST', '/api/auth/login', { email: dto.email, password });
+    }
+
+    if (dto.password !== undefined && dto.password !== '') {
+      if (!this.passwordCrypto.isPlainAllowed()) {
+        throw new HttpException('请使用当前页面支持的加密方式登录', HttpStatus.BAD_REQUEST);
+      }
+      return this.proxyRequest('POST', '/api/auth/login', { email: dto.email, password: dto.password });
+    }
+
+    throw new HttpException('无效的登录请求', HttpStatus.BAD_REQUEST);
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {

@@ -7,12 +7,12 @@
 
 ## Summary
 
-在 **web_platform** 与 **web_builder** 登录时，将密码以**受保护负载**提交到 **server_bside**；B 端在调用既有 core HTTP 登录前**解密**得到明文密码，再转发至 `CORE_SERVICE_HTTP_URL/api/auth/login`，保持 token 与用户行为与现有实现一致。技术方案采用 **RSA-OAEP + AES-256-GCM 混合加密**，公钥由 B 端公开接口下发，私钥仅配置于 B 端环境；可选共享库 `packages/password-transport` 供两前端复用加密逻辑（详见 [research.md](./research.md)）。
+在 **web_platform** 与 **web_builder** 登录时，将密码以**受保护负载**提交到 **server_bside**；B 端在调用既有 core HTTP 登录前**解密**得到明文密码，再转发至 `CORE_SERVICE_HTTP_URL/api/auth/login`，保持 token 与用户行为与现有实现一致。技术方案采用 **RSA-OAEP + AES-256-GCM 混合加密**，公钥由 B 端公开接口下发，私钥仅配置于 B 端环境；共享库 **`packages/password-transport`** 供两前端复用加密逻辑：优先 **Web Crypto (`subtle`)**，在 **HTTP 公网 IP** 等非安全上下文无 `subtle` 时 **按需加载 `node-forge`** 降级（与 BFF 解密字节级一致，见 [research.md](./research.md) §7、[contracts/login-password-transport.md](./contracts/login-password-transport.md) §5）。
 
 ## Technical Context
 
-**Language/Version**: TypeScript ~5.3；Node.js 与 `rush.json` 的 `nodeSupportedVersionRange` 一致；浏览器侧 Web Crypto（现代 Chromium/Safari/Edge 基线）  
-**Primary Dependencies**: React 18 + Vite（`web_platform`、`web_builder`）；NestJS 10 + `@nestjs/axios` + `class-validator`（`server_bside`）；Node `crypto`（解密）  
+**Language/Version**: TypeScript ~5.3；Node.js 与 `rush.json` 的 `nodeSupportedVersionRange` 一致；浏览器侧优先 Web Crypto（`subtle`），HTTP 场景下 **`node-forge`** 降级  
+**Primary Dependencies**: React 18 + Vite（`web_platform`、`web_builder`）；NestJS 10 + `@nestjs/axios` + `class-validator`（`server_bside`）；Node `crypto`（解密）；`packages/password-transport` 依赖 **`node-forge`**（仅无 `subtle` 时动态加载）  
 **Storage**: N/A（密钥通过环境变量注入，不落业务库）  
 **Testing**: `server_bside` 使用 Jest 单元测试（新增 `*.spec.ts`）；前端以手动/抽检脚本为主，若包内后续增加 `test`/`lint` 则按宪章执行  
 **Target Platform**: 浏览器（两前端）+ Node 服务器（BFF）  

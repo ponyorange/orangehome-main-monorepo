@@ -78,3 +78,27 @@
 
 - 客户端 MUST 在加密前检查 `version`；若本地不支持，应阻止登录并提示升级前端。
 - 服务端 MUST 拒绝未知 `version` 的密文包。
+
+---
+
+## 5. 客户端实现约定（`packages/password-transport`）
+
+**与 §2 线上字节格式一致**；差异仅在「用哪套 API 算出密文」。
+
+### 5.1 优先：Web Crypto（`SubtleCrypto`）
+
+在**安全上下文**（HTTPS、`http://localhost` 等）下，使用浏览器原生 **`crypto.subtle`** 实现 RSA-OAEP（SHA-256）+ AES-256-GCM，与 BFF `PasswordTransportCryptoService` 解密参数对齐。
+
+### 5.2 降级：`http://公网IP` 等非安全上下文
+
+浏览器不提供 `crypto.subtle` 时，**不得**要求用户仅能明文登录；共享包内对 `encryptForge` **动态按需加载**（`import()`），使用 **`node-forge`** 实现与 §5.1 **相同算法与载荷拆分**（`ciphertext` / `iv` / `wrappedKey` / `authTag` 独立 Base64），以便与 Node `crypto.privateDecrypt` / `createDecipheriv` 互通。
+
+**说明**：传输层仍为 HTTP 时，无法替代 TLS 的防窃听/防篡改；生产环境仍应部署 HTTPS。降级用于「无证书环境下的密文负载」与联调。
+
+### 5.3 获取加密参数响应的归一化
+
+若 API 网关将 JSON 包在 **`{ "data": { "version", "keyId", "publicKey", ... } }`** 等结构中，客户端 MUST 通过 **`normalizeLoginCryptoParams`**（或等价逻辑）解析出 §1 的扁平字段后再加密，避免 `publicKey` 为空导致失败。
+
+### 5.4 前端 HTTP 客户端（`web_platform`）
+
+对 **`/auth/login-crypto-params`**、**`/auth/login`** 等公开鉴权路径，请求匹配 MUST 兼容 Axios 中 **`config.url` 为完整 URL 或带 query** 的情况，避免误附加 `Authorization` 导致拉公钥失败。

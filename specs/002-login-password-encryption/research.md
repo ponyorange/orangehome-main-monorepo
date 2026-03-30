@@ -8,7 +8,7 @@
 
 - 仅 RSA 直接加密密码时，受 RSA 模长限制，长密码或 UTF-8 多字节场景易触顶；混合加密是常见且可审计的模式。
 - AES-GCM 提供机密性与完整性；与 RSA-OAEP 组合可满足「线路上不可直接识读明文密码」的规格要求。
-- Web 端使用 **Web Crypto (SubtleCrypto)**，与浏览器环境一致；服务端使用 Node **`crypto`**，与 Nest 技术栈一致。
+- Web 端在**安全上下文**下优先使用 **Web Crypto (`SubtleCrypto`)**；在 **HTTP 公网 IP** 等非安全上下文下无 `subtle` 时，使用 **`node-forge`** 纯 JS 实现同一算法族（见下文 §7）。服务端始终使用 Node **`crypto`**，与 Nest 技术栈一致。
 
 **Alternatives considered**:
 
@@ -76,6 +76,29 @@
 
 ---
 
+---
+
+## 7. 无安全上下文（HTTP 公网 IP）下的客户端实现
+
+**Decision**：在 `packages/password-transport` 中，若 **`globalThis.crypto.subtle` 不可用**，则 **`import()` 动态加载** `encryptForge` 模块，使用 **`node-forge`** 完成 **RSA-OAEP（SHA-256，MGF1-SHA-256）+ AES-256-GCM**，输出字段与既有 Web Crypto 路径一致，供 BFF 现有解密逻辑消费。
+
+**Rationale**
+
+- 浏览器规范在非安全上下文下不暴露 `SubtleCrypto`，无法用原生 API 完成同一协议。
+- `node-forge` 在浏览器打包中成熟可用，且与 Node `oaepHash: 'sha256'`、AES-GCM tag 拆分可对齐；已通过 `npm run verify-forge` 与 Node 解密做 roundtrip 校验。
+
+**Alternatives considered**
+
+| 方案 | 放弃原因 |
+|------|----------|
+| `@peculiar/webcrypto` | 浏览器 bundle 仍依赖 Node 的 `buffer`/`crypto` 等，**Vite 浏览器构建失败** |
+| 仅文档要求用户上 HTTPS | 与「公网 IP 无证书」联调场景冲突；作为降级补充而非替代 HTTPS |
+| 手写 `@noble/*` + 自拼 RSA-OAEP | 实现与审计成本高，首版不采用 |
+
+**约束**：HTTP 传输仍**不具备 TLS 的机密性与完整性**；本决策仅保证「请求体按约定协议加密」；**生产环境仍应使用 HTTPS**。
+
+---
+
 ## 已解决的 NEEDS CLARIFICATION
 
-技术上下文中未再保留 `NEEDS CLARIFICATION`：算法族、密钥位置、与 core 的边界、共享模块策略均已收敛为上述决策。
+技术上下文中未再保留 `NEEDS CLARIFICATION`：算法族、密钥位置、与 core 的边界、共享模块策略均已收敛为上述决策；HTTP 下客户端实现已补充为 §7。

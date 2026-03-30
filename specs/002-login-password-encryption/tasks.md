@@ -26,8 +26,8 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **Purpose**: 注册共享库工程，便于两前端共用同一套浏览器侧加密实现。
 
-- [ ] T001 Create Rush library `packages/password-transport` with `package.json` (name `@orangehome/password-transport`), `tsconfig.json`, and `src/index.ts`; append the project to `rush.json`
-- [ ] T002 Run `rush update` at repository root `d:\ai_coding\orangehome\main-monorepo` after T001
+- [x] T001 Create Rush library `packages/password-transport` with `package.json` (name `@orangehome/password-transport`), `tsconfig.json`, and `src/index.ts`; append the project to `rush.json`
+- [x] T002 Run `rush update` at repository root `d:\ai_coding\orangehome\main-monorepo` after T001
 
 ---
 
@@ -37,9 +37,9 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **⚠️ CRITICAL**: Phase 3（US3）可与 Phase 2 并行由不同开发者进行，但端到端联调须在 Phase 3 完成后。
 
-- [ ] T003 [P] Add `packages/password-transport/src/types.ts` for `LoginCryptoParams` and protected login payload fields per `specs/002-login-password-encryption/data-model.md` and `specs/002-login-password-encryption/contracts/login-password-transport.md`
-- [ ] T004 Implement `packages/password-transport/src/encrypt.ts` using Web Crypto (RSA-OAEP + AES-256-GCM) per `specs/002-login-password-encryption/research.md`, and export from `packages/password-transport/src/index.ts`
-- [ ] T005 Add `build` (and `types` if needed) scripts to `packages/password-transport/package.json` and verify `rush build --to @orangehome/password-transport` succeeds
+- [x] T003 [P] Add `packages/password-transport/src/types.ts` for `LoginCryptoParams` and protected login payload fields per `specs/002-login-password-encryption/data-model.md` and `specs/002-login-password-encryption/contracts/login-password-transport.md`
+- [x] T004 Implement `packages/password-transport/src/encrypt.ts` using Web Crypto (RSA-OAEP + AES-256-GCM) per `specs/002-login-password-encryption/research.md`, and export from `packages/password-transport/src/index.ts`
+- [x] T005 Add `build` (and `types` if needed) scripts to `packages/password-transport/package.json` and verify `rush build --to @orangehome/password-transport` succeeds
 
 **Checkpoint**: 共享加密库可构建；可进入 BFF 实现。
 
@@ -51,14 +51,14 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **Independent Test**: 对 `POST /auth/login` 发送合法密文负载可透传 core 成功路径；损坏/伪造负载返回失败且响应体不含密钥与明文密码。
 
-- [ ] T006 [US3] Update `apps/server_bside/.env.example` with `LOGIN_RSA_PRIVATE_KEY_PEM`, `LOGIN_RSA_KEY_ID`, `ALLOW_PLAIN_PASSWORD_LOGIN` documented per `specs/002-login-password-encryption/quickstart.md`
-- [ ] T007 [P] [US3] Extend `apps/server_bside/src/auth/dto/auth.dto.ts` with response DTO for `GET /auth/login-crypto-params` and validated body DTO for protected `POST /auth/login` per `specs/002-login-password-encryption/contracts/login-password-transport.md`
-- [ ] T008 [US3] Create `apps/server_bside/src/auth/password-transport-crypto.service.ts` to load RSA private key from config, expose public key material for clients, and decrypt protected payload to plaintext password using Node.js `crypto`
-- [ ] T009 [US3] Register `PasswordTransportCryptoService` in `apps/server_bside/src/auth/auth.module.ts` with `ConfigService` for env-based flags
-- [ ] T010 [US3] Add `GET /auth/login-crypto-params` handler in `apps/server_bside/src/auth/auth.controller.ts` with Swagger `@ApiOperation` / `@ApiResponse` per contract
-- [ ] T011 [US3] Update `login` in `apps/server_bside/src/auth/auth.service.ts` to branch on request shape: protected payload → decrypt → existing `proxyRequest('POST', '/api/auth/login', { email, password })`; plain `{ email, password }` only when `ALLOW_PLAIN_PASSWORD_LOGIN` is enabled
-- [ ] T012 [US3] Add `apps/server_bside/src/auth/password-transport-crypto.service.spec.ts` Jest tests for successful decrypt and failure on tampered or invalid ciphertext
-- [ ] T013 [US3] Ensure startup or first-use validation fails clearly when production mode expects RSA key but `LOGIN_RSA_PRIVATE_KEY_PEM` / `LOGIN_RSA_KEY_ID` is missing (avoid silent insecure fallback)
+- [x] T006 [US3] Update `apps/server_bside/.env.example` with `LOGIN_RSA_PRIVATE_KEY_PEM`, `LOGIN_RSA_KEY_ID`, `ALLOW_PLAIN_PASSWORD_LOGIN` documented per `specs/002-login-password-encryption/quickstart.md`
+- [x] T007 [P] [US3] Extend `apps/server_bside/src/auth/dto/auth.dto.ts` with response DTO for `GET /auth/login-crypto-params` and validated body DTO for protected `POST /auth/login` per `specs/002-login-password-encryption/contracts/login-password-transport.md`
+- [x] T008 [US3] Create `apps/server_bside/src/auth/password-transport-crypto.service.ts` to load RSA private key from config, expose public key material for clients, and decrypt protected payload to plaintext password using Node.js `crypto`
+- [x] T009 [US3] Register `PasswordTransportCryptoService` in `apps/server_bside/src/auth/auth.module.ts` with `ConfigService` for env-based flags
+- [x] T010 [US3] Add `GET /auth/login-crypto-params` handler in `apps/server_bside/src/auth/auth.controller.ts` with Swagger `@ApiOperation` / `@ApiResponse` per contract
+- [x] T011 [US3] Update `login` in `apps/server_bside/src/auth/auth.service.ts` to branch on request shape: protected payload → decrypt → existing `proxyRequest('POST', '/api/auth/login', { email, password })`; plain `{ email, password }` only when `ALLOW_PLAIN_PASSWORD_LOGIN` is enabled
+- [x] T012 [US3] Add `apps/server_bside/src/auth/password-transport-crypto.service.spec.ts` Jest tests for successful decrypt and failure on tampered or invalid ciphertext
+- [x] T013 [US3] Ensure startup or first-use validation fails clearly when production mode expects RSA key but `LOGIN_RSA_PRIVATE_KEY_PEM` / `LOGIN_RSA_KEY_ID` is missing (avoid silent insecure fallback)
 
 **Checkpoint**: BFF 可独立用 curl/自动化测通；可与 Phase 4 联调。
 
@@ -70,9 +70,9 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **Independent Test**: 平台端有效凭证登录成功；开发者工具 / 抓包可见 `POST /auth/login` 体为密文字段而非用户输入的明文密码。
 
-- [ ] T014 [US1] Add `@orangehome/password-transport` workspace dependency to `apps/web_platform/package.json` and run `rush update` at repository root
-- [ ] T015 [P] [US1] Update `apps/web_platform/src/api/auth.ts` to `GET` crypto params from BFF base URL, encrypt password with `@orangehome/password-transport`, then `POST /auth/login` with protected JSON body; preserve `LoginResponse` storage and interceptors behavior
-- [ ] T016 [US1] Confirm `apps/web_platform/src/pages/Login/index.tsx` continues to call `login({ email, password })` with no UI change; refactor only if `login` signature must change
+- [x] T014 [US1] Add `@orangehome/password-transport` workspace dependency to `apps/web_platform/package.json` and run `rush update` at repository root
+- [x] T015 [P] [US1] Update `apps/web_platform/src/api/auth.ts` to `GET` crypto params from BFF base URL, encrypt password with `@orangehome/password-transport`, then `POST /auth/login` with protected JSON body; preserve `LoginResponse` storage and interceptors behavior
+- [x] T016 [US1] Confirm `apps/web_platform/src/pages/Login/index.tsx` continues to call `login({ email, password })` with no UI change; refactor only if `login` signature must change
 
 **Checkpoint**: 平台端 E2E 登录（密文）可用。
 
@@ -84,9 +84,9 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **Independent Test**: 搭建器端有效凭证登录成功；请求负载不可直接识读明文密码。
 
-- [ ] T017 [US2] Add `@orangehome/password-transport` workspace dependency to `apps/web_builder/package.json` and run `rush update` at repository root
-- [ ] T018 [P] [US2] Update `apps/web_builder/src/data/modules/useUserData.ts` so `login` fetches crypto params and posts protected body via `post` from `apps/web_builder/src/data/api/client.ts` with `skipAuth: true` for login
-- [ ] T019 [US2] Adjust `apps/web_builder/vite.app.config.ts` or `apps/web_builder/tsconfig.json` / `package.json` exports only if Vite fails to resolve `@orangehome/password-transport` during `rushx dev` or `rushx build`
+- [x] T017 [US2] Add `@orangehome/password-transport` workspace dependency to `apps/web_builder/package.json` and run `rush update` at repository root
+- [x] T018 [P] [US2] Update `apps/web_builder/src/data/modules/useUserData.ts` so `login` fetches crypto params and posts protected body via `post` from `apps/web_builder/src/data/api/client.ts` with `skipAuth: true` for login
+- [x] T019 [US2] Adjust `apps/web_builder/vite.app.config.ts` or `apps/web_builder/tsconfig.json` / `package.json` exports only if Vite fails to resolve `@orangehome/password-transport` during `rushx dev` or `rushx build`
 
 **Checkpoint**: 两前端均完成密文登录。
 
@@ -96,10 +96,21 @@ description: "Task list for Login Password Transport Protection (002)"
 
 **Purpose**: 文档、构建与冒烟一致。
 
-- [ ] T020 [P] Update `apps/server_bside/README.md` with `GET /auth/login-crypto-params`, protected `POST /auth/login`, and required environment variables
-- [ ] T021 [P] Align `specs/002-login-password-encryption/quickstart.md` environment variable names with final `apps/server_bside/.env.example` values
-- [ ] T022 Run `rush build --to @orangehome/password-transport`, `rush build --to @orangehome/server_bside`, `rush build --to @orangehome/web_platform`, and `rush build --to @orangehome/web_builder` from repository root
-- [ ] T023 Smoke-test login flows per `specs/002-login-password-encryption/quickstart.md` (protected path mandatory; plain path only with `ALLOW_PLAIN_PASSWORD_LOGIN=true` locally)
+- [x] T020 [P] Update `apps/server_bside/README.md` with `GET /auth/login-crypto-params`, protected `POST /auth/login`, and required environment variables
+- [x] T021 [P] Align `specs/002-login-password-encryption/quickstart.md` environment variable names with final `apps/server_bside/.env.example` values
+- [x] T022 Run `rush build --to @orangehome/password-transport`, `rush build --to @orangehome/server_bside`, `rush build --to @orangehome/web_platform`, and `rush build --to @orangehome/web_builder` from repository root
+- [x] T023 Smoke-test login flows per `specs/002-login-password-encryption/quickstart.md` (protected path mandatory; plain path only with `ALLOW_PLAIN_PASSWORD_LOGIN=true` locally)
+
+---
+
+## 补充（HTTP / 公网 IP / 网关，2026-03）
+
+**Purpose**：与 `contracts/login-password-transport.md` §5、`research.md` §7、`quickstart.md`「HTTP / 公网 IP」一致。
+
+- [x] T024 [P] `packages/password-transport`：无 `crypto.subtle` 时动态加载 `encryptForge`（`node-forge`），与 Web Crypto 路径输出同一契约；包内相对导入使用 ESM **`.js` 后缀** 以兼容 Node/Vite
+- [x] T025 [P] `normalizeLoginCryptoParams`：兼容网关将 `GET /auth/login-crypto-params` 包在 `data` 内的响应
+- [x] T026 [P] `web_platform` `src/api/auth.ts`：公开鉴权路径匹配 **完整 URL / query**，避免误带 `Authorization` 请求公钥
+- [x] T027 [P] `packages/password-transport`：`npm run verify-forge`（forge 加密 + Node 解密 roundtrip）
 
 ---
 

@@ -7,6 +7,10 @@
   "projectFolderMaxDepth": 2,
   "projects": [
     {
+      "packageName": "@orangehome/password-transport",
+      "projectFolder": "packages/password-transport"
+    },
+    {
       "packageName": "@orangehome/web_platform",
       "projectFolder": "apps/web_platform"
     },
