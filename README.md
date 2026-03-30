@@ -11,7 +11,7 @@
 
 ## 环境要求
 
-- Node.js >= 18.12.0
+- Node.js：建议使用 **20.x LTS** 及以上（与工具链及团队约定一致）；Rush 校验的版本范围为 `>=18.12.0 <23.0.0`（见根目录 `rush.json` 中的 `nodeSupportedVersionRange`）
 - 全局安装 Rush：`npm install -g @microsoft/rush`
 
 ## 快速开始
