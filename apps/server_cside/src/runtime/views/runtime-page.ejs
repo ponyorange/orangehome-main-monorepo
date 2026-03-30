@@ -14,15 +14,15 @@
     schema: typeof pageSchema !== 'undefined' ? pageSchema : null,
     componentsAmdMap: typeof componentsAmdMap === 'object' && componentsAmdMap !== null ? componentsAmdMap : {}
   }) %></script>
-  <script src="http://192.168.1.91:33035/orangehome/materials/basic/react/react-18.js"></script>
-  <script src="http://192.168.1.91:33035/orangehome/materials/basic/react/react-dom-18.js"></script>
-  <script src="http://192.168.1.91:33035/orangehome/materials/basic/amd_require/require.min.js"></script>
+  <script src="http://8.148.251.221:6011/orangehome/materials/basic/react/react-18.js"></script>
+  <script src="http://8.148.251.221:6011/orangehome/materials/basic/react/react-dom-18.js"></script>
+  <script src="http://8.148.251.221:6011/orangehome/materials/basic/amd_require/require.min.js"></script>
 </head>
 
 <body>
   <div id="app"></div>
   <script defer
-    src="http://192.168.1.91:33035/orangehome/materials/@orangehome/common-plugin-runtime/1.0.1/index.js"></script>
+    src="http://8.148.251.221:6011/orangehome/materials/@orangehome/common-plugin-runtime/1.0.1/index.js"></script>
 
   <% const map=(typeof componentsAmdMap==='object' && componentsAmdMap !==null) ? componentsAmdMap : {}; const
     urls=Object.values(map).filter(function (u) { return typeof u==='string' && u.length> 0; });

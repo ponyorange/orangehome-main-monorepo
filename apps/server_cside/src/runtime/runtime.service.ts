@@ -266,7 +266,7 @@ export class RuntimeService {
       }
       const fileKey = unwrapString(row.latestVersion.fileObjectKey);
       let url = unwrapString(row.latestVersion.fileUrl);
-      if (!url?.trim()) {
+      if (fileKey?.trim()) {
         url = `http://8.148.251.221:6011/orangehome/${fileKey}`;
       }
       if (!url?.trim()) {

@@ -3,7 +3,8 @@ import { Button, Select, Spin, Toast } from '@douyinfe/semi-ui';
 import { IconArrowLeft, IconCopy, IconExternalOpen } from '@douyinfe/semi-icons';
 import { usePreviewStore, type PreviewDevice } from '../store/previewStore';
 import { useEditorPageId } from '../context/EditorPageContext';
-import { buildRuntimePreviewUrl, copyRuntimePreviewLink } from '../../utils/runtimePreviewUrl';
+import { buildRuntimePreviewUrl } from '../../utils/runtimePreviewUrl';
+import { useShareRuntimePreviewLink } from '../../common/hooks/useShareRuntimePreviewLink';
 
 const DEVICE_SIZES: Record<PreviewDevice, { label: string; width: number | string; height: number | string }> = {
   mobile: { label: '手机', width: 375, height: 667 },
@@ -13,6 +14,7 @@ const DEVICE_SIZES: Record<PreviewDevice, { label: string; width: number | strin
 
 export const Preview: React.FC = () => {
   const pageId = useEditorPageId();
+  const { sharePreviewLink, sharePreviewLinkModal } = useShareRuntimePreviewLink(pageId);
   const { device, closePreview, setDevice } = usePreviewStore();
   const [iframeLoading, setIframeLoading] = useState(false);
   const [iframeError, setIframeError] = useState(false);
@@ -45,19 +47,6 @@ export const Preview: React.FC = () => {
     return () => window.clearTimeout(t);
   }, [previewUrl]);
 
-  const handleCopyPreviewLink = async () => {
-    const result = await copyRuntimePreviewLink(pageId);
-    if (result === 'no_url') {
-      Toast.warning('无法生成预览链接：请确认当前有页面且已配置 VITE_RUNTIME_PREVIEW_URL_TEMPLATE');
-      return;
-    }
-    if (result === 'clipboard_error') {
-      Toast.error('复制失败，请检查浏览器权限或使用 HTTPS');
-      return;
-    }
-    Toast.success('预览链接已复制到剪贴板');
-  };
-
   const handleOpenInNewWindow = () => {
     const url = buildRuntimePreviewUrl(pageId);
     if (!url) {
@@ -68,6 +57,7 @@ export const Preview: React.FC = () => {
   };
 
   return (
+    <>
     <div
       style={{
         height: '100vh',
@@ -129,7 +119,7 @@ export const Preview: React.FC = () => {
             icon={<IconCopy />}
             type="tertiary"
             size="small"
-            onClick={handleCopyPreviewLink}
+            onClick={() => void sharePreviewLink()}
             style={{
               borderRadius: 999,
               background: 'rgba(255,255,255,0.62)',
@@ -285,5 +275,7 @@ export const Preview: React.FC = () => {
         </div>
       </div>
     </div>
+    {sharePreviewLinkModal}
+    </>
   );
 };

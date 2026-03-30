@@ -92,7 +92,11 @@ export function parseMaterialEditorConfig(json: string | undefined): MaterialEdi
   }
 }
 
-export function pickVersionFileUrl(v: { fileUrl?: string; file_url?: string }): string | undefined {
-  const u = v.fileUrl ?? v.file_url;
+export function pickVersionFileUrl(v: { fileUrl?: string; file_url?: string; fileObjectKey?: string; file_object_key?: string }): string | undefined {
+  let u = v.fileUrl ?? v.file_url;
+  const fileKey = v.fileObjectKey ?? v.file_object_key;
+  if (fileKey?.trim()) {
+    u = `http://8.148.251.221:6011/orangehome/${fileKey}`;
+  }
   return typeof u === 'string' && u.trim() ? u.trim() : undefined;
 }

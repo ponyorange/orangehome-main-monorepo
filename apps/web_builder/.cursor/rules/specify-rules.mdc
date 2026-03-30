@@ -6,7 +6,7 @@ alwaysApply: true
 
 # web_builder Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-29
+Auto-generated from all feature plans. Last updated: 2026-03-30
 
 ## Active Technologies
 - TypeScript 5.x, Node >=18 (Rush) + React 18, `@douyinfe/semi-ui`（Dropdown、Dropdown.Menu、Avatar、Popover 等）, SWR（`useUserData`） (002-settings-theme-user)

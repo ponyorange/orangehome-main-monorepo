@@ -8,7 +8,7 @@ import { exportService } from '../../../../core/services/ExportService';
 import { importService } from '../../../../core/services/ImportService';
 import { saveBuilderPageVersion, useBuilderData, useUserData } from '../../../../data/modules';
 import { useEditorPageId } from '../../../../core/context/EditorPageContext';
-import { copyRuntimePreviewLink } from '../../../../utils/runtimePreviewUrl';
+import { useShareRuntimePreviewLink } from '../../../../common/hooks/useShareRuntimePreviewLink';
 
 export const Toolbar: React.FC = () => {
   const primaryColor = 'var(--theme-primary)';
@@ -19,6 +19,7 @@ export const Toolbar: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [previewPreparing, setPreviewPreparing] = useState(false);
   const pageId = useEditorPageId();
+  const { sharePreviewLink, sharePreviewLinkModal } = useShareRuntimePreviewLink(pageId);
   const { user } = useUserData();
   const { mutate: mutateBuilder } = useBuilderData(pageId, Boolean(pageId));
 
@@ -34,19 +35,6 @@ export const Toolbar: React.FC = () => {
     } catch {
       Toast.error('复制失败');
     }
-  };
-
-  const handleShareLink = async () => {
-    const result = await copyRuntimePreviewLink(pageId);
-    if (result === 'no_url') {
-      Toast.warning('无法生成预览链接：请确认已打开页面且已配置 VITE_RUNTIME_PREVIEW_URL_TEMPLATE');
-      return;
-    }
-    if (result === 'clipboard_error') {
-      Toast.error('复制失败，请检查浏览器权限或使用 HTTPS');
-      return;
-    }
-    Toast.success('预览链接已复制到剪贴板');
   };
 
   const handleImportClick = () => {
@@ -129,6 +117,7 @@ export const Toolbar: React.FC = () => {
   };
 
   return (
+    <>
     <div
       style={{
         display: 'flex',
@@ -183,7 +172,7 @@ export const Toolbar: React.FC = () => {
       >导出</Button>
       <Button icon={<IconUpload />} type="tertiary" size="small" onClick={handleImportClick} style={ghostButtonStyle}>导入</Button>
       <Button icon={<IconCopy />} type="tertiary" size="small" onClick={handleCopy} style={ghostButtonStyle}>复制</Button>
-      <Button icon={<IconLink />} type="tertiary" size="small" onClick={handleShareLink} style={ghostButtonStyle}>分享</Button>
+      <Button icon={<IconLink />} type="tertiary" size="small" onClick={() => void sharePreviewLink()} style={ghostButtonStyle}>分享</Button>
       <input
         ref={fileInputRef}
         type="file"
@@ -192,6 +181,8 @@ export const Toolbar: React.FC = () => {
         onChange={handleImportFile}
       />
     </div>
+    {sharePreviewLinkModal}
+    </>
   );
 };
 
