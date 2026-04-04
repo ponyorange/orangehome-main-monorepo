@@ -3,6 +3,8 @@ import * as monaco from 'monaco-editor';
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 
+const MONACO_CONTAINER_CLASS = 'monaco-schema-editor-container';
+
 declare global {
   interface Window {
     MonacoEnvironment?: {
@@ -64,6 +66,24 @@ export const MonacoSchemaEditor: React.FC<MonacoSchemaEditorProps> = ({ value, o
     };
   }, []);
 
+  // 阻止复制/粘贴/剪切快捷键冒泡到 document，避免触发画布层组件复制/粘贴
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCtrl = e.ctrlKey || e.metaKey;
+      if (isCtrl && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+        e.stopPropagation();
+      }
+    };
+
+    container.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      container.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, []);
+
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -72,5 +92,11 @@ export const MonacoSchemaEditor: React.FC<MonacoSchemaEditorProps> = ({ value, o
     }
   }, [value]);
 
-  return <div ref={containerRef} style={{ height: 420, border: '1px solid #e8e8e8', borderRadius: 6, overflow: 'hidden' }} />;
+  return (
+    <div
+      ref={containerRef}
+      className={MONACO_CONTAINER_CLASS}
+      style={{ height: 420, border: '1px solid #e8e8e8', borderRadius: 6, overflow: 'hidden' }}
+    />
+  );
 };

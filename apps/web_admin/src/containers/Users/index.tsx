@@ -86,9 +86,46 @@ export function Users() {
   );
 
   const formatDate = (v?: number | string) => {
-    if (!v) return '-';
-    if (typeof v === 'number') return new Date(v * 1000).toLocaleString();
-    return new Date(v).toLocaleString();
+    if (v === undefined || v === null || v === '') return '-';
+
+    const toDate = (input: number | string): Date | null => {
+      // number: 10-digit seconds or 13-digit milliseconds (best-effort)
+      if (typeof input === 'number' && Number.isFinite(input)) {
+        const ms = input > 1e12 ? input : input * 1000;
+        const d = new Date(ms);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+
+      const raw = String(input).trim();
+      if (!raw) return null;
+
+      // numeric string: seconds or milliseconds
+      if (/^\d+$/.test(raw)) {
+        const n = Number(raw);
+        if (!Number.isFinite(n)) return null;
+        const ms = raw.length >= 13 ? n : n * 1000;
+        const d = new Date(ms);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+
+      // ISO / RFC / other parseable date string
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const d = toDate(v);
+    if (!d) return '-';
+
+    // local timezone formatting (current OS timezone)
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(d);
   };
 
   const columns = [

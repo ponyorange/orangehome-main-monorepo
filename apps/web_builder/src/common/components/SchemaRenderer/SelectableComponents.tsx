@@ -197,6 +197,15 @@ export const SelectableContainer: React.FC<SelectableContainerProps> = ({
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       if (!selectable) return;
+      // 修复：只有点击 container 本身时才选中 container
+      // 如果点击的是子元素，让子元素自己的 onClick 处理
+      const target = e.target as HTMLElement;
+      const current = e.currentTarget as HTMLElement;
+      if (target !== current && current.contains(target)) {
+        // 点击的是子元素，不阻止传播，让子元素处理
+        return;
+      }
+      // 点击的是 container 本身
       e.stopPropagation();
       const eventClick = eventHandlers.onClick as ((event: React.MouseEvent<HTMLElement>) => void) | undefined;
       eventClick?.(e as React.MouseEvent<HTMLElement>);

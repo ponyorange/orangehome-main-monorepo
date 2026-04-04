@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Button, Dropdown, Modal } from '@douyinfe/semi-ui';
+import { Button, Dropdown, Modal, Typography } from '@douyinfe/semi-ui';
 import { IconSetting } from '@douyinfe/semi-icons';
 import { ThemeSwitcher } from '../../../../core/theme/ThemeSwitcher';
+import { EDITOR_CANVAS_WIDTH, EDITOR_CANVAS_HEIGHT } from '../../../../constants/editorCanvasArtboard';
 
 /**
  * 顶栏工具组内：下拉「切换主题」打开弹层，内嵌 ThemeSwitcher。
@@ -21,6 +22,11 @@ export const EditorSettingsMenu: React.FC = () => {
         getPopupContainer={() => document.body}
         render={
           <Dropdown.Menu>
+            <Dropdown.Item disabled>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                画布: {EDITOR_CANVAS_WIDTH} × {EDITOR_CANVAS_HEIGHT}
+              </Typography.Text>
+            </Dropdown.Item>
             <Dropdown.Item onClick={openThemeModal}>切换主题</Dropdown.Item>
           </Dropdown.Menu>
         }

@@ -169,6 +169,16 @@ export const Ruler: React.FC<RulerProps> = ({
       drawTick(ctx, value, pos, containerWidth, containerHeight, isHorizontal, tickInterval);
     }
     
+    // 高亮特定刻度：横向标尺高亮 0 和 750（canvasWidth），纵向标尺高亮 0
+    const highlightValues = isHorizontal ? [0, canvasWidth] : [0];
+    for (const highlightValue of highlightValues) {
+      if (drawnValues.has(highlightValue)) continue;
+      const highlightPos = (highlightValue * zoom) - scrollOffset;
+      if (highlightPos >= 0 && highlightPos <= containerMax) {
+        drawTick(ctx, highlightValue, highlightPos, containerWidth, containerHeight, isHorizontal, tickInterval, true);
+      }
+    }
+    
     // 强制绘制画布逻辑幅面末端刻度（maxValue，与 canvasWidth/canvasHeight 一致）
     const endPos = (maxValue * zoom) - scrollOffset;
     if (endPos >= 0 && endPos <= containerMax && !drawnValues.has(maxValue)) {

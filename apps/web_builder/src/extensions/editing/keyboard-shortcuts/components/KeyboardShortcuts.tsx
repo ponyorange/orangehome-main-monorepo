@@ -93,7 +93,12 @@ export const KeyboardShortcuts: React.FC = () => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const tag = target.tagName.toLowerCase();
+      // 输入类元素：原生输入框或 contentEditable
       if (tag === 'input' || tag === 'textarea' || target.isContentEditable) return;
+
+      // Monaco 编辑器容器检测：若事件来自 Monaco 编辑器内部 DOM，则跳过画布快捷键
+      const isInsideMonaco = !!target.closest('.monaco-schema-editor-container, .monaco-editor');
+      if (isInsideMonaco) return;
 
       const isCtrl = e.ctrlKey || e.metaKey;
       const amount = e.shiftKey ? 10 : 1;

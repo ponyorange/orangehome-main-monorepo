@@ -29,7 +29,6 @@ import {
 import { resolveHitSchemaTarget } from '../utils/resolveHitSchemaTarget';
 const RULER_SIZE = 24;
 const CANVAS_MARGIN = 200;
-const VERTICAL_OFFSET = 50;
 
 export const CenterCanvas: React.FC = () => {
   const { schema } = useSchemaStore();
@@ -166,6 +165,7 @@ export const CenterCanvas: React.FC = () => {
   /** 滚动区内 flex 行：用脚本写入 minWidth，避免 max(100%, px) 在嵌套 flex 下百分比基线异常 */
   const scrollContentRef = useRef<HTMLDivElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const rulerContainerRef = useRef<HTMLDivElement>(null);
 
   const { isDragOver, dropTargetId } = useCanvasDrop(canvasWrapperRef, zoom);
 
@@ -216,60 +216,91 @@ export const CenterCanvas: React.FC = () => {
 
   const [scrollX, setScrollX] = useState(0);
   const [scrollY, setScrollY] = useState(0);
-  /** 画布左缘在滚动内容中的像素位置，供横向标尺与 scrollLeft 对齐；由布局测量得到 */
-  const [canvasLeftOffset, setCanvasLeftOffset] = useState(0);
 
   const handleScroll = useCallback(() => {
     if (scrollRef.current) {
-      setScrollX(scrollRef.current.scrollLeft);
+      const newScrollLeft = scrollRef.current.scrollLeft;
+      setScrollX(newScrollLeft);
       setScrollY(scrollRef.current.scrollTop);
+
+      // 同步标尺容器的水平滚动
+      if (rulerContainerRef.current) {
+        rulerContainerRef.current.scrollLeft = newScrollLeft;
+      }
     }
   }, []);
 
-  // flex + justifyContent:center 居中；内容区宽度显式设为 max(视口宽, 画布宽)，不依赖 CSS max(100%,px) 的百分比解析。
-  // canvasLeftOffset：画布相对滚动容器的 offsetLeft，供 RulerX。
+  // 画布居中逻辑：使用 margin auto 实现真正的居中，无论内容是否溢出
   useLayoutEffect(() => {
     const scrollEl = scrollRef.current;
     const contentEl = scrollContentRef.current;
     if (!scrollEl || !contentEl) return undefined;
 
     const apply = () => {
-      const cw = scrollEl.clientWidth;
-      contentEl.style.minWidth = `${Math.max(cw, layoutVisualW)}px`;
-      const canvas = canvasWrapperRef.current;
-      if (!canvas) return;
-      const left = canvas.offsetLeft;
-      setCanvasLeftOffset(left);
-      // 重排后画布在文档中的水平位置会变，若保留旧的 scrollLeft，视口会切到错误片段，
-      // 表现为 SelectableContainer/手机框偏在一侧；刷新后 scrollLeft=0 故看起来「只有刷新才居中」。
-      const targetSl = left + layoutVisualW / 2 - cw / 2;
-      const maxSl = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
-      scrollEl.scrollLeft = Math.min(maxSl, Math.max(0, targetSl));
+      // 更新滚动状态供标尺使用
       setScrollX(scrollEl.scrollLeft);
+      setScrollY(scrollEl.scrollTop);
     };
 
-    let rafId: number | null = null;
-    const schedule = () => {
-      if (rafId != null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        apply();
-      });
-    };
-
+    // 初始应用
     apply();
 
+    // 监听滚动事件
+    const handleScroll = () => {
+      setScrollX(scrollEl.scrollLeft);
+      setScrollY(scrollEl.scrollTop);
+    };
+    scrollEl.addEventListener('scroll', handleScroll);
+
+    // 监听画布位置变化（ResizeObserver 观察内容区大小变化）
     const ro = new ResizeObserver(() => {
-      schedule();
+      apply();
     });
+    ro.observe(contentEl);
     ro.observe(scrollEl);
-    window.addEventListener('resize', schedule);
 
     return () => {
       ro.disconnect();
-      window.removeEventListener('resize', schedule);
-      if (rafId != null) cancelAnimationFrame(rafId);
-      contentEl.style.minWidth = '';
+      scrollEl.removeEventListener('scroll', handleScroll);
+    };
+  }, [zoom, layoutVisualW, layoutVisualH]);
+
+  // 单独的 effect：窗口大小变化时强制重新居中画布
+  useLayoutEffect(() => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const centerCanvas = () => {
+      const canvas = canvasWrapperRef.current;
+      if (!canvas) return;
+
+      const cw = scrollEl.clientWidth;
+      const ch = scrollEl.clientHeight;
+
+      // 计算目标 scrollLeft/Top：让画布在滚动容器的可视区域中居中
+      const targetScrollLeft = canvas.offsetLeft + layoutVisualW / 2 - cw / 2;
+      const targetScrollTop = canvas.offsetTop + layoutVisualH / 2 - ch / 2;
+
+      // 限制在有效滚动范围内
+      const maxScrollLeft = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
+      const maxScrollTop = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
+
+      scrollEl.scrollLeft = Math.min(maxScrollLeft, Math.max(0, targetScrollLeft));
+      scrollEl.scrollTop = Math.min(maxScrollTop, Math.max(0, targetScrollTop));
+    };
+
+    // 窗口大小变化时重新居中
+    const handleResize = () => {
+      // 使用 RAF 确保布局已完成
+      requestAnimationFrame(centerCanvas);
+    };
+
+    // 初始居中
+    centerCanvas();
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
     };
   }, [zoom, layoutVisualW, layoutVisualH]);
 
@@ -301,6 +332,15 @@ export const CenterCanvas: React.FC = () => {
 
   return (
     <SelectionContext.Provider value={selectionContextValue}>
+      {/* 全局样式：拖拽目标容器高亮 */}
+      <style>{`
+        [data-drop-target="true"] {
+          outline: 2px solid #1890ff !important;
+          outline-offset: -2px;
+          background-color: rgba(24, 144, 255, 0.08) !important;
+          transition: outline 0.15s ease, background-color 0.15s ease;
+        }
+      `}</style>
       <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -308,81 +348,6 @@ export const CenterCanvas: React.FC = () => {
         overflow: 'hidden',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)',
       }}>
-        {/* 顶部工具栏 */}
-        <header style={{
-          height: 48,
-          margin: '10px 12px 0',
-          border: '1px solid var(--theme-border-soft)',
-          background: 'rgba(255,255,255,0.56)',
-          backdropFilter: 'blur(var(--theme-backdrop-blur))',
-          borderRadius: 18,
-          boxShadow: 'var(--theme-shadow-sm)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 14px',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 12, color: 'var(--theme-text-secondary)', fontWeight: 600, letterSpacing: 0.2 }}>
-            画布: {EDITOR_CANVAS_WIDTH}x{EDITOR_CANVAS_HEIGHT}
-          </span>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '4px 6px',
-              borderRadius: 999,
-              background: 'rgba(255,255,255,0.72)',
-              border: '1px solid var(--theme-border-soft)',
-            }}
-          >
-            <Button
-              icon={<IconMinus />}
-              size="small"
-              theme="solid"
-              type="tertiary"
-              style={{
-                color: primaryColor,
-                backgroundColor: 'rgba(255,255,255,0.72)',
-                borderRadius: 999,
-                boxShadow: 'var(--theme-shadow-sm)',
-              }}
-              onClick={zoomOut}
-            />
-            <span style={{ fontSize: 12, color: 'var(--theme-text-primary)', fontWeight: 700, minWidth: 52, textAlign: 'center' }}>
-              {formatZoomPercent(zoom)}
-            </span>
-            <Button
-              icon={<IconPlus />}
-              size="small"
-              theme="solid"
-              type="tertiary"
-              style={{
-                color: primaryColor,
-                backgroundColor: 'rgba(255,255,255,0.72)',
-                borderRadius: 999,
-                boxShadow: 'var(--theme-shadow-sm)',
-              }}
-              onClick={zoomIn}
-            />
-            <Button
-              icon={<IconRefresh />}
-              size="small"
-              theme="solid"
-              type="tertiary"
-              style={{
-                color: primaryColor,
-                backgroundColor: 'rgba(255,255,255,0.72)',
-                borderRadius: 999,
-                boxShadow: 'var(--theme-shadow-sm)',
-              }}
-              onClick={resetZoom}
-            />
-          </div>
-        </header>
-
         {/* 主区域 */}
         <div style={{
           flex: 1,
@@ -396,20 +361,19 @@ export const CenterCanvas: React.FC = () => {
             flexDirection: 'column',
             flexShrink: 0,
             width: RULER_SIZE,
-            marginTop: 10,
           }}>
             <div style={{
               height: RULER_SIZE,
-              background: 'var(--theme-ruler-bg)',
-              borderRight: '1px solid var(--theme-border)',
-              borderBottom: '1px solid var(--theme-border)',
+              // background: 'var(--theme-ruler-bg)',
+              // borderRight: '1px solid var(--theme-border)',
+              // borderBottom: '1px solid var(--theme-border)',
               flexShrink: 0,
             }} />
-            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ flex: 1, overflow: 'hidden', position: 'relative', marginTop: 20 }}>
               <RulerY
                 canvasHeight={EDITOR_CANVAS_HEIGHT}
                 zoom={zoom * EDITOR_VIEWPORT_SCALE}
-                scrollY={scrollY - VERTICAL_OFFSET}
+                scrollY={scrollY}
               />
             </div>
           </aside>
@@ -420,17 +384,49 @@ export const CenterCanvas: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            marginTop: 10,
             marginRight: 12,
             marginBottom: 12,
           }}>
-            {/* 标尺 */}
-            <div style={{ flexShrink: 0, height: RULER_SIZE, overflow: 'hidden', borderTopRightRadius: 14 }}>
-              <RulerX
-                canvasWidth={EDITOR_CANVAS_WIDTH}
-                zoom={zoom * EDITOR_VIEWPORT_SCALE}
-                scrollX={scrollX - canvasLeftOffset}
-              />
+            {/* 标尺 - 与下方滚动区域同步水平滚动 */}
+            <div
+              ref={rulerContainerRef}
+              style={{
+                flexShrink: 0,
+                height: RULER_SIZE,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                borderTopRightRadius: 14,
+                position: 'relative',
+                scrollbarWidth: 'none', // Firefox
+                msOverflowStyle: 'none', // IE/Edge
+              }}
+            >
+              {/* 隐藏滚动条样式 */}
+              <style>{`
+                div[ref="${rulerContainerRef}"]::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              {/* 标尺内部容器，与滚动内容宽度和结构一致 */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxSizing: 'border-box',
+                  paddingLeft: CANVAS_MARGIN,
+                  paddingRight: CANVAS_MARGIN,
+                  minWidth: layoutVisualW + CANVAS_MARGIN * 2,
+                  height: '100%',
+                }}
+              >
+                <div style={{ width: layoutVisualW, marginLeft: 'auto', marginRight: 'auto', marginTop: 0, marginBottom: 0, height: '100%' }}>
+                  <RulerX
+                    canvasWidth={EDITOR_CANVAS_WIDTH}
+                    zoom={zoom * EDITOR_VIEWPORT_SCALE}
+                    scrollX={scrollX}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 画布滚动区域 - 灰色背景 */}
@@ -451,15 +447,15 @@ export const CenterCanvas: React.FC = () => {
                 ref={scrollContentRef}
                 style={{
                   display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
+                  flexDirection: 'column',
                   boxSizing: 'border-box',
-                  paddingTop: VERTICAL_OFFSET,
+                  paddingTop: 0,
                   paddingBottom: CANVAS_MARGIN,
-                  minHeight: VERTICAL_OFFSET + layoutVisualH + CANVAS_MARGIN,
+                  minWidth: layoutVisualW + CANVAS_MARGIN * 2,
+                  minHeight: layoutVisualH + CANVAS_MARGIN,
                 }}
               >
-                {/* 画布区域：外层占位为视觉尺寸，内层逻辑尺寸 + scale 保持 schema 按 750 幅面排版 */}
+                {/* 画布区域：使用 margin auto 实现真正的居中，无论窗口大小 */}
                 <div
                   ref={canvasWrapperRef}
                   data-canvas-area="true"
@@ -467,6 +463,10 @@ export const CenterCanvas: React.FC = () => {
                     position: 'relative',
                     width: layoutVisualW,
                     height: layoutVisualH,
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    marginTop: 20,
+                    marginBottom: 0,
                     flexShrink: 0,
                     filter: isDragOver ? 'drop-shadow(0 0 18px var(--theme-primary-light))' : 'none',
                   }}
@@ -525,6 +525,68 @@ export const CenterCanvas: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* 悬浮缩放控制条 - 右下角 */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                right: 20,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 10px',
+                borderRadius: 999,
+                background: 'rgba(255,255,255,0.88)',
+                border: '1px solid var(--theme-border-soft)',
+                boxShadow: 'var(--theme-shadow-sm)',
+                zIndex: 100,
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <Button
+                icon={<IconMinus />}
+                size="small"
+                theme="solid"
+                type="tertiary"
+                style={{
+                  color: 'var(--theme-primary)',
+                  backgroundColor: 'rgba(255,255,255,0.72)',
+                  borderRadius: 999,
+                  boxShadow: 'var(--theme-shadow-sm)',
+                }}
+                onClick={zoomOut}
+              />
+              <span style={{ fontSize: 12, color: 'var(--theme-text-primary)', fontWeight: 700, minWidth: 48, textAlign: 'center' }}>
+                {formatZoomPercent(zoom)}
+              </span>
+              <Button
+                icon={<IconPlus />}
+                size="small"
+                theme="solid"
+                type="tertiary"
+                style={{
+                  color: 'var(--theme-primary)',
+                  backgroundColor: 'rgba(255,255,255,0.72)',
+                  borderRadius: 999,
+                  boxShadow: 'var(--theme-shadow-sm)',
+                }}
+                onClick={zoomIn}
+              />
+              <Button
+                icon={<IconRefresh />}
+                size="small"
+                theme="solid"
+                type="tertiary"
+                style={{
+                  color: 'var(--theme-primary)',
+                  backgroundColor: 'rgba(255,255,255,0.72)',
+                  borderRadius: 999,
+                  boxShadow: 'var(--theme-shadow-sm)',
+                }}
+                onClick={resetZoom}
+              />
             </div>
           </div>
 

@@ -65,10 +65,54 @@ export function useCanvasDrop(
       if (data.type !== 'add-component') return;
 
       const idPrefix = data.componentType.toLowerCase().replace(/\W/g, '') || 'node';
-      const newSchema: ISchema = withDefaultFloatingLayerStyleForNewNode({
+
+      // 找到目标容器并计算落点坐标
+      const targetId = findDropTarget(clientX, clientY, schemaRef.current);
+      const targetNode = findById(schemaRef.current, targetId);
+
+      // 计算鼠标相对于目标容器的位置（逻辑坐标）
+      let positionX = 0;
+      let positionY = 0;
+
+      if (targetNode) {
+        // 获取目标容器的DOM元素
+        const canvasEl = canvasRef.current;
+        if (canvasEl) {
+          // 查找目标容器对应的DOM元素
+          let targetEl: Element | null = null;
+          try {
+            targetEl = canvasEl.querySelector(`[id="${CSS.escape(targetId)}"]`);
+          } catch {
+            targetEl = null;
+          }
+
+          if (targetEl) {
+            const targetRect = targetEl.getBoundingClientRect();
+            // 计算鼠标相对于目标容器左上角的偏移
+            const relativeX = clientX - targetRect.left;
+            const relativeY = clientY - targetRect.top;
+            // 转换视觉坐标到逻辑坐标（考虑画布缩放）
+            positionX = relativeX / _zoom;
+            positionY = relativeY / _zoom;
+          }
+        }
+      }
+
+      // 创建新组件，设置 style.top/left 而非 position.x/y
+      const newSchemaBase: ISchema = {
         ...data.defaultSchema,
         id: generateIdWithPrefix(idPrefix),
-      });
+      };
+      // 先应用默认浮动样式，然后覆盖top/left
+      const withDefaults = withDefaultFloatingLayerStyleForNewNode(newSchemaBase);
+      const newSchema: ISchema = {
+        ...withDefaults,
+        style: {
+          ...withDefaults.style,
+          top: Math.round(positionY),
+          left: Math.round(positionX),
+        },
+      };
 
       const bundleUrl = useMaterialBundleStore.getState().bundles[newSchema.type];
       remoteComponentDebug('useCanvasDrop: 拖入节点', {
@@ -77,9 +121,10 @@ export function useCanvasDrop(
         schemaId: newSchema.id,
         schemaName: newSchema.name,
         bundleUrlInStore: bundleUrl ?? '(无 — 将导致 SchemaNode 未知组件)',
+        dropPosition: { x: positionX, y: positionY },
+        targetContainer: targetId,
       });
 
-      const targetId = findDropTarget(clientX, clientY, schemaRef.current);
       const updated = addChild(schemaRef.current, targetId, newSchema);
       setSchema(updated);
       const addedId = newSchema.id;
@@ -90,7 +135,7 @@ export function useCanvasDrop(
       });
       onComponentAdded?.(addedId);
     },
-    [setSchema, onComponentAdded],
+    [setSchema, onComponentAdded, _zoom, canvasRef],
   );
 
   useEffect(() => {
