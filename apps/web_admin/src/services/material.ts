@@ -78,9 +78,15 @@ export const materialApi = {
    * 获取预签名上传 URL（PUT 直传 MinIO，创建版本时使用返回的 objectKey）
    */
   async getPresignedUploadUrl(body: PresignedUploadBody): Promise<PresignedUploadResponse> {
+    const { materialId, version, filename, bundle } = body;
     return request<PresignedUploadResponse>(API_ENDPOINTS.MATERIAL.PRESIGNED_UPLOAD, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        materialId,
+        version,
+        ...(filename !== undefined ? { filename } : {}),
+        ...(bundle !== undefined ? { bundle } : {}),
+      }),
     });
   },
 };

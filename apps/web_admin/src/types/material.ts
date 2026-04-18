@@ -109,4 +109,6 @@ export interface PresignedUploadBody {
   materialId: string;
   version: string;
   filename?: string;
+  /** 产物类型：browser=运行时包；ssr=Node CJS SSR 包（与 core PresignedUploadBodyDto 一致） */
+  bundle?: 'browser' | 'ssr';
 }
