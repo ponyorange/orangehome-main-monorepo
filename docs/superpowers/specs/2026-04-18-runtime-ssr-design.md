@@ -2,7 +2,7 @@
 
 **日期**：2026-04-18  
 **状态**：已确认路由策略（见 §2.1）  
-**范围**：在现有 SSG/CSR（`/orangehome/runtime/:type/:pageid`）之外，新增服务端渲染 HTML + 客户端水合；涉及 `orangehome-core-service`、`orangehome-materials`、`server_bside`、`server_cside`、`web_builder`。
+**范围**：在现有 SSG/CSR（`/orangehome/runtime/:type/:pageid`）之外，新增服务端渲染 HTML + 客户端水合；涉及 `orangehome-core-service`、`orangehome-materials`（含 **`@orangehome/material-cli`**）、`server_bside`、`server_cside`、`web_builder`、**`web_admin`**（物料版本管理）。
 
 ---
 
@@ -72,7 +72,17 @@
 
 ### 4.3 上传与写库
 
-- CI 上传两个对象；调用 core / BFF 创建或更新物料版本时 **同时写入** `file*` 与 `ssr*`。
+- **CI / 流水线**：构建 browser + SSR 两个产物后，分别走预签名上传，再在 **同一物料版本** 上写入 `file*` 与 `ssr*`（与 CLI `publish` 行为一致）。
+- 调用 core / BFF 创建或更新物料版本时 **同时写入** `file*` 与 `ssr*`（允许分两次 PATCH，但 **`ohm publish` 默认原子语义**：两次上传都成功后才 `upsert`，见 §4.4）。
+
+### 4.4 物料 CLI（`@orangehome/material-cli`）
+
+与现网一致：`publish` 在包根目录执行 `runPackageBuild`，上传 `dist/index.js`，再 `PUT /versions/by-uid`。扩展如下：
+
+1. **二次构建**：在 browser 构建成功后执行 **SSR 构建**（例如根目录脚本 `build:ssr` 或 CLI 内调 Vite 第二配置），产出路径约定为例如 **`dist-ssr/index.cjs`**（具体文件名在实现时固定并写入文档）。若缺少该文件则 **`publish` 失败**（可加 `--skip-ssr` 仅用于本地调试，**默认关闭**）。
+2. **预签名上传**：在 `presignedUploadDistBundle` 基础上泛化为 **按产物类型上传**（或并列 `presignedUploadSsrBundle`）。请求 `POST /materials/upload/presigned` 的 body 增加字段，例如 **`bundle: 'browser' | 'ssr'`**（或 `artifactKind`），服务端为 SSR 生成 **独立 objectKey**（路径与 browser 区分，避免覆盖）。`Content-Type` 仍可用 `application/javascript` 或与存储约定一致。
+3. **写库**：扩展 **`UpsertMaterialVersionByUidDto`**（及 CLI 侧 TS 类型）：在现有 `fileObjectKey`、`md5` 之外增加 **`ssrFileObjectKey`**（命名与 core 一致）、可选 **`ssrMd5`**（与 browser md5 对称，便于校验）。一次 `publish` 顺序建议：**browser 上传 → SSR 上传 → 单次 upsert 携带两个 key**（减少半成功状态）。
+4. **兼容性**：旧包未配置 SSR 构建前，维护者需先升级模板/脚本；CLI 在缺少 `build:ssr` 时给出明确错误指引。
 
 ---
 
@@ -108,19 +118,35 @@
 
 ## 6. BFF（server_bside）
 
-- 管理端「创建/更新物料版本」「发布/构建回调」等 API：**扩展 `ssr_file_url` / `ssr_file_object_key`**，校验与存储。
-- 与 core gRPC 字段一一映射；权限与审计与现物料上传一致。
+- 管理端「创建/更新物料版本」「CLI upsert」等 API：**扩展 `ssrFileObjectKey` / `ssrFileUrl`（HTTP JSON 可与前端约定驼峰，OpenAPI 文档中注明与 `ssr_url` 业务含义一致）**，校验与存储。
+- **`POST /materials/upload/presigned`**（或当前等价路由）：请求体在现有 `materialId`、`version`、`filename` 基础上增加 **`bundle`**（或 `artifactKind`：`browser` | `ssr`），生成 **不同的存储 key**；权限与审计与现网一致。
+- `CreateMaterialVersionDto` / `UpdateMaterialVersionDto` / `UpsertMaterialVersionByUidDto`：**可选或必选** `ssrFileObjectKey` 由产品规则决定——**首版建议创建版本时与 CLI 一致：browser 与 SSR 均提供**；更新版本（开发中）允许仅补传 SSR（`ssrFileObjectKey` 单独 PATCH）。
+- 与 core gRPC / Mongo 字段一一映射。
 
 ---
 
-## 7. 编辑器（web_builder）
+## 7. 管理后台（`web_admin`）
+
+目标：运营/研发在 **物料版本管理** 中与浏览器 JS **并列**维护 SSR 产物，无需强依赖 CLI。
+
+1. **类型与服务**：`src/types/materialVersion.ts` 中 `MaterialVersion` 增加 `ssrFileObjectKey?`、`ssrFileUrl?`；`CreateMaterialVersionParams` / `UpdateMaterialVersionParams` 增加可选 **`ssrFileObjectKey`**（与创建/更新 DTO 对齐）。`materialApi.getPresignedUploadUrl`（或当前封装）增加 **`bundle: 'browser' | 'ssr'`** 参数并传给 BFF。
+2. **页面**：`src/containers/MaterialVersions/index.tsx`  
+   - 在现有「运行时 JS」上传之外，增加 **「SSR 产物（CJS）」** 上传区（Semi `Upload` + `customRequest`），流程与 `handleJsUpload` 相同：先取预签名，再 `PUT` 到对象存储，本地 state 保存 **`ssrFileObjectKey`**。  
+   - **创建版本**：校验逻辑扩展——除 `fileObjectKey` 外，首版可要求 **`ssrFileObjectKey` 必填**（与 CLI 默认严格模式一致），或分阶段先可选、SSR 预览页 502 提示补传（产品二选一，**推荐与 CLI 一致：新建双产物必填**）。  
+   - **编辑版本**（仅开发中）：支持仅替换 SSR 文件（`fileReplaced` 模式对称增加 `ssrFileReplaced`），`update` body 带上 `ssrFileObjectKey`。  
+   - **列表**：新增列展示 SSR（`ssrFileUrl` 链接或「未配置」Tag），便于排查 runtime-ssr 502。
+3. **与 CLI 一致**：同一套预签名与 DTO，避免 admin 与 CLI 写入字段不一致。
+
+---
+
+## 8. 编辑器（web_builder）
 
 - 新增环境变量，例如 `VITE_RUNTIME_PREVIEW_SSR_URL_TEMPLATE`，默认形态：`{base}/orangehome/runtime-ssr/preview/{pageId}`。
 - 预览/分享：可在产品层提供「SSG 预览 / SSR 预览」切换或并行入口（实现阶段再定交互）。
 
 ---
 
-## 8. 测试与验收
+## 9. 测试与验收
 
 - **单测**：`RuntimeSsrService` 对 501 分支、缺 SSR URL 的 502、schema 404。
 - **集成**：mock core 返回带 `ssrFileUrl` 的物料；快照或字符串包含关键 SSR 标记。
@@ -128,35 +154,37 @@
 
 ---
 
-## 9. 跨仓库实施顺序
+## 10. 跨仓库实施顺序
 
-1. **core-service**：schema + proto + gRPC 映射 + 必要 DTO。  
-2. **orangehome-materials**：CJS SSR 构建与上传写 `ssr*`。  
-3. **server_bside**：管理端 API。  
-4. **server_cside**：路由 + SSR 管线 + EJS 模板（或复用模板插槽）。  
-5. **web_builder**：预览 URL 配置与文档。
+1. **core-service**：schema + proto + gRPC 映射 + HTTP DTO（若版本 API 在 core 暴露）。  
+2. **server_bside**：预签名 body 扩展、`Create`/`Update`/`Upsert` DTO 与 core 同步。  
+3. **orangehome-materials**：各包 **SSR 构建脚本与产物路径**；**`material-cli`**：`publish` 双上传 + upsert 带 `ssrFileObjectKey`。  
+4. **web_admin**：类型、预签名参数、`MaterialVersions` 双上传与列表列。  
+5. **server_cside**：路由 + SSR 管线 + 模板。  
+6. **web_builder**：预览 SSR URL 配置与文档。
 
 ---
 
-## 10. 子 Agent 分工（与实现对齐）
+## 11. 子 Agent 分工（与实现对齐）
 
-| 子 Agent | 仓库 | 交付物 |
-|----------|------|--------|
+| 子 Agent | 仓库 / 路径 | 交付物 |
+|----------|-------------|--------|
 | core-service | `orangehome-core-service` | `material_versions` 字段、`MaterialVersionMessage`、读写与列表 |
-| orangehome-materials | `orangehome-materials` | 双产物构建、上传、导出约定 |
-| orangehome-server-bside | `main-monorepo/apps/server_bside` | BFF 字段与校验 |
+| orangehome-materials | `orangehome-materials` | 模板/组件 **双构建**、CI；**`packages/@orangehome/material-cli`**：`publish`、预签名、DTO |
+| orangehome-server-bside | `main-monorepo/apps/server_bside` | 预签名 `bundle`、版本 CRUD / upsert 的 `ssr*` 字段 |
+| orangehome-web-admin | `main-monorepo/apps/web_admin` | 物料版本 **SSR 上传**、列表展示、创建/更新入参 |
 | server_cside | `main-monorepo/apps/server_cside` | `runtime-ssr` 路由、SSR 服务、模板 |
 | orangehome-web-builder | `main-monorepo/apps/web_builder` | 预览 SSR URL 模板 |
 | team-lead | 跨仓库 | 契约冻结、联调顺序、发布与回滚 |
 
 ---
 
-## 11. 自检
+## 12. 自检
 
 - **占位符**：无 TBD；501 范围与字段命名已写明。  
-- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明。  
+- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明；**CLI / web_admin / BFF 预签名契约一致**（§4.4、§6、§7）。  
 - **范围**：首版仅 preview SSR；release/dev 明确 501。  
-- **歧义**：降级 CSR 默认为关；若开启需在实现中单独立项。
+- **歧义**：降级 CSR 默认为关；若开启需在实现中单独立项。**新建版本是否强制双产物**：文档推荐与 CLI 默认一致，若产品改为「SSR 可选」须在 §7 与验收标准中显式修改。
 
 ---
 
