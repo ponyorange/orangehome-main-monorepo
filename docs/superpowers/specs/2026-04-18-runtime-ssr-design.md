@@ -17,6 +17,11 @@
 - **PR 约定**：各仓向默认分支提 PR 时，**源分支统一为 `feat/ssr_support`**，便于按分支名筛选、联调与审计。
 - **team-lead / 编排**：合并顺序仍按 §10，但**禁止**在本需求未结束前在各仓改用不一致的功能分支名（避免遗漏同步与重复解决冲突）。
 
+### 0.1 包管理与 monorepo 工具链
+
+- **`orangehome-main-monorepo`**：使用 **Rush**（根目录 `rush.json`），安装与解析依赖由 Rush 调度的 **pnpm** 完成（版本见 `rush.json` 的 `pnpmVersion`）。常规操作：在仓库根执行 **`rush update`**；在某一 Rush 项目目录内跑脚本优先使用 **`rushx <script>`**（与该项目 `package.json` 的 scripts 对应，由 Rush 注入环境）。全仓构建/测试可按需使用 **`rush build`** / **`rush test`** 及 `-t` / `--to` 等参数（以仓库内 Rush 文档为准）。**不要**在主仓文档或脚本示例中默认写成根目录无 Rush 的裸 `npm install`。
+- **其他独立 Git 仓库**（如 `orangehome-core-service`、`orangehome-materials`）：统一使用 **pnpm**（`pnpm install`、`pnpm run …`、`pnpm exec …`）。新建或维护脚本、CI、实现计划时以 pnpm 为准；仅当某第三方工具强制要求时再使用 npm。
+
 ---
 
 ## 1. 背景与现状
@@ -195,7 +200,7 @@
 ## 12. 自检
 
 - **占位符**：无 TBD；501 范围与字段命名已写明。  
-- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明；**CLI / web_admin / BFF 预签名契约一致**（§4.4、§6、§7）；**Git 分支与 §0 一致**。  
+- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明；**CLI / web_admin / BFF 预签名契约一致**（§4.4、§6、§7）；**Git 分支与 §0 一致**；**主仓 Rush + pnpm 与其它仓 pnpm 与 §0.1 一致**。  
 - **范围**：首版仅 preview SSR；release/dev 明确 501。  
 - **歧义**：降级 CSR 默认为关；若开启需在实现中单独立项。**新建版本是否强制双产物**：文档推荐与 CLI 默认一致，若产品改为「SSR 可选」须在 §7 与验收标准中显式修改。
 

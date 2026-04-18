@@ -8,6 +8,8 @@
 
 **Tech Stack:** NestJS、MongoDB/Mongoose、gRPC + `core.proto`、MinIO 预签名、Vite（物料 CJS SSR 构建）、React 18、`react-dom/server`、`@douyinfe/semi-ui`（web_admin）。
 
+**包管理：** **`orangehome-main-monorepo` 使用 Rush + pnpm**（见根目录 `rush.json`）：依赖变更后根目录执行 `rush update`；子项目内跑脚本用 **`rushx <script>`**。**`orangehome-core-service`、`orangehome-materials` 等独立仓使用 pnpm**。计划正文中的 `npm …` 示例均已改为上述约定；历史提交若仍含 `npm`，新工作以本段为准。
+
 ---
 
 ## 文件与职责总览（实施前锁定）
@@ -56,7 +58,7 @@
 | `packages/@orangehome/material-cli/src/publish/upload-runtime.ts` | `presignedUploadBundle(..., bundle)` 或并列函数 |
 | `packages/@orangehome/material-cli/src/api/material-version.ts` | DTO 增加 `ssrFileObjectKey`、`ssrMd5?` |
 | `packages/@orangehome/material-cli/src/commands/publish.ts` | `build:ssr`、第二次上传、单次 upsert |
-| `packages/@orangehome/material-cli/src/publish/run-build.ts`（或新建） | 调用 `npm run build:ssr` |
+| `packages/@orangehome/material-cli/src/publish/run-build.ts`（或新建） | 调用 `pnpm run build:ssr`（有 `pnpm-lock.yaml` 时；否则 CLI 可回退 npm） |
 | `templates/component/vite.config.ts`（及 `plugins/runtime/vite.config.ts`） | 增加 **SSR CJS** 构建配置或 `vite.ssr.config.ts` |
 | 各 `components/*/package.json` | 增加 `"build:ssr": "vite build --config vite.ssr.config.ts"`（路径以实际模板为准） |
 
@@ -524,7 +526,7 @@ Run:
 
 ```bash
 cd /Users/orange/Desktop/code/orangehome/orangehome-core-service
-npx jest src/material/services/material-version.service.spec.ts --no-cache
+pnpm exec jest src/material/services/material-version.service.spec.ts --no-cache
 ```
 
 Expected: `PASS`、1 test。
@@ -655,7 +657,7 @@ git commit -m "feat(material-cli): presign bundle and upsert SSR keys"
 - Modify: `orangehome-materials/packages/@orangehome/material-cli/src/commands/publish.ts`
 - Modify: `orangehome-materials/packages/@orangehome/material-cli/src/publish/run-build.ts`（若当前无 `build:ssr` 调用能力则扩展）
 
-- [ ] **Step 1: 在 `runPackageBuild(root)` 之后**执行 `npm run build:ssr`（`execSync` 或 `spawn`），失败则抛错并提示配置 `build:ssr`。
+- [ ] **Step 1: 在 `runPackageBuild(root)` 之后**执行 **`pnpm run build:ssr`**（物料仓以 pnpm 为准；实现已可用 `findPackageManager` 在仅有 `package-lock.json` 时回退 `npm run build:ssr`），失败则抛错并提示配置 `build:ssr`。
 
 - [ ] **Step 2: 上传 `dist/index.js` 后**，再上传 `dist-ssr/index.cjs`（`presignedUploadDistBundle` 指定 `filename: 'index.cjs'`、`bundle: 'ssr'`）。
 
@@ -734,11 +736,14 @@ git commit -m "feat(web_admin): material version SSR upload UI"
 
 - [ ] **Step 1: 安装 React（版本与 `runtime-page.ejs` 中脚本一致，例如 18）**
 
+Rush 主仓：**编辑** `apps/server_cside/package.json` 的 `dependencies` / `devDependencies` 加入 `react@18`、`react-dom@18` 及 `@types/react`、`@types/react-dom`，然后在 **monorepo 根目录**执行：
+
 ```bash
-cd /Users/orange/Desktop/code/orangehome/orangehome-main-monorepo/apps/server_cside
-npm install react@18 react-dom@18
-npm install -D @types/react @types/react-dom
+cd /Users/orange/Desktop/code/orangehome/orangehome-main-monorepo
+rush update
 ```
+
+（不在主仓根对单包使用裸 `npm install`，以免与 Rush/pnpm 锁不一致。）
 
 - [ ] **Step 2: 在 `runtime-ssr.service.ts` 中实现 `buildComponentsSsrMap`**：逻辑镜像 `RuntimeService.buildComponentsMapWithMaterialVersionStatus`，但从 `row.latestVersion` 读取 `unwrapString(row.latestVersion.ssrFileUrl)` 与 `ssrFileObjectKey`，优先 URL，否则用与 runtime 相同的 fileKey → URL 拼接规则（提取公共函数避免重复硬编码 IP）。
 
@@ -850,10 +855,10 @@ describe('RuntimeSsrService', () => {
 
 ```bash
 cd /Users/orange/Desktop/code/orangehome/orangehome-main-monorepo/apps/server_cside
-npm test -- --testPathPattern=runtime-ssr.service.spec
+rushx test -- --testPathPattern=runtime-ssr.service.spec
 ```
 
-Expected: `PASS`。
+Expected: `PASS`。（若 `rushx` 未在 PATH，可在 monorepo 根执行 `node common/scripts/install-run-rush.js` 或使用文档中的 Rush 推荐方式调用。）
 
 - [ ] **Step 3: Commit**
 
