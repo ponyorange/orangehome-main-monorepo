@@ -6,6 +6,19 @@
 
 ---
 
+## 0. 跨仓库 Git 分支约定（本需求）
+
+- **统一分支名**：`feat/ssr_support`。凡本需求涉及的子 Agent / 开发者在**各独立 Git 仓库**中开发时，**从默认分支（如 `main`）检出并始终使用该分支**，直至需求结束（合并入主线、发布完成或项目方宣告收尾）。
+- **工作区内典型仓库**（需在各自目录分别建同名分支）：
+  - `orangehome-core-service`
+  - `orangehome-materials`
+  - `orangehome-main-monorepo`（单仓内覆盖 `server_bside`、`server_cside`、`web_admin`、`web_builder`、与 core 同步的 `proto` 等所有本需求改动）
+- **操作示例**（每仓库根目录执行一次）：`git fetch origin && git checkout main && git pull && git checkout -b feat/ssr_support`（若分支已存在则 `git checkout feat/ssr_support` 并拉齐远端）。
+- **PR 约定**：各仓向默认分支提 PR 时，**源分支统一为 `feat/ssr_support`**，便于按分支名筛选、联调与审计。
+- **team-lead / 编排**：合并顺序仍按 §10，但**禁止**在本需求未结束前在各仓改用不一致的功能分支名（避免遗漏同步与重复解决冲突）。
+
+---
+
 ## 1. 背景与现状
 
 - **当前**：`server_cside` 通过 gRPC 从 core 拉取页面 schema 与物料 **浏览器脚本 URL**（`componentsAmdMap`），EJS 输出 HTML；`#app` 为空，由浏览器加载 AMD/React 后 CSR 挂载。
@@ -175,14 +188,14 @@
 | orangehome-web-admin | `main-monorepo/apps/web_admin` | 物料版本 **SSR 上传**、列表展示、创建/更新入参 |
 | server_cside | `main-monorepo/apps/server_cside` | `runtime-ssr` 路由、SSR 服务、模板 |
 | orangehome-web-builder | `main-monorepo/apps/web_builder` | 预览 SSR URL 模板 |
-| team-lead | 跨仓库 | 契约冻结、联调顺序、发布与回滚 |
+| team-lead | 跨仓库 | 契约冻结、联调顺序、发布与回滚；**监督各仓库统一使用 `feat/ssr_support`** |
 
 ---
 
 ## 12. 自检
 
 - **占位符**：无 TBD；501 范围与字段命名已写明。  
-- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明；**CLI / web_admin / BFF 预签名契约一致**（§4.4、§6、§7）。  
+- **一致性**：路由 B 与 §2.1、§5.1 一致；`ssr_url` 与 `ssrFileUrl` 映射已说明；**CLI / web_admin / BFF 预签名契约一致**（§4.4、§6、§7）；**Git 分支与 §0 一致**。  
 - **范围**：首版仅 preview SSR；release/dev 明确 501。  
 - **歧义**：降级 CSR 默认为关；若开启需在实现中单独立项。**新建版本是否强制双产物**：文档推荐与 CLI 默认一致，若产品改为「SSR 可选」须在 §7 与验收标准中显式修改。
 
