@@ -9,6 +9,11 @@ import * as ejs from 'ejs';
 import { join } from 'path';
 import { CoreGrpcClientService } from '../core-grpc/core-grpc-client.service';
 import { unwrapString } from '../core-grpc/grpc-value.util';
+import {
+  assertHttpOrHttpsMaterialUrl,
+  urlFromOrangehomeMaterialObjectKey,
+} from './material-cdn-url.util';
+import { parsePageSchemaJson, unwrapPageSchemaRoot } from './page-schema.util';
 import { collectMaterialUids } from './schema-material.util';
 import type { RuntimeType } from './dto/runtime-params.dto';
 import {
@@ -47,7 +52,7 @@ export class RuntimeService {
       const lang = (langQuery?.trim() || 'zh-CN') as string;
 
       const parsed = await this.resolvePageSchemaByRuntimeType(type, pageid);
-      const schema = this.unwrapPageSchemaRoot(parsed);
+      const schema = unwrapPageSchemaRoot(parsed);
 
       this.logger.log({
         msg: 'runtime.materials.schemaShape',
@@ -119,31 +124,6 @@ export class RuntimeService {
     }
   }
 
-  private parsePageSchemaJson(raw: unknown): unknown {
-    const s = typeof raw === 'string' ? raw : '';
-    if (!s.trim()) return {};
-    try {
-      return JSON.parse(s) as unknown;
-    } catch {
-      throw new BadGatewayException('Invalid page schema');
-    }
-  }
-
-  /**
-   * core 存盘常见为 `{ "schema": { "id", "type", "children", ... } }`；
-   * 注入前端的 ORANGEHOME_DATA 应为 `{ schema: <根节点> }`，故取内层根节点。
-   */
-  private unwrapPageSchemaRoot(parsed: unknown): unknown {
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const o = parsed as Record<string, unknown>;
-      const inner = o.schema;
-      if (inner !== null && inner !== undefined && typeof inner === 'object') {
-        return inner;
-      }
-    }
-    return parsed;
-  }
-
   /** 仅用于日志：解析结果顶层键、是否使用 `{ schema: ... }` 解包、根节点 type、子节点 type 抽样 */
   private schemaShapeForLog(parsed: unknown, root: unknown): {
     parsedTopKeys: string[];
@@ -201,19 +181,7 @@ export class RuntimeService {
     if (!hit) {
       throw new NotFoundException('No page version available');
     }
-    return this.parsePageSchemaJson(hit.pageSchemaJson);
-  }
-
-  private assertScriptUrl(url: string): void {
-    try {
-      const u = new URL(url);
-      if (u.protocol !== 'http:' && u.protocol !== 'https:') {
-        throw new BadGatewayException('Invalid material URL scheme');
-      }
-    } catch (e) {
-      if (e instanceof BadGatewayException) throw e;
-      throw new BadGatewayException('Invalid material URL');
-    }
+    return parsePageSchemaJson(hit.pageSchemaJson);
   }
 
   /** MaterialService.getMaterialsWithLatestVersion，`versionStatus` 为允许的状态集合 */
@@ -267,12 +235,12 @@ export class RuntimeService {
       const fileKey = unwrapString(row.latestVersion.fileObjectKey);
       let url = unwrapString(row.latestVersion.fileUrl);
       if (fileKey?.trim()) {
-        url = `http://8.148.251.221:6011/orangehome/${fileKey}`;
+        url = urlFromOrangehomeMaterialObjectKey(fileKey);
       }
       if (!url?.trim()) {
         throw new BadGatewayException(`Empty material URL for ${uid}`);
       }
-      this.assertScriptUrl(url);
+      assertHttpOrHttpsMaterialUrl(url);
       map[uid] = url;
     }
 
