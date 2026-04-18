@@ -8,11 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as ejs from 'ejs';
 import { join } from 'path';
 import { CoreGrpcClientService } from '../core-grpc/core-grpc-client.service';
-import { unwrapString } from '../core-grpc/grpc-value.util';
-import {
-  assertHttpOrHttpsMaterialUrl,
-  urlFromOrangehomeMaterialObjectKey,
-} from './material-cdn-url.util';
+import { buildComponentsAmdMapFromRows } from './components-amd-map.util';
 import { parsePageSchemaJson, unwrapPageSchemaRoot } from './page-schema.util';
 import { collectMaterialUids } from './schema-material.util';
 import type { RuntimeType } from './dto/runtime-params.dto';
@@ -218,32 +214,6 @@ export class RuntimeService {
         .filter((x: unknown): x is string => typeof x === 'string'),
     });
 
-    const byUid = new Map<string, any>();
-    for (const row of rows) {
-      const uid = row?.material?.materialUid;
-      if (typeof uid === 'string') byUid.set(uid, row);
-    }
-
-    const statusHint = versionStatuses.join(',');
-    for (const uid of uids) {
-      const row = byUid.get(uid);
-      if (!row?.latestVersion) {
-        throw new BadGatewayException(
-          `No material version for ${uid} (allowed versionStatus=[${statusHint}])`,
-        );
-      }
-      const fileKey = unwrapString(row.latestVersion.fileObjectKey);
-      let url = unwrapString(row.latestVersion.fileUrl);
-      if (fileKey?.trim()) {
-        url = urlFromOrangehomeMaterialObjectKey(fileKey);
-      }
-      if (!url?.trim()) {
-        throw new BadGatewayException(`Empty material URL for ${uid}`);
-      }
-      assertHttpOrHttpsMaterialUrl(url);
-      map[uid] = url;
-    }
-
-    return map;
+    return buildComponentsAmdMapFromRows(uids, rows, versionStatuses);
   }
 }

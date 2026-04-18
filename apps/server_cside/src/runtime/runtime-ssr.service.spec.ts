@@ -92,7 +92,8 @@ describe('RuntimeSsrService', () => {
         {
           material: { materialUid: 'u1' },
           latestVersion: {
-            ssrFileUrl: 'http://example.com/ssr.js',
+            fileUrl: 'http://example.com/amd.js',
+            ssrFileUrl: 'http://example.com/ssr.cjs',
           },
         },
       ],
@@ -103,5 +104,11 @@ describe('RuntimeSsrService', () => {
     expect(out.html).toContain('ssr-ok');
     expect(out.cacheControl).toBe('private, no-store');
     expect(ejs.renderFile).toHaveBeenCalled();
+    const renderData = (ejs.renderFile as jest.Mock).mock.calls[0][1] as {
+      componentsAmdMap: Record<string, string>;
+    };
+    expect(renderData.componentsAmdMap).toEqual({
+      u1: 'http://example.com/amd.js',
+    });
   });
 });

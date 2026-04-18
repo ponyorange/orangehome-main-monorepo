@@ -9,7 +9,7 @@
     <%= typeof pageTitle !=='undefined' && pageTitle ? String(pageTitle) : 'Page' %> | <%= typeof siteName
         !=='undefined' && siteName ? String(siteName) : 'OrangeHome' %>
   </title>
-  <!-- 内嵌配置：合法 JSON，供引导脚本读取（勿用非 JSON 语法）。componentsAmdMap 在此为 SSR bundle URL（与 CSR 页字段名一致便于后续对齐）。 -->
+  <!-- 内嵌配置：合法 JSON，供引导脚本读取（勿用非 JSON 语法）。componentsAmdMap 为浏览器 AMD 脚本 URL，与 SSG 运行时一致，便于水合。 -->
   <script type="application/json" id="ORANGEHOME_DATA"><%- JSON.stringify({
     schema: typeof pageSchema !== 'undefined' ? pageSchema : null,
     componentsAmdMap: typeof componentsAmdMap === 'object' && componentsAmdMap !== null ? componentsAmdMap : {}

@@ -5,6 +5,7 @@ import * as React from 'react';
 import { renderToString } from 'react-dom/server';
 import { join } from 'path';
 import { CoreGrpcClientService } from '../core-grpc/core-grpc-client.service';
+import { buildComponentsAmdMapFromRows } from './components-amd-map.util';
 import { buildComponentsSsrMap } from './components-ssr-map.util';
 import { collectMaterialUids } from './schema-material.util';
 import { MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW } from './material-version-status';
@@ -24,7 +25,8 @@ export class RuntimeSsrService {
 
   /**
    * 仅 preview：解析 schema、校验全部物料具备 SSR URL，生成带 `#app` 内 SSR 占位 HTML 的页面。
-   * TODO: 按 componentsSsrMap URL 加载 CJS 并渲染真实组件树，替换当前 `oh-ssr-root` 占位。
+   * ORANGEHOME_DATA.componentsAmdMap 与 defer 脚本使用 **浏览器 AMD** URL（与 SSG 一致，便于 hydrate）。
+   * TODO: 按 componentsSsrMap URL 在 Node 加载 CJS 并渲染真实组件树，替换当前 `oh-ssr-root` 占位。
    */
   async renderPreview(
     pageid: string,
@@ -79,11 +81,23 @@ export class RuntimeSsrService {
         });
       }
 
-      const componentsAmdMap = buildComponentsSsrMap(
+      const componentsSsrMap = buildComponentsSsrMap(
         uids,
         rows,
         versionStatuses,
       );
+      const componentsAmdMap = buildComponentsAmdMapFromRows(
+        uids,
+        rows,
+        versionStatuses,
+      );
+
+      this.logger.log({
+        msg: 'runtimeSsr.materials.maps',
+        pageId: pageid,
+        ssrMapSize: Object.keys(componentsSsrMap).length,
+        amdMapSize: Object.keys(componentsAmdMap).length,
+      });
 
       const ssrHtml = renderToString(
         React.createElement(
