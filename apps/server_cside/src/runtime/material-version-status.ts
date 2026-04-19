@@ -20,8 +20,7 @@ export const MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW =
   MATERIAL_VERSION_STATUSES_RELEASE_ONLY;
 
 /**
- * preview / dev：开发中、测试中、已发布均可命中「最新」一条。
- * preview 与草稿页搭配时，物料常尚未发布；若仅允许 [2] 会导致 502。
+ * dev：开发中、测试中、已发布均可命中「最新」一条。
  */
 export const MATERIAL_VERSION_STATUSES_DEV: number[] = [
   VERSION_STATUS.DEVELOPING,

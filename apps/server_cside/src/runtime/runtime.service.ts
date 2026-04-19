@@ -66,11 +66,11 @@ export class RuntimeService {
         uids,
       });
 
-      /** release=仅已发布；preview/dev=含开发中/测试中，避免预览页因物料未上架 502 */
+      /** release / preview：仅已发布物料；dev：含开发中/测试中 */
       const versionStatuses =
-        type === 'release'
-          ? MATERIAL_VERSION_STATUSES_RELEASE_ONLY
-          : MATERIAL_VERSION_STATUSES_DEV;
+        type === 'dev'
+          ? MATERIAL_VERSION_STATUSES_DEV
+          : MATERIAL_VERSION_STATUSES_RELEASE_ONLY;
       const componentsAmdMap = await this.buildComponentsMapWithMaterialVersionStatus(
         uids,
         pageid,

@@ -8,7 +8,7 @@ import { CoreGrpcClientService } from '../core-grpc/core-grpc-client.service';
 import { buildComponentsAmdMapFromRows } from './components-amd-map.util';
 import { buildComponentsSsrMap } from './components-ssr-map.util';
 import { collectMaterialUids } from './schema-material.util';
-import { MATERIAL_VERSION_STATUSES_DEV } from './material-version-status';
+import { MATERIAL_VERSION_STATUSES_RELEASE_ONLY } from './material-version-status';
 import { parsePageSchemaJson, unwrapPageSchemaRoot } from './page-schema.util';
 
 /** preview：与 runtime 一致，取最新草稿页版本 */
@@ -64,8 +64,8 @@ export class RuntimeSsrService {
         uids,
       });
 
-      /** 与 SSG preview 一致：物料含未发布版本，否则 root 等基础物料易 502 */
-      const versionStatuses = MATERIAL_VERSION_STATUSES_DEV;
+      /** 与 SSG preview 一致：仅已发布物料 */
+      const versionStatuses = MATERIAL_VERSION_STATUSES_RELEASE_ONLY;
       let rows: unknown[] = [];
       if (uids.length > 0) {
         const matRes = await this.core.getMaterialsWithLatestVersion(
