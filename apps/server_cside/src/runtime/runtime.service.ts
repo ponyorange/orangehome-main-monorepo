@@ -14,7 +14,7 @@ import { collectMaterialUids } from './schema-material.util';
 import type { RuntimeType } from './dto/runtime-params.dto';
 import {
   MATERIAL_VERSION_STATUSES_DEV,
-  MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW,
+  MATERIAL_VERSION_STATUSES_RELEASE_ONLY,
 } from './material-version-status';
 
 /** core GetLatestPageVersionByStatus: 1=latest_draft, 2=published */
@@ -66,10 +66,11 @@ export class RuntimeService {
         uids,
       });
 
+      /** release=仅已发布；preview/dev=含开发中/测试中，避免预览页因物料未上架 502 */
       const versionStatuses =
-        type === 'dev'
-          ? MATERIAL_VERSION_STATUSES_DEV
-          : MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW;
+        type === 'release'
+          ? MATERIAL_VERSION_STATUSES_RELEASE_ONLY
+          : MATERIAL_VERSION_STATUSES_DEV;
       const componentsAmdMap = await this.buildComponentsMapWithMaterialVersionStatus(
         uids,
         pageid,
