@@ -13,18 +13,19 @@ export class RuntimeSsrController {
     @Query('lang') lang: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<string> {
-    if (params.type !== 'preview') {
+    if (params.type !== 'preview' && params.type !== 'dev') {
       res.status(501);
       res.setHeader('Cache-Control', 'no-store');
       res.type('json');
       return JSON.stringify({
-        error: 'SSR is only implemented for preview',
+        error: 'SSR is only implemented for preview and dev',
         type: params.type,
       });
     }
 
-    const { html, cacheControl } = await this.runtimeSsr.renderPreview(
+    const { html, cacheControl } = await this.runtimeSsr.renderSsr(
       params.pageid,
+      params.type,
       lang,
     );
     res.setHeader('Cache-Control', cacheControl);

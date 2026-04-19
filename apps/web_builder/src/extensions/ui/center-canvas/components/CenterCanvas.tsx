@@ -304,9 +304,6 @@ export const CenterCanvas: React.FC = () => {
     };
   }, [zoom, layoutVisualW, layoutVisualH]);
 
-  // 使用CSS变量获取主题色
-  const primaryColor = 'var(--theme-primary)';
-
   // 全局点击：仅点击画布手机框外的区域（灰底滚动区等）取消选中。
   // 手机框内（data-canvas-area）不在这里清：根节点 selectable=false 不会 stopPropagation，
   // 拖放结束后的 click 也会冒泡到 document，否则会误清刚选中的节点。
@@ -335,7 +332,7 @@ export const CenterCanvas: React.FC = () => {
       {/* 全局样式：拖拽目标容器高亮 */}
       <style>{`
         [data-drop-target="true"] {
-          outline: 2px solid #1890ff !important;
+          outline: 2px solid var(--theme-primary) !important;
           outline-offset: -2px;
           background-color: rgba(24, 144, 255, 0.08) !important;
           transition: outline 0.15s ease, background-color 0.15s ease;
