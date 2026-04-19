@@ -10,6 +10,8 @@ export interface MaterialVersion {
   changelog?: string;
   fileObjectKey: string;
   fileUrl?: string;
+  ssrFileObjectKey?: string;
+  ssrFileUrl?: string;
   sourceObjectKey?: string;
   sourceUrl?: string;
   size?: number;
@@ -33,6 +35,9 @@ export interface CreateMaterialVersionParams {
   changelog?: string;
   /** 上传完成后的 MinIO 对象键（非访问 URL） */
   fileObjectKey: string;
+  /** SSR（CJS）产物对象键，创建时必填（与 CreateMaterialVersionDto 一致） */
+  ssrFileObjectKey: string;
+  ssrMd5?: string;
   sourceObjectKey?: string;
   editorConfig?: Record<string, unknown>;
   dependencies?: Array<Record<string, string>>;
@@ -45,10 +50,12 @@ export interface CreateMaterialVersionParams {
 export interface UpdateMaterialVersionParams {
   changelog?: string;
   fileObjectKey?: string;
+  ssrFileObjectKey?: string;
   sourceObjectKey?: string;
   editorConfig?: Record<string, unknown>;
   dependencies?: Array<Record<string, string>>;
   md5?: string;
+  ssrMd5?: string;
 }
 
 /**

@@ -8,12 +8,20 @@ export const VERSION_STATUS = {
   DEPRECATED: 3,
 } as const;
 
-/** release / preview：只查已发布 */
-export const MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW: number[] = [
+/**
+ * release（线上）：只查已发布物料，与 CDN 缓存策略一致。
+ */
+export const MATERIAL_VERSION_STATUSES_RELEASE_ONLY: number[] = [
   VERSION_STATUS.PUBLISHED,
 ];
 
-/** dev：开发中、测试中、已发布均可命中最新 */
+/** @deprecated 使用 {@link MATERIAL_VERSION_STATUSES_RELEASE_ONLY} */
+export const MATERIAL_VERSION_STATUSES_RELEASE_PREVIEW =
+  MATERIAL_VERSION_STATUSES_RELEASE_ONLY;
+
+/**
+ * dev：开发中、测试中、已发布均可命中「最新」一条。
+ */
 export const MATERIAL_VERSION_STATUSES_DEV: number[] = [
   VERSION_STATUS.DEVELOPING,
   VERSION_STATUS.TESTING,

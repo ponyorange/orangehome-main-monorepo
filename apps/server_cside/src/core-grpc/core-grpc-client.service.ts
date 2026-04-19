@@ -133,15 +133,15 @@ export class CoreGrpcClientService {
 
   getMaterialsWithLatestVersion(
     materialUids: string[],
-    /** 与 proto `repeated int32 version_status` 对应，grpc-js 字段名为 camelCase */
-    versionStatus: number[],
+    /** 与 proto `repeated int32 version_statuses` 对应；须为 `versionStatuses`，勿写成 `versionStatus` */
+    versionStatuses: number[],
   ): Promise<any> {
     return this.promisify(
       () => this.materialStub,
       'getMaterialsWithLatestVersion',
       {
         materialUids,
-        versionStatus,
+        versionStatuses,
       },
       'MaterialService.getMaterialsWithLatestVersion',
     );

@@ -78,6 +78,9 @@ export function MaterialVersions() {
   /** 进入编辑时的 objectKey，用于取消替换文件 */
   const [baselineFileObjectKey, setBaselineFileObjectKey] = useState('');
   const [fileReplaced, setFileReplaced] = useState(false);
+  const [ssrFileObjectKey, setSsrFileObjectKey] = useState('');
+  const [baselineSsrFileObjectKey, setBaselineSsrFileObjectKey] = useState('');
+  const [ssrFileReplaced, setSsrFileReplaced] = useState(false);
   const [formValues, setFormValues] = useState<{
     version: string;
     changelog: string;
@@ -136,6 +139,9 @@ export function MaterialVersions() {
     setFileObjectKey('');
     setBaselineFileObjectKey('');
     setFileReplaced(false);
+    setSsrFileObjectKey('');
+    setBaselineSsrFileObjectKey('');
+    setSsrFileReplaced(false);
     setUploadResetKey((k) => k + 1);
   }, []);
 
@@ -151,6 +157,9 @@ export function MaterialVersions() {
     setBaselineFileObjectKey(record.fileObjectKey || '');
     setFileReplaced(false);
     setFileObjectKey(record.fileObjectKey || '');
+    setBaselineSsrFileObjectKey(record.ssrFileObjectKey || '');
+    setSsrFileReplaced(false);
+    setSsrFileObjectKey(record.ssrFileObjectKey || '');
     setFormValues({
       version: record.version || '',
       changelog: record.changelog || '',
@@ -211,6 +220,7 @@ export function MaterialVersions() {
           materialId,
           version: formValues.version.trim(),
           filename: fileInstance.name || 'index.js',
+          bundle: 'browser',
         });
         const res = await fetch(presigned.url, {
           method: 'PUT',
@@ -224,6 +234,41 @@ export function MaterialVersions() {
         }
         setFileObjectKey(presigned.objectKey);
         if (editingVersionId) setFileReplaced(true);
+        onSuccess(res as unknown as object);
+      } catch (e) {
+        Toast.error(e instanceof Error ? e.message : '上传失败');
+        onError({ status: 500 });
+      }
+    },
+    [materialId, formValues.version, editingVersionId]
+  );
+
+  const handleSsrUpload = useCallback(
+    async ({ fileInstance, onSuccess, onError }: customRequestArgs) => {
+      try {
+        if (!materialId || !formValues.version?.trim()) {
+          Toast.error('请先填写版本号再上传 SSR 产物');
+          onError({ status: 400 });
+          return;
+        }
+        const presigned = await materialApi.getPresignedUploadUrl({
+          materialId,
+          version: formValues.version.trim(),
+          filename: fileInstance.name || 'index.cjs',
+          bundle: 'ssr',
+        });
+        const res = await fetch(presigned.url, {
+          method: 'PUT',
+          body: fileInstance,
+          headers: {
+            'Content-Type': fileInstance.type || 'application/javascript',
+          },
+        });
+        if (!res.ok) {
+          throw new Error(`上传失败 (${res.status})`);
+        }
+        setSsrFileObjectKey(presigned.objectKey);
+        if (editingVersionId) setSsrFileReplaced(true);
         onSuccess(res as unknown as object);
       } catch (e) {
         Toast.error(e instanceof Error ? e.message : '上传失败');
@@ -256,6 +301,7 @@ export function MaterialVersions() {
         };
         if (editorConfig !== undefined) body.editorConfig = editorConfig;
         if (fileReplaced && fileObjectKey) body.fileObjectKey = fileObjectKey;
+        if (ssrFileReplaced && ssrFileObjectKey) body.ssrFileObjectKey = ssrFileObjectKey;
         await updateTrigger({ id: editingVersionId, data: body });
         Toast.success('更新成功');
         setVisible(false);
@@ -271,12 +317,17 @@ export function MaterialVersions() {
       Toast.error('请上传 JS 文件');
       return;
     }
+    if (!ssrFileObjectKey) {
+      Toast.error('请上传 SSR 构建产物（CJS）');
+      return;
+    }
     try {
       await createTrigger({
         materialId,
         version: ver,
         changelog: formValues.changelog?.trim() || undefined,
         fileObjectKey,
+        ssrFileObjectKey,
         ...(editorConfig !== undefined ? { editorConfig } : {}),
       });
       Toast.success('创建成功');
@@ -290,9 +341,11 @@ export function MaterialVersions() {
     materialId,
     formValues,
     fileObjectKey,
+    ssrFileObjectKey,
     isEditing,
     editingVersionId,
     fileReplaced,
+    ssrFileReplaced,
     createTrigger,
     updateTrigger,
     mutate,
@@ -319,6 +372,16 @@ export function MaterialVersions() {
           <Text link={{ href: record.fileUrl, target: '_blank' }}>下载 / 打开</Text>
         ) : (
           <Text type="tertiary">{record.fileObjectKey || '—'}</Text>
+        ),
+    },
+    {
+      title: 'SSR',
+      dataIndex: 'ssrFileUrl',
+      render: (_: unknown, record: MaterialVersion) =>
+        record.ssrFileUrl ? (
+          <Text link={{ href: record.ssrFileUrl, target: '_blank' }}>下载 / 打开</Text>
+        ) : (
+          <Tag color="grey">未配置</Tag>
         ),
     },
     { title: '发布时间', dataIndex: 'releaseTime' },
@@ -409,6 +472,7 @@ export function MaterialVersions() {
                 setFormValues((p) => ({ ...p, version: v }));
                 if (!isEditing) {
                   setFileObjectKey('');
+                  setSsrFileObjectKey('');
                   setUploadResetKey((k) => k + 1);
                 }
               }}
@@ -468,6 +532,41 @@ export function MaterialVersions() {
               <Text type="secondary" size="small" style={{ display: 'block', marginTop: 8 }}>
                 {fileReplaced ? '新 objectKey: ' : 'objectKey: '}
                 {fileObjectKey}
+              </Text>
+            ) : null}
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>
+              SSR 构建产物（CJS）{isEditing ? '（可选重新上传替换）' : ''}
+            </Text>
+            <Upload
+              key={`ssr-${uploadResetKey}`}
+              draggable
+              accept=".cjs,.js,application/javascript,text/javascript"
+              limit={1}
+              disabled={!formValues.version?.trim()}
+              customRequest={handleSsrUpload}
+              onRemove={() => {
+                if (isEditing) {
+                  setSsrFileObjectKey(baselineSsrFileObjectKey);
+                  setSsrFileReplaced(false);
+                } else {
+                  setSsrFileObjectKey('');
+                }
+                return true;
+              }}
+            >
+              <IconUpload size="extra-large" />
+              <Text type="tertiary" size="small">
+                {isEditing
+                  ? '当前版本已绑定 SSR 产物时可重新上传替换'
+                  : '请先填写版本号；默认文件名 index.cjs，直传至 MinIO 的 ssr/ 路径'}
+              </Text>
+            </Upload>
+            {ssrFileObjectKey ? (
+              <Text type="secondary" size="small" style={{ display: 'block', marginTop: 8 }}>
+                {ssrFileReplaced ? '新 SSR objectKey: ' : 'SSR objectKey: '}
+                {ssrFileObjectKey}
               </Text>
             ) : null}
           </div>

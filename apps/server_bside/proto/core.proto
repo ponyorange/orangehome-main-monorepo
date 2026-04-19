@@ -142,7 +142,7 @@ message ListBusinessesRequest {
   google.protobuf.StringValue search = 3;
   google.protobuf.StringValue platform_id = 4;
   bool with_deleted = 5;
-  // 可选；与 Business.business_type 对齐（如 public / private），传则 Core 只返回该类型
+  // 传入 private 或 public 时仅返回该类型；不传则返回全部
   google.protobuf.StringValue business_type = 6;
 }
 
@@ -492,6 +492,8 @@ message MaterialVersionMessage {
   bool is_deleted = 16;
   google.protobuf.Timestamp created_at = 17;
   google.protobuf.Timestamp updated_at = 18;
+  google.protobuf.StringValue ssr_file_object_key = 19;
+  google.protobuf.StringValue ssr_file_url = 20;
 }
 
 message CreateMaterialVersionRequest {
@@ -502,6 +504,8 @@ message CreateMaterialVersionRequest {
   google.protobuf.StringValue source_object_key = 5;
   google.protobuf.StringValue editor_config = 6;
   google.protobuf.StringValue md5 = 7;
+  string ssr_file_object_key = 8;
+  google.protobuf.StringValue ssr_md5 = 9;
 }
 
 message GetMaterialVersionRequest {
@@ -527,6 +531,7 @@ message GetPresignedUploadUrlRequest {
   string material_id = 1;
   string version = 2;
   string filename = 3;
+  google.protobuf.StringValue bundle = 4;
 }
 
 message PresignedUploadUrlResponse {

@@ -142,7 +142,7 @@ message ListBusinessesRequest {
   google.protobuf.StringValue search = 3;
   google.protobuf.StringValue platform_id = 4;
   bool with_deleted = 5;
-  // 可选；与 Business.business_type 对齐（如 public / private），传则 Core 只返回该类型
+  // 传入 private 或 public 时仅返回该类型；不传则返回全部
   google.protobuf.StringValue business_type = 6;
 }
 
@@ -450,8 +450,7 @@ message ListMaterialsResponse {
 
 message GetMaterialsWithLatestVersionRequest {
   repeated string material_uids = 1;
-  /** 在多个状态中取各自「最新」版本，如仅已发布传 [2] */
-  repeated int32 version_status = 2;
+  repeated int32 version_statuses = 2;
 }
 
 message MaterialWithLatestVersion {
@@ -493,6 +492,8 @@ message MaterialVersionMessage {
   bool is_deleted = 16;
   google.protobuf.Timestamp created_at = 17;
   google.protobuf.Timestamp updated_at = 18;
+  google.protobuf.StringValue ssr_file_object_key = 19;
+  google.protobuf.StringValue ssr_file_url = 20;
 }
 
 message CreateMaterialVersionRequest {
@@ -503,6 +504,8 @@ message CreateMaterialVersionRequest {
   google.protobuf.StringValue source_object_key = 5;
   google.protobuf.StringValue editor_config = 6;
   google.protobuf.StringValue md5 = 7;
+  string ssr_file_object_key = 8;
+  google.protobuf.StringValue ssr_md5 = 9;
 }
 
 message GetMaterialVersionRequest {
@@ -528,6 +531,7 @@ message GetPresignedUploadUrlRequest {
   string material_id = 1;
   string version = 2;
   string filename = 3;
+  google.protobuf.StringValue bundle = 4;
 }
 
 message PresignedUploadUrlResponse {
@@ -573,7 +577,7 @@ message Project {
 }
 
 message CreateProjectRequest {
-  string project_code = 1;
+  optional string project_code = 1;
   string project_name = 2;
   string business_id = 3;
   google.protobuf.StringValue description = 4;
@@ -607,6 +611,10 @@ message ListProjectsRequest {
   google.protobuf.StringValue search = 3;
   google.protobuf.StringValue business_id = 4;
   bool with_deleted = 5;
+  // 按创建者邮箱精确匹配（可选）
+  google.protobuf.StringValue owner = 6;
+  // 传入一个邮箱：项目的 collaborators 数组包含该邮箱即匹配（可选）；与 owner 同时传时为「或」关系
+  google.protobuf.StringValue collaborators = 7;
 }
 
 message ProjectResponse {
@@ -645,7 +653,7 @@ message Page {
 
 message CreatePageRequest {
   string project_id = 1;
-  string path = 2;
+  optional string path = 2;
   string title = 3;
   google.protobuf.StringValue description = 4;
 }

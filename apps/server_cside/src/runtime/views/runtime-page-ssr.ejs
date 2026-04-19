@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 与 plugins/runtime/src/rem/htmlRootFontSize.ts 一致：首屏 rem 在 runtime 包执行前即生效 -->
+  <!-- 与 plugins/runtime/src/rem/htmlRootFontSize.ts 一致：首屏 SSR 的 rem 依赖此值；须在解析 #app 前同步执行（勿 defer） -->
   <script>
     (function () {
       var design =
@@ -25,7 +25,7 @@
     <%= typeof pageTitle !=='undefined' && pageTitle ? String(pageTitle) : 'Page' %> | <%= typeof siteName
         !=='undefined' && siteName ? String(siteName) : 'OrangeHome' %>
   </title>
-  <!-- 内嵌配置：合法 JSON，供引导脚本读取（勿用非 JSON 语法） -->
+  <!-- 内嵌配置：合法 JSON，供引导脚本读取（勿用非 JSON 语法）。componentsAmdMap 为浏览器 AMD 脚本 URL，与 SSG 运行时一致，便于水合。 -->
   <script type="application/json" id="ORANGEHOME_DATA"><%- JSON.stringify({
     schema: typeof pageSchema !== 'undefined' ? pageSchema : null,
     componentsAmdMap: typeof componentsAmdMap === 'object' && componentsAmdMap !== null ? componentsAmdMap : {}
@@ -33,6 +33,7 @@
   <script defer src="http://8.148.251.221:6011/orangehome/materials/basic/react/react-18.js"></script>
   <script defer src="http://8.148.251.221:6011/orangehome/materials/basic/react/react-dom-18.js"></script>
   <script defer src="http://8.148.251.221:6011/orangehome/materials/basic/amd_require/require.min.js"></script>
+  <!-- 与 plugins/runtime/src/index.css 中 .oh-top-loading-bar 一致；defer 资源未执行前即显示 -->
   <style>
     #oh-pre-react-progress.oh-top-loading-bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:2147483646;pointer-events:none;overflow:hidden;background:rgba(15,23,42,.06)}
     #oh-pre-react-progress .oh-top-loading-bar__inner{height:100%;width:100%;transform-origin:left center;background:linear-gradient(90deg,#3b82f6 0%,#6366f1 45%,#8b5cf6 100%);animation:oh-top-loading-indeterminate 1.1s ease-in-out infinite}
@@ -44,9 +45,9 @@
   <div id="oh-pre-react-progress" class="oh-top-loading-bar oh-top-loading-bar--run" aria-hidden="true">
     <div class="oh-top-loading-bar__inner"></div>
   </div>
-  <div id="app"></div>
+  <div id="app"><%- typeof ssrHtml === 'string' ? ssrHtml : '' %></div>
   <script defer
-    src="http://8.148.251.221:6011/orangehome/materials/@orangehome/common-plugin-runtime/1.0.2/index.js"></script>
+    src="http://8.148.251.221:6011/orangehome/materials/@orangehome/common-plugin-ssrruntime/1.0.2/index.js"></script>
 
   <% const map=(typeof componentsAmdMap==='object' && componentsAmdMap !==null) ? componentsAmdMap : {}; const
     urls=Object.values(map).filter(function (u) { return typeof u==='string' && u.length> 0; });
